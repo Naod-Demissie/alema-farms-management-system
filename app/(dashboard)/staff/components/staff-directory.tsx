@@ -1,9 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { 
   UserPlus,
   RefreshCw,
@@ -13,6 +24,7 @@ import {
 import { useStaff } from "@/features/staff/context/staff-context";
 import { StaffInviteDialog } from "@/features/staff/components/staff-invite-dialog";
 import { AddStaffDialog } from "@/features/staff/components/add-staff-dialog";
+import { updateStaff, deleteStaff } from "@/server/staff";
 import { getAllStaff, getAllInvites, resendInvite, cancelInvite } from "@/server/staff-invites";
 import { StaffTable } from "@/features/staff/components/staff-table";
 import { InviteTable } from "@/features/staff/components/invite-table";
@@ -43,6 +55,15 @@ import { Mail as MailIcon, Phone, Calendar, Shield, Copy, Send, XCircle } from "
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 
+const editStaffFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phoneNumber: z.string().optional(),
+  isActive: z.boolean(),
+});
+
+type EditStaffFormValues = z.infer<typeof editStaffFormSchema>;
+
 const roleColors = {
   ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
   VETERINARIAN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
@@ -50,7 +71,7 @@ const roleColors = {
 };
 
 export function StaffDirectory() {
-  const { setIsInviteDialogOpen, setIsAddStaffDialogOpen, setRefreshInvites } = useStaff();
+  const { setIsInviteDialogOpen, setIsAddStaffDialogOpen, setRefreshInvites, setRefreshStaff } = useStaff();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -62,14 +83,27 @@ export function StaffDirectory() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("staff");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isEditLoading, setIsEditLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
-    type: 'resend' | 'cancel' | null;
-    invite: Invite | null;
+    type: 'resend' | 'cancel' | 'delete' | null;
+    invite?: Invite | null;
+    staff?: Staff | null;
   }>({
     open: false,
     type: null,
     invite: null,
+    staff: null,
+  });
+
+  const editForm = useForm<EditStaffFormValues>({
+    resolver: zodResolver(editStaffFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      isActive: true,
+    },
   });
 
   // Load staff members from database
@@ -134,14 +168,63 @@ export function StaffDirectory() {
     loadInvites();
   }, []);
 
-  // Register refresh function with context
+  // Register refresh functions with context
   useEffect(() => {
     setRefreshInvites(() => loadInvites);
-  }, [setRefreshInvites]);
+    setRefreshStaff(() => loadStaffMembers);
+  }, [setRefreshInvites, setRefreshStaff]);
 
   const handleEditStaff = (staff: Staff) => {
     setSelectedStaff(staff);
+    editForm.reset({
+      firstName: staff.firstName,
+      lastName: staff.lastName,
+      phoneNumber: staff.phoneNumber || "",
+      isActive: staff.isActive,
+    });
     setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (data: EditStaffFormValues) => {
+    if (!selectedStaff) return;
+    
+    setIsEditLoading(true);
+    try {
+      const result = await updateStaff(selectedStaff.id, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber || "",
+        isActive: data.isActive,
+      });
+
+      if (result.success) {
+        // Update the staff in the list immediately
+        setStaffData(prevStaff => 
+          prevStaff.map(s => 
+            s.id === selectedStaff.id 
+              ? { ...s, ...data, updatedAt: new Date() }
+              : s
+          )
+        );
+        // Also refresh from server to ensure data consistency
+        await loadStaffMembers();
+        toast.success("Staff member updated successfully!", {
+          description: `${data.firstName} ${data.lastName} has been updated`,
+        });
+        setIsEditDialogOpen(false);
+      } else {
+        toast.error("Failed to update staff member", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update staff:", error);
+      toast.error("Failed to update staff member", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    } finally {
+      setIsEditLoading(false);
+    }
   };
 
   const handleViewStaff = (staff: Staff) => {
@@ -150,8 +233,11 @@ export function StaffDirectory() {
   };
 
   const handleDeleteStaff = (staff: Staff) => {
-    // TODO: Implement delete functionality
-    console.log("Delete staff:", staff);
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      staff,
+    });
   };
 
   // Invite management functions
@@ -231,19 +317,52 @@ export function StaffDirectory() {
     }
   };
 
-  const handleConfirmAction = async () => {
-    if (!confirmDialog.invite || !confirmDialog.type) return;
+  const executeDeleteStaff = async (staff: Staff) => {
+    setActionLoading(staff.id);
+    try {
+      const result = await deleteStaff(staff.id);
+      if (result.success) {
+        // Remove the staff from the list immediately
+        setStaffData(prevStaff => 
+          prevStaff.filter(s => s.id !== staff.id)
+        );
+        // Also refresh from server to ensure data consistency
+        await loadStaffMembers();
+        toast.success("Staff member deleted successfully!", {
+          description: `${staff.firstName} ${staff.lastName} has been removed from the system`,
+        });
+      } else {
+        console.error("Failed to delete staff:", result.message);
+        toast.error("Failed to delete staff member", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to delete staff:", error);
+      toast.error("Failed to delete staff member", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
-    if (confirmDialog.type === 'resend') {
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.type) return;
+
+    if (confirmDialog.type === 'resend' && confirmDialog.invite) {
       await executeResendInvite(confirmDialog.invite);
-    } else if (confirmDialog.type === 'cancel') {
+    } else if (confirmDialog.type === 'cancel' && confirmDialog.invite) {
       await executeCancelInvite(confirmDialog.invite);
+    } else if (confirmDialog.type === 'delete' && confirmDialog.staff) {
+      await executeDeleteStaff(confirmDialog.staff);
     }
 
     setConfirmDialog({
       open: false,
       type: null,
       invite: null,
+      staff: null,
     });
   };
 
@@ -390,20 +509,20 @@ export function StaffDirectory() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Staff Members ({staffData.length})</CardTitle>
-                <CardDescription>
-                  A list of all staff members in your organization.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <StaffTable 
+      <Card>
+        <CardHeader>
+          <CardTitle>Staff Members ({staffData.length})</CardTitle>
+          <CardDescription>
+            A list of all staff members in your organization.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StaffTable 
                   columns={staffColumns} 
-                  data={staffData}
-                />
-              </CardContent>
-            </Card>
+            data={staffData}
+          />
+        </CardContent>
+      </Card>
           )}
         </TabsContent>
 
@@ -589,62 +708,105 @@ export function StaffDirectory() {
             </DialogDescription>
           </DialogHeader>
           {selectedStaff && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">First Name</label>
-                  <Input defaultValue={selectedStaff.firstName} />
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+                
                 <div>
-                  <label className="text-sm font-medium">Last Name</label>
-                  <Input defaultValue={selectedStaff.lastName} />
+                  <label className="text-sm font-medium">Email</label>
+                  <Input value={selectedStaff.email || ""} disabled />
+                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
                 </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <Input defaultValue={selectedStaff.email || ""} type="email" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <Input defaultValue={selectedStaff.phoneNumber || ""} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Role</label>
-                  <Select defaultValue={selectedStaff.role}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
-                      <SelectItem value="VETERINARIAN">Veterinarian</SelectItem>
-                      <SelectItem value="WORKER">Worker</SelectItem>
-                    </SelectContent>
-                  </Select>
+                
+                <FormField
+                  control={editForm.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="+1234567890" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Role</label>
+                    <Input value={selectedStaff.role} disabled />
+                    <p className="text-xs text-muted-foreground mt-1">Role cannot be changed</p>
+                  </div>
+                  <FormField
+                    control={editForm.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <FormControl>
+                          <Select 
+                            value={field.value ? "active" : "inactive"}
+                            onValueChange={(value) => field.onChange(value === "active")}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Status</label>
-                  <Select defaultValue={selectedStaff.isActive ? "active" : "inactive"}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
+                
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsEditDialogOpen(false)}
+                    disabled={isEditLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isEditLoading}>
+                    {isEditLoading ? "Saving..." : "Save Changes"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => setIsEditDialogOpen(false)}>
-              Save Changes
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -661,6 +823,8 @@ export function StaffDirectory() {
             ? 'Resend Invitation' 
             : confirmDialog.type === 'cancel' 
             ? 'Cancel Invitation' 
+            : confirmDialog.type === 'delete'
+            ? 'Delete Staff Member'
             : 'Confirm Action'
         }
         desc={
@@ -668,6 +832,8 @@ export function StaffDirectory() {
             ? `Are you sure you want to resend the invitation to ${confirmDialog.invite?.email}? A new invitation email will be sent with a fresh expiration date.`
             : confirmDialog.type === 'cancel'
             ? `Are you sure you want to cancel the invitation for ${confirmDialog.invite?.email}? This action cannot be undone.`
+            : confirmDialog.type === 'delete'
+            ? `Are you sure you want to delete ${confirmDialog.staff?.firstName} ${confirmDialog.staff?.lastName}? This action cannot be undone and all associated data will be permanently removed.`
             : 'Are you sure you want to proceed?'
         }
         confirmText={
@@ -675,12 +841,14 @@ export function StaffDirectory() {
             ? 'Resend Invitation' 
             : confirmDialog.type === 'cancel' 
             ? 'Cancel Invitation' 
+            : confirmDialog.type === 'delete'
+            ? 'Delete Staff Member'
             : 'Continue'
         }
         cancelBtnText="Cancel"
-        destructive={confirmDialog.type === 'cancel'}
+        destructive={confirmDialog.type === 'cancel' || confirmDialog.type === 'delete'}
         handleConfirm={handleConfirmAction}
-        isLoading={actionLoading === confirmDialog.invite?.id}
+        isLoading={actionLoading === (confirmDialog.invite?.id || confirmDialog.staff?.id)}
       />
     </div>
   );

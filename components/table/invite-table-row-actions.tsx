@@ -40,6 +40,7 @@ export function InviteTableRowActions({
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
             disabled={isLoading}
+            onClick={(e) => e.stopPropagation()}
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -51,7 +52,10 @@ export function InviteTableRowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[180px]">
           <DropdownMenuItem
-            onClick={() => onCopyLink(invite)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopyLink(invite);
+            }}
             disabled={isLoading}
           >
             <Copy size={16} className="mr-2" />
@@ -62,7 +66,10 @@ export function InviteTableRowActions({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onResend(invite)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResend(invite);
+                }}
                 disabled={isLoading}
               >
                 <Send size={16} className="mr-2" />
@@ -70,7 +77,10 @@ export function InviteTableRowActions({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onCancel(invite)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancel(invite);
+                }}
                 disabled={isLoading}
                 className="text-red-500 focus:text-red-500"
               >

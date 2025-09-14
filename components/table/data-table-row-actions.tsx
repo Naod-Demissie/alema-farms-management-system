@@ -30,6 +30,7 @@ export function DataTableRowActions<TData>({
           <Button
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            onClick={(e) => e.stopPropagation()}
           >
             <DotsHorizontalIcon className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
@@ -37,7 +38,8 @@ export function DataTableRowActions<TData>({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               onEdit(row.original);
             }}
           >
@@ -46,7 +48,8 @@ export function DataTableRowActions<TData>({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               onDelete(row.original);
             }}
             className="text-red-500 focus:text-red-500"

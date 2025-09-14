@@ -30,17 +30,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useStaff } from "../context/staff-context";
+import { createNonSystemStaff } from "@/server/staff-invites";
 import { toast } from "sonner";
 
 const addStaffFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
-  role: z.enum(["WORKER", "VETERINARIAN"], {
-    required_error: "Please select a role",
-  }),
-  isSystemUser: z.boolean(),
 });
 
 type AddStaffFormValues = z.infer<typeof addStaffFormSchema>;
@@ -54,41 +50,38 @@ export function AddStaffDialog() {
     defaultValues: {
       firstName: "",
       lastName: "",
-      email: "",
       phoneNumber: "",
-      role: "WORKER",
-      isSystemUser: false,
     },
   });
 
   const onSubmit = async (data: AddStaffFormValues) => {
     setIsLoading(true);
     try {
-      // Here you would call your API to add the staff member
-      // For now, we'll just simulate success
-      console.log("Adding staff member:", data);
+      const result = await createNonSystemStaff({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber || "",
+        role: "WORKER",
+        isSystemUser: false,
+      });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success("Staff member added successfully!");
-      form.reset();
-      setIsAddStaffDialogOpen(false);
-      refreshStaff();
+      if (result.success) {
+        toast.success("Staff member added successfully!");
+        form.reset();
+        setIsAddStaffDialogOpen(false);
+        // Refresh staff list to show the new member
+        refreshStaff();
+      } else {
+        toast.error(result.message || "Failed to add staff member");
+      }
     } catch (error) {
+      console.error("Failed to add staff member:", error);
       toast.error("Failed to add staff member");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStaffTypeChange = (isSystemUser: boolean) => {
-    form.setValue("isSystemUser", isSystemUser);
-    form.setValue("role", isSystemUser ? "VETERINARIAN" : "WORKER");
-    if (!isSystemUser) {
-      form.setValue("email", "");
-    }
-  };
 
   return (
     <Dialog open={isAddStaffDialogOpen} onOpenChange={setIsAddStaffDialogOpen}>
@@ -96,7 +89,7 @@ export function AddStaffDialog() {
         <DialogHeader>
           <DialogTitle>Add Staff Member</DialogTitle>
           <DialogDescription>
-            Add a new staff member to the system. Choose between system user (requires email) or non-system user (worker).
+            Add a new worker to the system.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -130,78 +123,6 @@ export function AddStaffDialog() {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="isSystemUser"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Staff Type *</FormLabel>
-                  <Select 
-                    value={field.value ? "SYSTEM_USER" : "NON_SYSTEM_USER"} 
-                    onValueChange={(value) => handleStaffTypeChange(value === "SYSTEM_USER")}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select staff type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="SYSTEM_USER">System User (Admin/Vet) - Requires Email</SelectItem>
-                      <SelectItem value="NON_SYSTEM_USER">Non-System User (Worker) - No Email Required</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {form.watch("isSystemUser") ? (
-                        <>
-                          <SelectItem value="VETERINARIAN">Veterinarian</SelectItem>
-                        </>
-                      ) : (
-                        <SelectItem value="WORKER">Worker</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Email {form.watch("isSystemUser") ? "*" : "(Optional)"}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="staff@company.com"
-                      type="email"
-                      disabled={!form.watch("isSystemUser")}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}

@@ -522,3 +522,64 @@ export const completeStaffRegistration = async (
         };
     }
 };
+
+// Delete staff member
+export const deleteStaff = async (id: string): Promise<ApiResponse> => {
+    try {
+        const session = await auth.api.getSession({ headers: await headers() });
+
+        if (!session?.user) {
+            return {
+                success: false,
+                message: "Authentication required"
+            };
+        }
+
+        const currentUser = session.user as any;
+
+        // Check permissions - only admin can delete staff
+        if (currentUser.role !== "ADMIN") {
+            return {
+                success: false,
+                message: "Insufficient permissions to delete staff"
+            };
+        }
+
+        // Check if staff member exists
+        const staff = await prisma.staff.findUnique({
+            where: { id }
+        });
+
+        if (!staff) {
+            return {
+                success: false,
+                message: "Staff member not found"
+            };
+        }
+
+        // Prevent deleting self
+        if (currentUser.id === id) {
+            return {
+                success: false,
+                message: "Cannot delete your own account"
+            };
+        }
+
+        // Delete staff member
+        await prisma.staff.delete({
+            where: { id }
+        });
+
+        return {
+            success: true,
+            message: "Staff member deleted successfully"
+        };
+
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to delete staff member"
+        };
+    }
+};
