@@ -373,6 +373,54 @@ export const getInvites = async (createdById?: string): Promise<ApiResponse> => 
   }
 };
 
+// Get all invites for the invite sent table
+export const getAllInvites = async (): Promise<ApiResponse> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+    if (currentUser.role !== "ADMIN") {
+      return {
+        success: false,
+        message: "Insufficient permissions"
+      };
+    }
+
+    const invites = await prisma.invite.findMany({
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            role: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return {
+      success: true,
+      data: invites
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to fetch invitations"
+    };
+  }
+};
+
 // Cancel invitation
 export const cancelInvite = async (inviteId: string): Promise<ApiResponse> => {
   try {

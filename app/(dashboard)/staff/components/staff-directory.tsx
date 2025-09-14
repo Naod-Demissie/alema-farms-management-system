@@ -3,18 +3,23 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   UserPlus,
   RefreshCw,
-  Loader2
+  Loader2,
+  Mail
 } from "lucide-react";
 import { useStaff } from "@/features/staff/context/staff-context";
 import { StaffInviteDialog } from "@/features/staff/components/staff-invite-dialog";
 import { AddStaffDialog } from "@/features/staff/components/add-staff-dialog";
-import { getAllStaff } from "@/server/staff-invites";
+import { getAllStaff, getAllInvites } from "@/server/staff-invites";
 import { StaffTable } from "@/features/staff/components/staff-table";
+import { InviteTable } from "@/features/staff/components/invite-table";
 import { createStaffDirectoryColumns } from "./staff-directory-columns";
+import { createInviteSentColumns } from "./invite-sent-columns";
 import { Staff } from "@/features/staff/data/schema";
+import { Invite, computeInviteStatus } from "@/features/staff/data/invite-schema";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import {
   Dialog,
@@ -34,7 +39,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, Calendar, Shield } from "lucide-react";
+import { Mail as MailIcon, Phone, Calendar, Shield, Copy, Send, XCircle } from "lucide-react";
 
 const roleColors = {
   ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
@@ -48,8 +53,12 @@ export function StaffDirectory() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [staffData, setStaffData] = useState<Staff[]>([]);
+  const [inviteData, setInviteData] = useState<Invite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInviteLoading, setIsInviteLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("staff");
 
   // Load staff members from database
   const loadStaffMembers = async () => {
@@ -72,14 +81,37 @@ export function StaffDirectory() {
     }
   };
 
+  // Load invites from database
+  const loadInvites = async () => {
+    setIsInviteLoading(true);
+    setInviteError(null);
+    try {
+      const result = await getAllInvites();
+      if (result.success) {
+        setInviteData(result.data);
+      } else {
+        setInviteError(result.message || "Failed to load invites");
+        setInviteData([]);
+      }
+    } catch (error) {
+      console.error("Failed to load invites:", error);
+      setInviteError("Failed to load invites");
+      setInviteData([]);
+    } finally {
+      setIsInviteLoading(false);
+    }
+  };
+
   // Refresh data
   const handleRefresh = () => {
     loadStaffMembers();
+    loadInvites();
   };
 
   // Load data on component mount
   useEffect(() => {
     loadStaffMembers();
+    loadInvites();
   }, []);
 
   const handleEditStaff = (staff: Staff) => {
@@ -97,15 +129,39 @@ export function StaffDirectory() {
     console.log("Delete staff:", staff);
   };
 
+  // Invite management functions
+  const handleResendInvite = (invite: Invite) => {
+    // TODO: Implement resend functionality
+    console.log("Resend invite:", invite);
+  };
+
+  const handleCancelInvite = (invite: Invite) => {
+    // TODO: Implement cancel functionality
+    console.log("Cancel invite:", invite);
+  };
+
+  const handleCopyInviteLink = (invite: Invite) => {
+    const inviteLink = `${window.location.origin}/invite/${invite.token}`;
+    navigator.clipboard.writeText(inviteLink);
+    // TODO: Show toast notification
+    console.log("Copied invite link:", inviteLink);
+  };
+
   // Create columns with handlers
-  const columns = createStaffDirectoryColumns({
+  const staffColumns = createStaffDirectoryColumns({
     onEdit: handleEditStaff,
     onView: handleViewStaff,
     onDelete: handleDeleteStaff,
   });
 
-  // Faceted filter options
-  const facetedFilters = [
+  const inviteColumns = createInviteSentColumns({
+    onResend: handleResendInvite,
+    onCancel: handleCancelInvite,
+    onCopyLink: handleCopyInviteLink,
+  });
+
+  // Faceted filter options for staff
+  const staffFacetedFilters = [
     {
       columnId: "role",
       title: "Role",
@@ -125,54 +181,37 @@ export function StaffDirectory() {
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
-            <p className="text-muted-foreground">
-              Manage your staff members and their information.
-            </p>
-          </div>
-        </div>
-        <Card>
-          <CardContent className="flex items-center justify-center py-8">
-            <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading staff members...</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Faceted filter options for invites
+  const inviteFacetedFilters = [
+    {
+      columnId: "role",
+      title: "Role",
+      options: [
+        { label: "Admin", value: "ADMIN" },
+        { label: "Veterinarian", value: "VETERINARIAN" },
+        { label: "Worker", value: "WORKER" },
+      ],
+    },
+    {
+      columnId: "status",
+      title: "Status",
+      options: [
+        { label: "Pending", value: "PENDING" },
+        { label: "Accepted", value: "ACCEPTED" },
+        { label: "Expired", value: "EXPIRED" },
+        { label: "Cancelled", value: "CANCELLED" },
+      ],
+    },
+  ];
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
-            <p className="text-muted-foreground">
-              Manage your staff members and their information.
-            </p>
-          </div>
-        </div>
-        <Card>
-          <CardContent className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <p className="text-red-600 mb-4">{error}</p>
-              <Button variant="outline" onClick={handleRefresh}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Try Again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Calculate invite stats
+  const inviteStats = {
+    total: inviteData.length,
+    pending: inviteData.filter(invite => computeInviteStatus(invite) === "PENDING").length,
+    accepted: inviteData.filter(invite => computeInviteStatus(invite) === "ACCEPTED").length,
+    expired: inviteData.filter(invite => computeInviteStatus(invite) === "EXPIRED").length,
+  };
+
 
   return (
     <div className="space-y-6">
@@ -185,8 +224,8 @@ export function StaffDirectory() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-            {isLoading ? (
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading || isInviteLoading}>
+            {(isLoading || isInviteLoading) ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="mr-2 h-4 w-4" />
@@ -198,27 +237,156 @@ export function StaffDirectory() {
             Add Staff
           </Button>
           <Button onClick={() => setIsInviteDialogOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
+            <Mail className="mr-2 h-4 w-4" />
             Invite Staff
           </Button>
         </div>
       </div>
 
-      {/* Staff Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Staff Members ({staffData.length})</CardTitle>
-          <CardDescription>
-            A list of all staff members in your organization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <StaffTable 
-            columns={columns} 
-            data={staffData}
-          />
-        </CardContent>
-      </Card>
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="staff">Staff Members</TabsTrigger>
+          <TabsTrigger value="invites">Invite Sent</TabsTrigger>
+        </TabsList>
+
+        {/* Staff Members Tab */}
+        <TabsContent value="staff" className="space-y-6">
+          {isLoading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading staff members...</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-600 mb-4">{error}</p>
+                  <Button variant="outline" onClick={handleRefresh}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Try Again
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Staff Members ({staffData.length})</CardTitle>
+                <CardDescription>
+                  A list of all staff members in your organization.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StaffTable 
+                  columns={staffColumns} 
+                  data={staffData}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Invite Sent Tab */}
+        <TabsContent value="invites" className="space-y-6">
+          {/* Invite Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total</CardTitle>
+                <Mail className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{inviteStats.total}</div>
+                <p className="text-xs text-muted-foreground">
+                  All invitations
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{inviteStats.pending}</div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting response
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Accepted</CardTitle>
+                <UserPlus className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{inviteStats.accepted}</div>
+                <p className="text-xs text-muted-foreground">
+                  Successfully joined
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Expired</CardTitle>
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{inviteStats.expired}</div>
+                <p className="text-xs text-muted-foreground">
+                  No longer valid
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {isInviteLoading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading invites...</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : inviteError ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-600 mb-4">{inviteError}</p>
+                  <Button variant="outline" onClick={handleRefresh}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Try Again
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Invitations Sent ({inviteData.length})</CardTitle>
+                <CardDescription>
+                  All staff invitations sent and their current status.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <InviteTable 
+                  columns={inviteColumns} 
+                  data={inviteData}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* View Staff Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
