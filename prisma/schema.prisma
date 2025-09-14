@@ -1,0 +1,474 @@
+
+// Prisma schema for Poultry Farm Management System
+// Database: PostgreSQL
+
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+
+
+// ===================
+// Authentication Models
+// ===================
+
+model Staff {
+  id                          String    @id @default(uuid())
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  firstName                   String
+  lastName                    String 
+  name                        String
+  email                       String?   // nullable for workers without system access
+  emailVerified               Boolean   @default(false)
+  image                       String? 
+  phoneNumber                 String?
+  role                        StaffRole @default(WORKER)
+  isSystemUser                Boolean   @default(false)  // True for Admin/Vet
+  isActive                    Boolean   @default(true)
+  
+  // Relations
+  sessions                    Sessions[]
+  accounts                    Accounts[]
+  invitesCreated              Invite[]  @relation("InviteCreatedByStaff")
+  treatments                  Treatments[] @relation("TreatedByStaff")
+  healthMonitoring            HealthMonitoring[] @relation("RecordedByStaff")
+  mortalityRecords            Mortality[] @relation("RecordedByStaff")
+  notifications               Notifications[] @relation("StaffNotifications")
+  payrolls                    Payroll[]
+  leaveRequests               LeaveRequest[] @relation("StaffLeave")
+  leaveBalance                LeaveBalance?
+  attendance                  Attendance[]
+  approvedLeaves              LeaveRequest[] @relation("ApprovedLeaves")
+
+  @@map("staff")
+}
+
+model Sessions {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  staff     Staff    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Accounts {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  staff                 Staff     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verifications {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("verifications")
+}
+
+// ===================
+// Invite System for Magic Link Signup
+// ===================
+model Invite {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  role        StaffRole @default(WORKER)
+  token       String    @unique
+  expiresAt   DateTime
+  isUsed      Boolean   @default(false)
+  createdById String?   // Staff who created the invite
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  createdBy   Staff?    @relation("InviteCreatedByStaff", fields: [createdById], references: [id])
+}
+
+// ===================
+// Payroll & Attendance
+// ===================
+model Payroll {
+  id         String   @id @default(uuid())
+  staffId    String
+  salary     Float
+  bonus      Float?
+  deductions Float?   @default(0)
+  paidOn     DateTime
+
+  staff      Staff    @relation(fields: [staffId], references: [id])
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  staffId   String
+  date      DateTime
+  status    String   // Present, Absent, On Leave, etc.
+
+  staff     Staff    @relation(fields: [staffId], references: [id])
+
+  @@unique([staffId, date])
+}
+
+// ===================
+// Leave Management
+// ===================
+model LeaveRequest {
+  id          String       @id @default(uuid())
+  staffId     String
+  leaveType   LeaveType
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      LeaveStatus  @default(PENDING)
+  approvedBy  String?
+
+  staff       Staff        @relation("StaffLeave", fields: [staffId], references: [id])
+  approver    Staff?       @relation("ApprovedLeaves", fields: [approvedBy], references: [id])
+}
+
+model LeaveBalance {
+  id                 String   @id @default(uuid())
+  staffId            String   @unique
+  year               Int
+  totalLeaveDays     Int
+  usedLeaveDays      Int      @default(0)
+  remainingLeaveDays Int
+
+  staff              Staff    @relation(fields: [staffId], references: [id])
+}
+
+// ===================
+// Enums
+// ===================  
+
+
+enum StaffRole {
+  ADMIN
+  VETERINARIAN
+  WORKER
+}
+
+enum LeaveType {
+  SICK
+  ANNUAL
+  MATERNITY
+  PATERNITY
+  CASUAL
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+
+
+
+
+// ------------------ ENUMS ------------------
+
+enum BreedType {
+  broiler
+  layer
+  dual_purpose
+}
+
+enum SourceType {
+  hatchery
+  farm
+  imported
+}
+
+enum TreatmentResponse {
+  improved
+  no_change
+  worsened
+}
+
+enum DiseaseClass {
+  respiratory
+  digestive
+  parasitic
+  nutritional
+  other
+}
+
+enum BodyCondition {
+  underweight
+  normal
+  overweight
+}
+
+enum BehaviorStatus {
+  active
+  lethargic
+  abnormal
+}
+
+enum DeathCause {
+  disease
+  injury
+  environmental
+  unknown
+}
+
+enum DisposalMethod {
+  burial
+  incineration
+  composting
+  other
+}
+
+enum FeedType {
+  starter
+  grower
+  finisher
+  layer
+  custom
+}
+
+enum EggGrade {
+  A
+  B
+  C
+  cracked
+  discard
+}
+
+enum Fertility {
+  fertile
+  infertile
+}
+
+enum ExpenseCategory {
+  feed
+  medicine
+  labor
+  utilities
+  maintenance
+  other
+}
+
+enum RevenueSource {
+  egg_sales
+  bird_sales
+  subsidy
+  other
+}
+
+
+// ------------------ MODELS ------------------
+
+model Flocks {
+  id            String      @id @default(uuid())
+  batchCode     String      @unique
+  breed         BreedType
+  source        SourceType
+  arrivalDate   DateTime
+  initialCount  Int
+  currentCount  Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  vaccinations      Vaccinations[]
+  treatments        Treatments[]
+  healthMonitoring  HealthMonitoring[]
+  mortality         Mortality[]
+  feedUsage         FeedUsage[]
+  eggProduction     EggProduction[]
+  expenses          Expenses[]
+  revenue           Revenue[]
+  notifications     Notifications[]
+  
+  @@map("flocks")
+}
+
+model Vaccinations {
+  id          String    @id @default(uuid())
+  flockId     String
+  vaccineName String
+  date        DateTime
+  lotNo       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  flock Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  
+  @@map("vaccinations")
+}
+
+model Treatments {
+  id           String            @id @default(uuid())
+  flockId      String
+  disease      DiseaseClass
+  medication   String?
+  dosage       String?
+  response     TreatmentResponse?
+  treatedById  String?           // Staff who administered the treatment
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  flock    Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  treatedBy Staff? @relation("TreatedByStaff", fields: [treatedById], references: [id])
+  
+  @@map("treatments")
+}
+
+model HealthMonitoring {
+  id            String          @id @default(uuid())
+  flockId       String
+  date          DateTime
+  avgWeight     Float?
+  bodyCondition BodyCondition?
+  behavior      BehaviorStatus?
+  observations  String?
+  recordedById  String?         // Staff who recorded the monitoring
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  flock     Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  recordedBy Staff? @relation("RecordedByStaff", fields: [recordedById], references: [id])
+  
+  @@map("health_monitoring")
+}
+
+model Mortality {
+  id             String         @id @default(uuid())
+  flockId        String
+  date           DateTime
+  count          Int
+  cause          DeathCause?
+  disposalMethod DisposalMethod?
+  postMortem     String?
+  recordedById   String?        // Staff who recorded the mortality
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  flock      Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  recordedBy Staff? @relation("RecordedByStaff", fields: [recordedById], references: [id])
+  
+  @@map("mortality")
+}
+
+model FeedInventory {
+  id        String    @id @default(uuid())
+  feedType  FeedType
+  supplier  String?
+  quantity  Float
+  cost      Float?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  feedUsage FeedUsage[]
+  
+  @@map("feed_inventory")
+}
+
+model FeedUsage {
+  id         String    @id @default(uuid())
+  flockId    String
+  feedId     String
+  date       DateTime
+  amountUsed Float
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  flock Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  feed  FeedInventory @relation(fields: [feedId], references: [id])
+  
+  @@map("feed_usage")
+}
+
+model EggProduction {
+  id        String    @id @default(uuid())
+  flockId   String
+  date      DateTime
+  quantity  Int
+  grade     EggGrade?
+  fertility Fertility?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  flock Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  
+  @@map("egg_production")
+}
+
+model Expenses {
+  id        String          @id @default(uuid())
+  flockId   String
+  category  ExpenseCategory
+  amount    Float
+  date      DateTime
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  flock Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  
+  @@map("expenses")
+}
+
+model Revenue {
+  id        String        @id @default(uuid())
+  flockId   String
+  source    RevenueSource
+  amount    Float
+  date      DateTime
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  flock Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  
+  @@map("revenue")
+}
+
+
+model Notifications {
+  id        String   @id @default(uuid())
+  staffId   String
+  flockId   String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  staff Staff  @relation("StaffNotifications", fields: [staffId], references: [id], onDelete: Cascade)
+  flock Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
