@@ -41,22 +41,18 @@ export function DataTableRowActions<TData>({
               onEdit(row.original);
             }}
           >
+            <Edit size={16} className="mr-2" />
             Edit
-            <DropdownMenuShortcut>
-              <Edit size={16} />
-            </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {
               onDelete(row.original);
             }}
-            className="text-red-500!"
+            className="text-red-500 focus:text-red-500"
           >
+            <Trash2 size={16} className="mr-2" />
             Delete
-            <DropdownMenuShortcut>
-              <Trash2 size={16} />
-            </DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

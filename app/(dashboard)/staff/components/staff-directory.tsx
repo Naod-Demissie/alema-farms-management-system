@@ -13,7 +13,7 @@ import {
 import { useStaff } from "@/features/staff/context/staff-context";
 import { StaffInviteDialog } from "@/features/staff/components/staff-invite-dialog";
 import { AddStaffDialog } from "@/features/staff/components/add-staff-dialog";
-import { getAllStaff, getAllInvites } from "@/server/staff-invites";
+import { getAllStaff, getAllInvites, resendInvite, cancelInvite } from "@/server/staff-invites";
 import { StaffTable } from "@/features/staff/components/staff-table";
 import { InviteTable } from "@/features/staff/components/invite-table";
 import { createStaffDirectoryColumns } from "./staff-directory-columns";
@@ -40,6 +40,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mail as MailIcon, Phone, Calendar, Shield, Copy, Send, XCircle } from "lucide-react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { toast } from "sonner";
 
 const roleColors = {
   ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
@@ -59,6 +61,16 @@ export function StaffDirectory() {
   const [error, setError] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("staff");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'resend' | 'cancel' | null;
+    invite: Invite | null;
+  }>({
+    open: false,
+    type: null,
+    invite: null,
+  });
 
   // Load staff members from database
   const loadStaffMembers = async () => {
@@ -92,20 +104,28 @@ export function StaffDirectory() {
       } else {
         setInviteError(result.message || "Failed to load invites");
         setInviteData([]);
+        toast.error("Failed to load invites", {
+          description: result.message || "Unable to fetch invitation data",
+        });
       }
     } catch (error) {
       console.error("Failed to load invites:", error);
       setInviteError("Failed to load invites");
       setInviteData([]);
+      toast.error("Failed to load invites", {
+        description: "An unexpected error occurred while loading invitation data",
+      });
     } finally {
       setIsInviteLoading(false);
     }
   };
 
   // Refresh data
-  const handleRefresh = () => {
-    loadStaffMembers();
-    loadInvites();
+  const handleRefresh = async () => {
+    await Promise.all([loadStaffMembers(), loadInvites()]);
+    toast.success("Data refreshed successfully!", {
+      description: "Staff members and invitations have been updated",
+    });
   };
 
   // Load data on component mount
@@ -131,20 +151,102 @@ export function StaffDirectory() {
 
   // Invite management functions
   const handleResendInvite = (invite: Invite) => {
-    // TODO: Implement resend functionality
-    console.log("Resend invite:", invite);
+    setConfirmDialog({
+      open: true,
+      type: 'resend',
+      invite,
+    });
   };
 
   const handleCancelInvite = (invite: Invite) => {
-    // TODO: Implement cancel functionality
-    console.log("Cancel invite:", invite);
+    setConfirmDialog({
+      open: true,
+      type: 'cancel',
+      invite,
+    });
   };
 
-  const handleCopyInviteLink = (invite: Invite) => {
-    const inviteLink = `${window.location.origin}/invite/${invite.token}`;
-    navigator.clipboard.writeText(inviteLink);
-    // TODO: Show toast notification
-    console.log("Copied invite link:", inviteLink);
+  const executeResendInvite = async (invite: Invite) => {
+    setActionLoading(invite.id);
+    try {
+      const result = await resendInvite(invite.id);
+      if (result.success) {
+        // Refresh invites to get updated data
+        await loadInvites();
+        toast.success("Invitation resent successfully!", {
+          description: `A new invitation has been sent to ${invite.email}`,
+        });
+      } else {
+        console.error("Failed to resend invite:", result.message);
+        toast.error("Failed to resend invitation", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to resend invite:", error);
+      toast.error("Failed to resend invitation", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const executeCancelInvite = async (invite: Invite) => {
+    setActionLoading(invite.id);
+    try {
+      const result = await cancelInvite(invite.id);
+      if (result.success) {
+        // Refresh invites to get updated data
+        await loadInvites();
+        toast.success("Invitation cancelled successfully!", {
+          description: `The invitation for ${invite.email} has been cancelled`,
+        });
+      } else {
+        console.error("Failed to cancel invite:", result.message);
+        toast.error("Failed to cancel invitation", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to cancel invite:", error);
+      toast.error("Failed to cancel invitation", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.invite || !confirmDialog.type) return;
+
+    if (confirmDialog.type === 'resend') {
+      await executeResendInvite(confirmDialog.invite);
+    } else if (confirmDialog.type === 'cancel') {
+      await executeCancelInvite(confirmDialog.invite);
+    }
+
+    setConfirmDialog({
+      open: false,
+      type: null,
+      invite: null,
+    });
+  };
+
+  const handleCopyInviteLink = async (invite: Invite) => {
+    try {
+      const inviteLink = `${window.location.origin}/complete-registration?token=${invite.token}&email=${encodeURIComponent(invite.email)}`;
+      await navigator.clipboard.writeText(inviteLink);
+      toast.success("Invite link copied!", {
+        description: `The invitation link for ${invite.email} has been copied to clipboard`,
+      });
+    } catch (error) {
+      console.error("Failed to copy invite link:", error);
+      toast.error("Failed to copy invite link", {
+        description: "Unable to copy the invitation link to clipboard",
+      });
+    }
   };
 
   // Create columns with handlers
@@ -158,6 +260,7 @@ export function StaffDirectory() {
     onResend: handleResendInvite,
     onCancel: handleCancelInvite,
     onCopyLink: handleCopyInviteLink,
+    actionLoading,
   });
 
   // Faceted filter options for staff
@@ -535,6 +638,37 @@ export function StaffDirectory() {
       {/* Dialog Components */}
       <StaffInviteDialog />
       <AddStaffDialog />
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={
+          confirmDialog.type === 'resend' 
+            ? 'Resend Invitation' 
+            : confirmDialog.type === 'cancel' 
+            ? 'Cancel Invitation' 
+            : 'Confirm Action'
+        }
+        desc={
+          confirmDialog.type === 'resend' 
+            ? `Are you sure you want to resend the invitation to ${confirmDialog.invite?.email}? A new invitation email will be sent with a fresh expiration date.`
+            : confirmDialog.type === 'cancel'
+            ? `Are you sure you want to cancel the invitation for ${confirmDialog.invite?.email}? This action cannot be undone.`
+            : 'Are you sure you want to proceed?'
+        }
+        confirmText={
+          confirmDialog.type === 'resend' 
+            ? 'Resend Invitation' 
+            : confirmDialog.type === 'cancel' 
+            ? 'Cancel Invitation' 
+            : 'Continue'
+        }
+        cancelBtnText="Cancel"
+        destructive={confirmDialog.type === 'cancel'}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.invite?.id}
+      />
     </div>
   );
 }

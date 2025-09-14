@@ -3,22 +3,23 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
-import { DataTableRowActions } from "@/components/table/data-table-row-actions";
+import { InviteTableRowActions } from "@/components/table/invite-table-row-actions";
 import { Invite, computeInviteStatus, getInviteStatusColor, getRoleColor } from "@/features/staff/data/invite-schema";
 import { format } from "date-fns";
-import { Mail, Calendar, User, Copy, Send, XCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Mail, Calendar, User } from "lucide-react";
 
 interface InviteSentColumnsProps {
   onResend: (invite: Invite) => void;
   onCancel: (invite: Invite) => void;
   onCopyLink: (invite: Invite) => void;
+  actionLoading?: string | null;
 }
 
 export const createInviteSentColumns = ({
   onResend,
   onCancel,
   onCopyLink,
+  actionLoading,
 }: InviteSentColumnsProps): ColumnDef<Invite>[] => [
   {
     accessorKey: "email",
@@ -30,12 +31,7 @@ export const createInviteSentColumns = ({
       return (
         <div className="flex items-center space-x-3">
           <Mail className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <div className="font-medium">{invite.email}</div>
-            <div className="text-sm text-muted-foreground">
-              {invite.createdBy?.name || "Unknown"}
-            </div>
-          </div>
+          <div className="font-medium">{invite.email}</div>
         </div>
       );
     },
@@ -146,45 +142,15 @@ export const createInviteSentColumns = ({
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const invite = row.original;
-      const status = computeInviteStatus(invite);
-      
-      return (
-        <div className="flex items-center justify-end space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onCopyLink(invite)}
-            title="Copy invite link"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-          
-          {status === "PENDING" && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onResend(invite)}
-                title="Resend invitation"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onCancel(invite)}
-                title="Cancel invitation"
-                className="text-red-600 hover:text-red-700"
-              >
-                <XCircle className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <InviteTableRowActions
+        row={row}
+        onResend={onResend}
+        onCancel={onCancel}
+        onCopyLink={onCopyLink}
+        actionLoading={actionLoading}
+      />
+    ),
     enableSorting: false,
     enableHiding: false,
   },

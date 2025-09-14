@@ -25,9 +25,13 @@ export function ProfileDropdown() {
     window.location.href = "/";
   };
 
-  const getInitials = (firstName?: string, lastName?: string) => {
-    if (!firstName && !lastName) return "U";
-    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
+    const nameParts = name.trim().split(" ");
+    if (nameParts.length === 1) {
+      return nameParts[0][0].toUpperCase();
+    }
+    return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
   };
 
   return (
@@ -40,7 +44,7 @@ export function ProfileDropdown() {
               alt={user?.name || "User"}
             />
             <AvatarFallback>
-              {getInitials(user?.firstName, user?.lastName)}
+              {getInitials(user?.name)}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -49,9 +53,7 @@ export function ProfileDropdown() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm leading-none font-medium">
-              {user?.name ||
-                `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-                "User"}
+              {user?.name || "User"}
             </p>
             <p className="text-muted-foreground text-xs leading-none">
               {user?.email || "No email"}
