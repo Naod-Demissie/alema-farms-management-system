@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  UserPlus,
+  RefreshCw,
+  Loader2
+} from "lucide-react";
+import { useStaff } from "@/features/staff/context/staff-context";
+import { StaffInviteDialog } from "@/features/staff/components/staff-invite-dialog";
+import { AddStaffDialog } from "@/features/staff/components/add-staff-dialog";
+import { getAllStaff } from "@/server/staff-invites";
+import { StaffTable } from "@/features/staff/components/staff-table";
+import { createStaffDirectoryColumns } from "./staff-directory-columns";
+import { Staff } from "@/features/staff/data/schema";
+import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import {
   Dialog,
   DialogContent,
@@ -22,56 +25,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
-  UserPlus,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Shield,
-  Eye,
-  RefreshCw,
-  Loader2
-} from "lucide-react";
-import { useStaff } from "@/features/staff/context/staff-context";
-import { StaffInviteDialog } from "@/features/staff/components/staff-invite-dialog";
-import { AddStaffDialog } from "@/features/staff/components/add-staff-dialog";
-import { getAllStaff } from "@/server/staff-invites";
-
-// Staff data type
-interface StaffMember {
-  id: string;
-  firstName: string;
-  lastName: string;
-  name: string;
-  email: string | null;
-  phoneNumber: string | null;
-  role: "ADMIN" | "VETERINARIAN" | "WORKER";
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  image?: string | null;
-}
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Mail, Phone, Calendar, Shield } from "lucide-react";
 
 const roleColors = {
   ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
@@ -81,13 +44,10 @@ const roleColors = {
 
 export function StaffDirectory() {
   const { setIsInviteDialogOpen, setIsAddStaffDialogOpen } = useStaff();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [staffData, setStaffData] = useState<StaffMember[]>([]);
+  const [staffData, setStaffData] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,29 +82,97 @@ export function StaffDirectory() {
     loadStaffMembers();
   }, []);
 
-  const filteredStaff = staffData.filter((staff) => {
-    const matchesSearch = 
-      staff.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (staff.email && staff.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesRole = roleFilter === "all" || staff.role === roleFilter;
-    const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "active" && staff.isActive) ||
-      (statusFilter === "inactive" && !staff.isActive);
-
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-
-  const handleEditStaff = (staff: StaffMember) => {
+  const handleEditStaff = (staff: Staff) => {
     setSelectedStaff(staff);
     setIsEditDialogOpen(true);
   };
 
-  const handleViewStaff = (staff: StaffMember) => {
+  const handleViewStaff = (staff: Staff) => {
     setSelectedStaff(staff);
     setIsViewDialogOpen(true);
   };
+
+  const handleDeleteStaff = (staff: Staff) => {
+    // TODO: Implement delete functionality
+    console.log("Delete staff:", staff);
+  };
+
+  // Create columns with handlers
+  const columns = createStaffDirectoryColumns({
+    onEdit: handleEditStaff,
+    onView: handleViewStaff,
+    onDelete: handleDeleteStaff,
+  });
+
+  // Faceted filter options
+  const facetedFilters = [
+    {
+      columnId: "role",
+      title: "Role",
+      options: [
+        { label: "Admin", value: "ADMIN" },
+        { label: "Veterinarian", value: "VETERINARIAN" },
+        { label: "Worker", value: "WORKER" },
+      ],
+    },
+    {
+      columnId: "isActive",
+      title: "Status",
+      options: [
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+      ],
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
+            <p className="text-muted-foreground">
+              Manage your staff members and their information.
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading staff members...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
+            <p className="text-muted-foreground">
+              Manage your staff members and their information.
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button variant="outline" onClick={handleRefresh}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -176,179 +204,19 @@ export function StaffDirectory() {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>
-            Filter staff members by role, status, or search by name/email.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="VETERINARIAN">Veterinarian</SelectItem>
-                <SelectItem value="WORKER">Worker</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Staff Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Staff Members ({filteredStaff.length})</CardTitle>
+          <CardTitle>Staff Members ({staffData.length})</CardTitle>
           <CardDescription>
             A list of all staff members in your organization.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Staff</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <div className="flex items-center justify-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Loading staff members...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : error ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <div className="text-red-600">
-                      <p>{error}</p>
-                      <Button variant="outline" onClick={handleRefresh} className="mt-2">
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Try Again
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredStaff.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <div className="text-muted-foreground">
-                      <p>No staff members found</p>
-                      {searchTerm || roleFilter !== "all" || statusFilter !== "all" ? (
-                        <p className="text-sm">Try adjusting your filters</p>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredStaff.map((staff) => (
-                  <TableRow key={staff.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={staff.image || ""} alt={staff.firstName} />
-                          <AvatarFallback>
-                            {staff.firstName.charAt(0)}{staff.lastName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{staff.firstName} {staff.lastName}</div>
-                          <div className="text-sm text-muted-foreground">{staff.email || "No email"}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={roleColors[staff.role as keyof typeof roleColors]}>
-                        {staff.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm">
-                          <Mail className="mr-2 h-3 w-3" />
-                          {staff.email || "No email"}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Phone className="mr-2 h-3 w-3" />
-                          {staff.phoneNumber || "No phone"}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={staff.isActive ? "default" : "secondary"}>
-                        {staff.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {new Date(staff.createdAt).toLocaleDateString()}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleViewStaff(staff)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditStaff(staff)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <StaffTable 
+            columns={columns} 
+            data={staffData}
+          />
         </CardContent>
       </Card>
 

@@ -1,7 +1,7 @@
 "use client";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Row } from "@tanstack/react-table";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,7 +43,7 @@ export function DataTableRowActions<TData>({
           >
             Edit
             <DropdownMenuShortcut>
-              <IconEdit size={16} />
+              <Edit size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -55,7 +55,7 @@ export function DataTableRowActions<TData>({
           >
             Delete
             <DropdownMenuShortcut>
-              <IconTrash size={16} />
+              <Trash2 size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>

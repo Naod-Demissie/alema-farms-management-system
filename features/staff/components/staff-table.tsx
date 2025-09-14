@@ -39,9 +39,10 @@ declare module "@tanstack/react-table" {
 interface DataTableProps {
   columns: ColumnDef<Staff>[];
   data: Staff[];
+  toolbar?: React.ReactNode;
 }
 
-export function StaffTable({ columns, data }: DataTableProps) {
+export function StaffTable({ columns, data, toolbar }: DataTableProps) {
   const router = useRouter();
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -76,30 +77,32 @@ export function StaffTable({ columns, data }: DataTableProps) {
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar
-        table={table}
-        filterColumnId="name"
-        filterPlaceholder="Filter staff..."
-        facetedFilters={[
-          {
-            columnId: "isActive",
-            title: "Status",
-            options: [
-              { label: "Active", value: "active" },
-              { label: "Inactive", value: "inactive" },
-            ],
-          },
-          {
-            columnId: "role",
-            title: "Role",
-            options: [
-              { label: "Admin", value: "ADMIN" },
-              { label: "Dentist", value: "DENTIST" },
-              { label: "Receptionist", value: "RECEPTIONIST" },
-            ],
-          },
-        ]}
-      />
+      {toolbar || (
+        <DataTableToolbar
+          table={table}
+          filterColumnId="name"
+          filterPlaceholder="Filter staff..."
+          facetedFilters={[
+            {
+              columnId: "isActive",
+              title: "Status",
+              options: [
+                { label: "Active", value: "active" },
+                { label: "Inactive", value: "inactive" },
+              ],
+            },
+            {
+              columnId: "role",
+              title: "Role",
+              options: [
+                { label: "Admin", value: "ADMIN" },
+                { label: "Veterinarian", value: "VETERINARIAN" },
+                { label: "Worker", value: "WORKER" },
+              ],
+            },
+          ]}
+        />
+      )}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
