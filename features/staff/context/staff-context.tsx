@@ -16,6 +16,8 @@ interface StaffContextType {
   setIsDeleteDialogOpen: (open: boolean) => void;
   refreshStaff: () => void;
   setRefreshStaff: (refresh: () => void) => void;
+  refreshInvites: () => void;
+  setRefreshInvites: (refresh: () => void) => void;
 }
 
 const StaffContext = createContext<StaffContextType | undefined>(undefined);
@@ -39,6 +41,7 @@ export default function StaffProvider({ children }: StaffProviderProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [refreshStaff, setRefreshStaff] = useState<() => void>(() => () => {});
+  const [refreshInvites, setRefreshInvites] = useState<() => void>(() => () => {});
 
   const value: StaffContextType = {
     selectedStaff,
@@ -53,6 +56,8 @@ export default function StaffProvider({ children }: StaffProviderProps) {
     setIsDeleteDialogOpen,
     refreshStaff,
     setRefreshStaff,
+    refreshInvites,
+    setRefreshInvites,
   };
 
   return (

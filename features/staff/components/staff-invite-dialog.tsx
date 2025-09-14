@@ -41,7 +41,7 @@ const inviteFormSchema = z.object({
 type InviteFormValues = z.infer<typeof inviteFormSchema>;
 
 export function StaffInviteDialog() {
-  const { isInviteDialogOpen, setIsInviteDialogOpen, refreshStaff } = useStaff();
+  const { isInviteDialogOpen, setIsInviteDialogOpen, refreshStaff, refreshInvites } = useStaff();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<InviteFormValues>({
@@ -62,6 +62,7 @@ export function StaffInviteDialog() {
         form.reset();
         setIsInviteDialogOpen(false);
         refreshStaff();
+        refreshInvites();
       } else {
         toast.error(result.message || "Failed to send invitation");
       }

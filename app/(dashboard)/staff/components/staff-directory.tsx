@@ -50,7 +50,7 @@ const roleColors = {
 };
 
 export function StaffDirectory() {
-  const { setIsInviteDialogOpen, setIsAddStaffDialogOpen } = useStaff();
+  const { setIsInviteDialogOpen, setIsAddStaffDialogOpen, setRefreshInvites } = useStaff();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -134,6 +134,11 @@ export function StaffDirectory() {
     loadInvites();
   }, []);
 
+  // Register refresh function with context
+  useEffect(() => {
+    setRefreshInvites(() => loadInvites);
+  }, [setRefreshInvites]);
+
   const handleEditStaff = (staff: Staff) => {
     setSelectedStaff(staff);
     setIsEditDialogOpen(true);
@@ -171,8 +176,14 @@ export function StaffDirectory() {
     try {
       const result = await resendInvite(invite.id);
       if (result.success) {
-        // Refresh invites to get updated data
-        await loadInvites();
+        // Update the invite data immediately with the new data from server
+        if (result.data) {
+          setInviteData(prevInvites => 
+            prevInvites.map(inv => 
+              inv.id === invite.id ? { ...inv, ...result.data, updatedAt: new Date() } : inv
+            )
+          );
+        }
         toast.success("Invitation resent successfully!", {
           description: `A new invitation has been sent to ${invite.email}`,
         });
@@ -197,8 +208,10 @@ export function StaffDirectory() {
     try {
       const result = await cancelInvite(invite.id);
       if (result.success) {
-        // Refresh invites to get updated data
-        await loadInvites();
+        // Remove the invite from the list immediately
+        setInviteData(prevInvites => 
+          prevInvites.filter(inv => inv.id !== invite.id)
+        );
         toast.success("Invitation cancelled successfully!", {
           description: `The invitation for ${invite.email} has been cancelled`,
         });
