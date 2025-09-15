@@ -1,19 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -46,117 +38,525 @@ import {
   User,
   CalendarDays
 } from "lucide-react";
+import { 
+  getLeaveRequests, 
+  createLeaveRequest, 
+  updateLeaveRequest, 
+  deleteLeaveRequest,
+  approveLeaveRequest,
+  rejectLeaveRequest,
+  cancelLeaveRequest,
+  getAllLeaveBalances,
+  createLeaveBalance,
+  updateLeaveBalance,
+  deleteLeaveBalance
+} from "@/server/leave";
+import { getStaff as getStaffList } from "@/server/staff";
+import { CreateLeaveRequestData } from "@/server/types";
+import { LeaveTable } from "./leave-table";
+import { createLeaveTableColumns, LeaveRequest } from "./leave-table-columns";
+import { LeaveBalanceTable } from "./leave-balance-table";
+import { createLeaveBalanceTableColumns, LeaveBalance } from "./leave-balance-table-columns";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { toast } from "sonner";
 
-// Mock data
-const leaveRequests = [
-  {
-    id: "1",
-    staffName: "John Doe",
-    leaveType: "Annual",
-    startDate: "2024-02-01",
-    endDate: "2024-02-05",
-    days: 5,
-    reason: "Family vacation",
-    status: "Approved",
-    submittedDate: "2024-01-15",
-    approvedBy: "Jane Smith",
-    approvedDate: "2024-01-16"
-  },
-  {
-    id: "2",
-    staffName: "Jane Smith",
-    leaveType: "Sick",
-    startDate: "2024-01-20",
-    endDate: "2024-01-22",
-    days: 3,
-    reason: "Flu symptoms",
-    status: "Pending",
-    submittedDate: "2024-01-19",
-    approvedBy: null,
-    approvedDate: null
-  },
-  {
-    id: "3",
-    staffName: "Mike Johnson",
-    leaveType: "Maternity",
-    startDate: "2024-03-01",
-    endDate: "2024-06-01",
-    days: 90,
-    reason: "Paternity leave",
-    status: "Approved",
-    submittedDate: "2024-01-10",
-    approvedBy: "John Doe",
-    approvedDate: "2024-01-11"
-  },
-  {
-    id: "4",
-    staffName: "Sarah Wilson",
-    leaveType: "Casual",
-    startDate: "2024-01-25",
-    endDate: "2024-01-25",
-    days: 1,
-    reason: "Personal appointment",
-    status: "Rejected",
-    submittedDate: "2024-01-24",
-    approvedBy: "John Doe",
-    approvedDate: "2024-01-24"
-  },
-];
-
-const statusColors = {
-  Pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  Approved: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  Rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-  Cancelled: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-};
-
-const leaveTypeColors = {
-  Annual: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  Sick: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-  Maternity: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300",
-  Paternity: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-  Casual: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  Unpaid: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-};
+// Types
+interface StaffMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  role: string;
+}
 
 export function LeaveManagement() {
   const [activeTab, setActiveTab] = useState("requests");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
-
-  const filteredRequests = leaveRequests.filter((request) => {
-    const matchesSearch = request.staffName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || request.status === statusFilter;
-    const matchesType = typeFilter === "all" || request.leaveType === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
+  
+  // Real data state
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [balanceLoading, setBalanceLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'delete' | 'approve' | 'reject' | 'deleteBalance' | null;
+    leaveRequest?: LeaveRequest | null;
+    leaveBalance?: LeaveBalance | null;
+  }>({
+    open: false,
+    type: null,
+    leaveRequest: null,
+    leaveBalance: null,
   });
+  
+  // Form state for create/edit
+  const [formData, setFormData] = useState({
+    staffId: "",
+    leaveType: "ANNUAL",
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    reason: ""
+  });
+
+  // Leave balance form state
+  const [balanceFormData, setBalanceFormData] = useState({
+    staffId: "",
+    year: new Date().getFullYear(),
+    totalLeaveDays: 25,
+    usedLeaveDays: 0
+  });
+
+  // Dialog states
+  const [isCreateBalanceDialogOpen, setIsCreateBalanceDialogOpen] = useState(false);
+  const [isEditBalanceDialogOpen, setIsEditBalanceDialogOpen] = useState(false);
+  const [selectedBalance, setSelectedBalance] = useState<LeaveBalance | null>(null);
+
+  // Fetch leave requests
+  const fetchLeaveRequests = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getLeaveRequests();
+      if (response.success) {
+        setLeaveRequests(response.data || []);
+      } else {
+        setError(response.message || "Failed to fetch leave requests");
+      }
+    } catch (err) {
+      console.error("Error fetching leave requests:", err);
+      setError("Failed to fetch leave requests");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch leave balances
+  const fetchLeaveBalances = async () => {
+    try {
+      setBalanceLoading(true);
+      const response = await getAllLeaveBalances();
+      if (response.success) {
+        setLeaveBalances(response.data || []);
+      } else {
+        setError(response.message || "Failed to fetch leave balances");
+      }
+    } catch (err) {
+      setError("Failed to fetch leave balances");
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  // Fetch staff list
+  const fetchStaffList = async () => {
+    try {
+      const response = await getStaffList();
+      if (response.success) {
+        setStaffList(response.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff list:", err);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchLeaveRequests();
+    fetchLeaveBalances();
+    fetchStaffList();
+  }, []);
 
   const leaveStats = {
     totalRequests: leaveRequests.length,
-    pendingRequests: leaveRequests.filter(r => r.status === "Pending").length,
-    approvedRequests: leaveRequests.filter(r => r.status === "Approved").length,
-    rejectedRequests: leaveRequests.filter(r => r.status === "Rejected").length,
-    totalDays: leaveRequests.reduce((sum, r) => sum + r.days, 0)
+    pendingRequests: leaveRequests.filter(r => r.status === "PENDING").length,
+    approvedRequests: leaveRequests.filter(r => r.status === "APPROVED").length,
+    rejectedRequests: leaveRequests.filter(r => r.status === "REJECTED").length,
+    totalDays: leaveRequests.reduce((sum, r) => {
+      const startDate = new Date(r.startDate);
+      const endDate = new Date(r.endDate);
+      const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return sum + days;
+    }, 0)
   };
 
-  const handleEditRequest = (request: any) => {
+  const handleEditRequest = (request: LeaveRequest) => {
     setSelectedRequest(request);
+    setFormData({
+      staffId: request.staffId,
+      leaveType: request.leaveType,
+      startDate: new Date(request.startDate).toISOString().split('T')[0],
+      endDate: new Date(request.endDate).toISOString().split('T')[0],
+      reason: request.reason || ""
+    });
     setIsEditDialogOpen(true);
   };
 
-  const handleApproveRequest = (requestId: string) => {
-    // Handle approval logic
-    console.log("Approving request:", requestId);
+  const handleDeleteRequest = (request: LeaveRequest) => {
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      leaveRequest: request,
+    });
   };
 
-  const handleRejectRequest = (requestId: string) => {
-    // Handle rejection logic
-    console.log("Rejecting request:", requestId);
+  const handleApproveRequest = (request: LeaveRequest) => {
+    setConfirmDialog({
+      open: true,
+      type: 'approve',
+      leaveRequest: request,
+    });
   };
+
+  const handleRejectRequest = (request: LeaveRequest) => {
+    setConfirmDialog({
+      open: true,
+      type: 'reject',
+      leaveRequest: request,
+    });
+  };
+
+  const executeDeleteRequest = async (request: LeaveRequest) => {
+    setActionLoading(request.id);
+    try {
+      const response = await deleteLeaveRequest(request.id);
+      if (response.success) {
+        await fetchLeaveRequests();
+        toast.success("Leave request deleted successfully!", {
+          description: `The leave request for ${request.staff.name} has been removed`,
+        });
+      } else {
+        toast.error("Failed to delete leave request", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to delete leave request", {
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const executeApproveRequest = async (request: LeaveRequest) => {
+    setActionLoading(request.id);
+    try {
+      // Get current user ID - in a real app, this would come from auth context
+      const currentUserId = "current-user-id"; // This should be replaced with actual user ID
+      const response = await approveLeaveRequest(request.id, currentUserId);
+      if (response.success) {
+        await fetchLeaveRequests();
+        toast.success("Leave request approved successfully!", {
+          description: `The leave request for ${request.staff.name} has been approved`,
+        });
+      } else {
+        toast.error("Failed to approve leave request", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to approve leave request", {
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const executeRejectRequest = async (request: LeaveRequest) => {
+    setActionLoading(request.id);
+    try {
+      // Get current user ID - in a real app, this would come from auth context
+      const currentUserId = "current-user-id"; // This should be replaced with actual user ID
+      const response = await rejectLeaveRequest(request.id, currentUserId);
+      if (response.success) {
+        await fetchLeaveRequests();
+        toast.success("Leave request rejected successfully!", {
+          description: `The leave request for ${request.staff.name} has been rejected`,
+        });
+      } else {
+        toast.error("Failed to reject leave request", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to reject leave request", {
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCreateRequest = async () => {
+    try {
+      const createData: CreateLeaveRequestData = {
+        staffId: formData.staffId,
+        leaveType: formData.leaveType as any,
+        startDate: new Date(formData.startDate),
+        endDate: new Date(formData.endDate),
+        reason: formData.reason || undefined
+      };
+
+      const response = await createLeaveRequest(createData);
+      
+      if (response.success) {
+        await fetchLeaveRequests();
+        setIsCreateDialogOpen(false);
+        setFormData({
+          staffId: "",
+          leaveType: "ANNUAL",
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date().toISOString().split('T')[0],
+          reason: ""
+        });
+        toast.success("Leave request created successfully!", {
+          description: "The new leave request has been submitted",
+        });
+      } else {
+        toast.error("Failed to create leave request", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      console.error("Error creating leave request:", err);
+      toast.error("Failed to create leave request", {
+        description: "An unexpected error occurred",
+      });
+    }
+  };
+
+  const handleUpdateRequest = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      const updateData: Partial<CreateLeaveRequestData> = {
+        leaveType: formData.leaveType as any,
+        startDate: new Date(formData.startDate),
+        endDate: new Date(formData.endDate),
+        reason: formData.reason || undefined
+      };
+
+      const response = await updateLeaveRequest(selectedRequest.id, updateData);
+      if (response.success) {
+        await fetchLeaveRequests();
+        setIsEditDialogOpen(false);
+        setSelectedRequest(null);
+        toast.success("Leave request updated successfully!", {
+          description: `The leave request for ${selectedRequest.staff.name} has been updated`,
+        });
+      } else {
+        toast.error("Failed to update leave request", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to update leave request", {
+        description: "An unexpected error occurred",
+      });
+    }
+  };
+
+  // Leave balance handlers
+  const handleEditBalance = (balance: LeaveBalance) => {
+    setSelectedBalance(balance);
+    setBalanceFormData({
+      staffId: balance.staffId,
+      year: balance.year,
+      totalLeaveDays: balance.totalLeaveDays,
+      usedLeaveDays: balance.usedLeaveDays
+    });
+    setIsEditBalanceDialogOpen(true);
+  };
+
+  const handleDeleteBalance = (balance: LeaveBalance) => {
+    setConfirmDialog({
+      open: true,
+      type: 'deleteBalance',
+      leaveBalance: balance,
+    });
+  };
+
+  const executeDeleteBalance = async (balance: LeaveBalance) => {
+    setActionLoading(balance.id);
+    try {
+      const response = await deleteLeaveBalance(balance.id);
+      if (response.success) {
+        await fetchLeaveBalances();
+        toast.success("Leave balance deleted successfully!", {
+          description: `The leave balance for ${balance.staff.name} has been removed`,
+        });
+      } else {
+        toast.error("Failed to delete leave balance", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to delete leave balance", {
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCreateBalance = async () => {
+    try {
+      const response = await createLeaveBalance({
+        staffId: balanceFormData.staffId,
+        year: balanceFormData.year,
+        totalLeaveDays: balanceFormData.totalLeaveDays,
+        usedLeaveDays: balanceFormData.usedLeaveDays
+      });
+      if (response.success) {
+        await fetchLeaveBalances();
+        setIsCreateBalanceDialogOpen(false);
+        setBalanceFormData({
+          staffId: "",
+          year: new Date().getFullYear(),
+          totalLeaveDays: 25,
+          usedLeaveDays: 0
+        });
+        toast.success("Leave balance created successfully!", {
+          description: "The new leave balance has been added",
+        });
+      } else {
+        toast.error("Failed to create leave balance", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to create leave balance", {
+        description: "An unexpected error occurred",
+      });
+    }
+  };
+
+  const handleUpdateBalance = async () => {
+    if (!selectedBalance) return;
+
+    try {
+      const response = await updateLeaveBalance(selectedBalance.staffId, {
+        staffId: selectedBalance.staffId,
+        year: balanceFormData.year,
+        totalLeaveDays: balanceFormData.totalLeaveDays,
+        usedLeaveDays: balanceFormData.usedLeaveDays
+      });
+      if (response.success) {
+        await fetchLeaveBalances();
+        setIsEditBalanceDialogOpen(false);
+        setSelectedBalance(null);
+        toast.success("Leave balance updated successfully!", {
+          description: `The leave balance for ${selectedBalance.staff.name} has been updated`,
+        });
+      } else {
+        toast.error("Failed to update leave balance", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to update leave balance", {
+        description: "An unexpected error occurred",
+      });
+    }
+  };
+
+  const handleStatusChange = async (leaveRequest: LeaveRequest, newStatus: string) => {
+    try {
+      setActionLoading(leaveRequest.id);
+
+      if (newStatus === 'APPROVED') {
+        // TODO: Get actual approver ID from auth context
+        const approverId = "admin-user-id"; // This should come from auth context
+        const response = await approveLeaveRequest(leaveRequest.id, approverId);
+        if (response.success) {
+          await fetchLeaveRequests();
+          toast.success("Leave request approved successfully!", {
+            description: "The leave request has been approved",
+          });
+        } else {
+          toast.error("Failed to approve leave request", {
+            description: response.message || "An unexpected error occurred",
+          });
+        }
+      } else if (newStatus === 'REJECTED') {
+        // TODO: Get actual approver ID from auth context
+        const approverId = "admin-user-id"; // This should come from auth context
+        const response = await rejectLeaveRequest(leaveRequest.id, approverId);
+        if (response.success) {
+          await fetchLeaveRequests();
+          toast.success("Leave request rejected successfully!", {
+            description: "The leave request has been rejected",
+          });
+        } else {
+          toast.error("Failed to reject leave request", {
+            description: response.message || "An unexpected error occurred",
+          });
+        }
+      } else if (newStatus === 'CANCELLED') {
+        const response = await cancelLeaveRequest(leaveRequest.id);
+        if (response.success) {
+          await fetchLeaveRequests();
+          toast.success("Leave request cancelled successfully!", {
+            description: "The leave request has been cancelled",
+          });
+        } else {
+          toast.error("Failed to cancel leave request", {
+            description: response.message || "An unexpected error occurred",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error changing status:", error);
+      toast.error("Failed to change status", {
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.type) return;
+
+    if (confirmDialog.type === 'delete' && confirmDialog.leaveRequest) {
+      await executeDeleteRequest(confirmDialog.leaveRequest);
+    } else if (confirmDialog.type === 'approve' && confirmDialog.leaveRequest) {
+      await executeApproveRequest(confirmDialog.leaveRequest);
+    } else if (confirmDialog.type === 'reject' && confirmDialog.leaveRequest) {
+      await executeRejectRequest(confirmDialog.leaveRequest);
+    } else if (confirmDialog.type === 'deleteBalance' && confirmDialog.leaveBalance) {
+      await executeDeleteBalance(confirmDialog.leaveBalance);
+    }
+
+    setConfirmDialog({
+      open: false,
+      type: null,
+      leaveRequest: null,
+      leaveBalance: null,
+    });
+  };
+
+  // Create table columns with handlers
+  const leaveColumns = createLeaveTableColumns({
+    onEdit: handleEditRequest,
+    onDelete: handleDeleteRequest,
+    onApprove: handleApproveRequest,
+    onReject: handleRejectRequest,
+    onStatusChange: handleStatusChange,
+    currentUserRole: "ADMIN" // This should come from auth context
+  });
+
+  const leaveBalanceColumns = createLeaveBalanceTableColumns({
+    onEdit: handleEditBalance,
+    onDelete: handleDeleteBalance,
+  });
 
   return (
     <div className="space-y-6">
@@ -239,7 +639,6 @@ export function LeaveManagement() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="requests">Leave Requests</TabsTrigger>
-          <TabsTrigger value="calendar">Leave Calendar</TabsTrigger>
           <TabsTrigger value="balance">Leave Balance</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
@@ -247,160 +646,50 @@ export function LeaveManagement() {
         {/* Leave Requests Tab */}
         <TabsContent value="requests" className="space-y-6">
           {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Filters</CardTitle>
-              <CardDescription>
-                Filter leave requests by staff, status, or type.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search by staff name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Approved">Approved</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="Annual">Annual</SelectItem>
-                    <SelectItem value="Sick">Sick</SelectItem>
-                    <SelectItem value="Maternity">Maternity</SelectItem>
-                    <SelectItem value="Paternity">Paternity</SelectItem>
-                    <SelectItem value="Casual">Casual</SelectItem>
-                    <SelectItem value="Unpaid">Unpaid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Leave Requests Table */}
           <Card>
             <CardHeader>
               <CardTitle>Leave Requests</CardTitle>
               <CardDescription>
-                All leave requests from staff members.
+                All leave requests from staff members. ({leaveRequests.length} requests)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff Member</TableHead>
-                    <TableHead>Leave Type</TableHead>
-                    <TableHead>Start Date</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRequests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">{request.staffName}</TableCell>
-                      <TableCell>
-                        <Badge className={leaveTypeColors[request.leaveType as keyof typeof leaveTypeColors]}>
-                          {request.leaveType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(request.startDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(request.endDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{request.days}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{request.reason}</TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                          {request.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(request.submittedDate).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          {request.status === "Pending" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleApproveRequest(request.id)}
-                                className="text-green-600 hover:text-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRejectRequest(request.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditRequest(request)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading leave requests...</p>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <p className="text-red-600 mb-2">Error loading leave requests</p>
+                    <p className="text-muted-foreground text-sm">{error}</p>
+                    <Button 
+                      variant="outline" 
+                      onClick={fetchLeaveRequests}
+                      className="mt-4"
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <LeaveTable
+                  columns={leaveColumns}
+                  data={leaveRequests}
+                  staffList={staffList}
+                  onStatusChange={handleStatusChange}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Leave Calendar Tab */}
-        <TabsContent value="calendar" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Leave Calendar</CardTitle>
-              <CardDescription>
-                Visual calendar showing approved leave periods.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">Calendar View</h3>
-                <p className="text-muted-foreground">
-                  Calendar component would be integrated here to show leave periods.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Leave Balance Tab */}
         <TabsContent value="balance" className="space-y-6">
@@ -408,48 +697,35 @@ export function LeaveManagement() {
             <CardHeader>
               <CardTitle>Leave Balance</CardTitle>
               <CardDescription>
-                Current leave balance for all staff members.
+                Current leave balance for all staff members. ({leaveBalances.length} balances)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff Member</TableHead>
-                    <TableHead>Annual Leave</TableHead>
-                    <TableHead>Sick Leave</TableHead>
-                    <TableHead>Casual Leave</TableHead>
-                    <TableHead>Used Days</TableHead>
-                    <TableHead>Remaining</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">John Doe</TableCell>
-                    <TableCell>25</TableCell>
-                    <TableCell>12</TableCell>
-                    <TableCell>5</TableCell>
-                    <TableCell>8</TableCell>
-                    <TableCell className="text-green-600 font-medium">34</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Jane Smith</TableCell>
-                    <TableCell>25</TableCell>
-                    <TableCell>12</TableCell>
-                    <TableCell>5</TableCell>
-                    <TableCell>15</TableCell>
-                    <TableCell className="text-green-600 font-medium">27</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Mike Johnson</TableCell>
-                    <TableCell>25</TableCell>
-                    <TableCell>12</TableCell>
-                    <TableCell>5</TableCell>
-                    <TableCell>3</TableCell>
-                    <TableCell className="text-green-600 font-medium">39</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={() => setIsCreateBalanceDialogOpen(true)}
+                    className="flex items-center space-x-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Leave Balance</span>
+                  </Button>
+                </div>
+              </div>
+              {balanceLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading leave balances...</p>
+                  </div>
+                </div>
+              ) : (
+                <LeaveBalanceTable
+                  columns={leaveBalanceColumns}
+                  data={leaveBalances}
+                  staffList={staffList}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -556,31 +832,38 @@ export function LeaveManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Leave Type</label>
-                <Select>
+                <Select 
+                  value={formData.leaveType}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, leaveType: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select leave type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Annual">Annual Leave</SelectItem>
-                    <SelectItem value="Sick">Sick Leave</SelectItem>
-                    <SelectItem value="Casual">Casual Leave</SelectItem>
-                    <SelectItem value="Maternity">Maternity Leave</SelectItem>
-                    <SelectItem value="Paternity">Paternity Leave</SelectItem>
-                    <SelectItem value="Unpaid">Unpaid Leave</SelectItem>
+                    <SelectItem value="ANNUAL">Annual Leave</SelectItem>
+                    <SelectItem value="SICK">Sick Leave</SelectItem>
+                    <SelectItem value="CASUAL">Casual Leave</SelectItem>
+                    <SelectItem value="MATERNITY">Maternity Leave</SelectItem>
+                    <SelectItem value="PATERNITY">Paternity Leave</SelectItem>
+                    <SelectItem value="UNPAID">Unpaid Leave</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <label className="text-sm font-medium">Staff Member</label>
-                <Select>
+                <Select 
+                  value={formData.staffId}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, staffId: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="john">John Doe</SelectItem>
-                    <SelectItem value="jane">Jane Smith</SelectItem>
-                    <SelectItem value="mike">Mike Johnson</SelectItem>
-                    <SelectItem value="sarah">Sarah Wilson</SelectItem>
+                    {staffList.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        {staff.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -588,23 +871,35 @@ export function LeaveManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Start Date</label>
-                <Input type="date" />
+                <Input 
+                  type="date" 
+                  value={formData.startDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                />
               </div>
               <div>
                 <label className="text-sm font-medium">End Date</label>
-                <Input type="date" />
+                <Input 
+                  type="date" 
+                  value={formData.endDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                />
               </div>
             </div>
             <div>
               <label className="text-sm font-medium">Reason</label>
-              <Textarea placeholder="Enter reason for leave..." />
+              <Textarea 
+                placeholder="Enter reason for leave..."
+                value={formData.reason}
+                onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsCreateDialogOpen(false)}>
+            <Button onClick={handleCreateRequest}>
               Submit Request
             </Button>
           </DialogFooter>
@@ -625,21 +920,24 @@ export function LeaveManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Staff Member</label>
-                  <Input defaultValue={selectedRequest.staffName} disabled />
+                  <Input value={selectedRequest?.staff.name || ''} disabled />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Leave Type</label>
-                  <Select defaultValue={selectedRequest.leaveType}>
+                  <Select 
+                    value={formData.leaveType}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, leaveType: value }))}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Annual">Annual Leave</SelectItem>
-                      <SelectItem value="Sick">Sick Leave</SelectItem>
-                      <SelectItem value="Casual">Casual Leave</SelectItem>
-                      <SelectItem value="Maternity">Maternity Leave</SelectItem>
-                      <SelectItem value="Paternity">Paternity Leave</SelectItem>
-                      <SelectItem value="Unpaid">Unpaid Leave</SelectItem>
+                      <SelectItem value="ANNUAL">Annual Leave</SelectItem>
+                      <SelectItem value="SICK">Sick Leave</SelectItem>
+                      <SelectItem value="CASUAL">Casual Leave</SelectItem>
+                      <SelectItem value="MATERNITY">Maternity Leave</SelectItem>
+                      <SelectItem value="PATERNITY">Paternity Leave</SelectItem>
+                      <SelectItem value="UNPAID">Unpaid Leave</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -647,30 +945,31 @@ export function LeaveManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Start Date</label>
-                  <Input type="date" defaultValue={selectedRequest.startDate} />
+                  <Input 
+                    type="date" 
+                    value={formData.startDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">End Date</label>
-                  <Input type="date" defaultValue={selectedRequest.endDate} />
+                  <Input 
+                    type="date" 
+                    value={formData.endDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                  />
                 </div>
               </div>
               <div>
                 <label className="text-sm font-medium">Reason</label>
-                <Textarea defaultValue={selectedRequest.reason} />
+                <Textarea 
+                  value={formData.reason}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                />
               </div>
               <div>
                 <label className="text-sm font-medium">Status</label>
-                <Select defaultValue={selectedRequest.status}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Approved">Approved</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input value={selectedRequest?.status || ''} disabled />
               </div>
             </div>
           )}
@@ -678,12 +977,181 @@ export function LeaveManagement() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsEditDialogOpen(false)}>
+            <Button onClick={handleUpdateRequest}>
               Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Leave Balance Dialog */}
+      <Dialog open={isCreateBalanceDialogOpen} onOpenChange={setIsCreateBalanceDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Leave Balance</DialogTitle>
+            <DialogDescription>
+              Set up leave balance for a staff member.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Staff Member</label>
+                <Select 
+                  value={balanceFormData.staffId}
+                  onValueChange={(value) => setBalanceFormData(prev => ({ ...prev, staffId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select staff member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffList.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        {staff.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Year</label>
+                <Input 
+                  type="number"
+                  value={balanceFormData.year}
+                  onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Total Leave Days</label>
+                <Input 
+                  type="number"
+                  value={balanceFormData.totalLeaveDays}
+                  onChange={(e) => setBalanceFormData(prev => ({ ...prev, totalLeaveDays: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Used Leave Days</label>
+                <Input 
+                  type="number"
+                  value={balanceFormData.usedLeaveDays}
+                  onChange={(e) => setBalanceFormData(prev => ({ ...prev, usedLeaveDays: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateBalanceDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateBalance}>
+              Add Leave Balance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Leave Balance Dialog */}
+      <Dialog open={isEditBalanceDialogOpen} onOpenChange={setIsEditBalanceDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Leave Balance</DialogTitle>
+            <DialogDescription>
+              Update leave balance for {selectedBalance?.staff.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBalance && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Staff Member</label>
+                  <Input value={selectedBalance.staff.name} disabled />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Year</label>
+                  <Input 
+                    type="number"
+                    value={balanceFormData.year}
+                    onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Total Leave Days</label>
+                  <Input 
+                    type="number"
+                    value={balanceFormData.totalLeaveDays}
+                    onChange={(e) => setBalanceFormData(prev => ({ ...prev, totalLeaveDays: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Used Leave Days</label>
+                  <Input 
+                    type="number"
+                    value={balanceFormData.usedLeaveDays}
+                    onChange={(e) => setBalanceFormData(prev => ({ ...prev, usedLeaveDays: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditBalanceDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateBalance}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={
+          confirmDialog.type === 'delete' 
+            ? 'Delete Leave Request' 
+            : confirmDialog.type === 'approve'
+            ? 'Approve Leave Request'
+            : confirmDialog.type === 'reject'
+            ? 'Reject Leave Request'
+            : confirmDialog.type === 'deleteBalance'
+            ? 'Delete Leave Balance'
+            : 'Confirm Action'
+        }
+        desc={
+          confirmDialog.leaveRequest
+            ? confirmDialog.type === 'delete'
+              ? `Are you sure you want to delete the leave request for ${confirmDialog.leaveRequest.staff.name}? This action cannot be undone.`
+              : confirmDialog.type === 'approve'
+              ? `Are you sure you want to approve the leave request for ${confirmDialog.leaveRequest.staff.name}?`
+              : confirmDialog.type === 'reject'
+              ? `Are you sure you want to reject the leave request for ${confirmDialog.leaveRequest.staff.name}?`
+              : 'Are you sure you want to proceed?'
+            : confirmDialog.leaveBalance
+            ? `Are you sure you want to delete the leave balance for ${confirmDialog.leaveBalance.staff.name}? This action cannot be undone.`
+            : 'Are you sure you want to proceed?'
+        }
+        confirmText={
+          confirmDialog.type === 'delete' 
+            ? 'Delete Leave Request' 
+            : confirmDialog.type === 'approve'
+            ? 'Approve Leave Request'
+            : confirmDialog.type === 'reject'
+            ? 'Reject Leave Request'
+            : confirmDialog.type === 'deleteBalance'
+            ? 'Delete Leave Balance'
+            : 'Continue'
+        }
+        cancelBtnText="Cancel"
+        destructive={confirmDialog.type === 'delete' || confirmDialog.type === 'reject' || confirmDialog.type === 'deleteBalance'}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === (confirmDialog.leaveRequest?.id || confirmDialog.leaveBalance?.id)}
+      />
     </div>
   );
 }

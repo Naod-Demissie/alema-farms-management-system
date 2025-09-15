@@ -283,11 +283,12 @@ export function StaffSettings() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Currency</label>
-                  <Select defaultValue="USD">
+                  <Select defaultValue="ETB">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="ETB">ETB (Ethiopian Birr)</SelectItem>
                       <SelectItem value="USD">USD ($)</SelectItem>
                       <SelectItem value="EUR">EUR (€)</SelectItem>
                       <SelectItem value="GBP">GBP (£)</SelectItem>

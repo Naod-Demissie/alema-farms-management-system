@@ -1,19 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +13,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -31,71 +22,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  DollarSign, 
   Plus, 
-  Search, 
-  Filter, 
   Download,
-  Edit,
-  Trash2,
   Calculator,
   TrendingUp,
   Users,
   Calendar,
   FileText
 } from "lucide-react";
+import { getPayroll, createPayroll, updatePayroll, deletePayroll } from "@/server/payroll";
+import { getStaff as getStaffList } from "@/server/staff";
+import { CreatePayrollData, UpdatePayrollData } from "@/server/types";
+import { PayrollTable } from "./payroll-table";
+import { createPayrollTableColumns, PayrollRecord } from "./payroll-table-columns";
+import { PayrollTableToolbar } from "./payroll-table-toolbar";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { toast } from "sonner";
 
-// Mock data
-const payrollData = [
-  {
-    id: "1",
-    staffName: "John Doe",
-    period: "January 2024",
-    baseSalary: 5000,
-    bonus: 500,
-    deductions: 200,
-    netSalary: 5300,
-    status: "Paid",
-    paidDate: "2024-01-31",
-    method: "Bank Transfer"
-  },
-  {
-    id: "2",
-    staffName: "Jane Smith",
-    period: "January 2024",
-    baseSalary: 4000,
-    bonus: 300,
-    deductions: 150,
-    netSalary: 4150,
-    status: "Paid",
-    paidDate: "2024-01-31",
-    method: "Bank Transfer"
-  },
-  {
-    id: "3",
-    staffName: "Mike Johnson",
-    period: "January 2024",
-    baseSalary: 3000,
-    bonus: 0,
-    deductions: 100,
-    netSalary: 2900,
-    status: "Pending",
-    paidDate: null,
-    method: "Bank Transfer"
-  },
-  {
-    id: "4",
-    staffName: "Sarah Wilson",
-    period: "January 2024",
-    baseSalary: 3000,
-    bonus: 200,
-    deductions: 120,
-    netSalary: 3080,
-    status: "Draft",
-    paidDate: null,
-    method: "Bank Transfer"
-  },
-];
+// Types
+interface StaffMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  role: string;
+}
+
+// Mock data removed - now using real data from database
 
 const statusColors = {
   Paid: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
@@ -106,29 +59,236 @@ const statusColors = {
 
 export function PayrollManagement() {
   const [activeTab, setActiveTab] = useState("records");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedPayroll, setSelectedPayroll] = useState<any>(null);
+  const [selectedPayroll, setSelectedPayroll] = useState<PayrollRecord | null>(null);
+  
+  // Real data state
+  const [payrollData, setPayrollData] = useState<PayrollRecord[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'delete' | null;
+    payroll?: PayrollRecord | null;
+  }>({
+    open: false,
+    type: null,
+    payroll: null,
+  });
+  
+  // Form state for create/edit
+  const [formData, setFormData] = useState({
+    staffId: "",
+    salary: 0,
+    bonus: 0,
+    deductions: 0,
+    paidOn: new Date().toISOString().split('T')[0],
+    period: ""
+  });
 
-  const filteredPayroll = payrollData.filter((record) => {
-    const matchesSearch = record.staffName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || record.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  // Data fetching functions
+  const fetchPayrollData = async () => {
+    try {
+      setLoading(true);
+      const response = await getPayroll();
+      if (response.success && response.data) {
+        setPayrollData(response.data);
+      } else {
+        setError(response.message || "Failed to fetch payroll data");
+      }
+    } catch (err) {
+      setError("Failed to fetch payroll data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStaffList = async () => {
+    try {
+      const response = await getStaffList();
+      if (response.success && response.data) {
+        setStaffList(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff list:", err);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchPayrollData();
+    fetchStaffList();
+  }, []);
+
+  const handleEditPayroll = (payroll: PayrollRecord) => {
+    setSelectedPayroll(payroll);
+    setFormData({
+      staffId: payroll.staffId,
+      salary: payroll.salary,
+      bonus: payroll.bonus || 0,
+      deductions: payroll.deductions || 0,
+      paidOn: new Date(payroll.paidOn).toISOString().split('T')[0],
+      period: ""
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeletePayroll = (payroll: PayrollRecord) => {
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      payroll,
+    });
+  };
+
+  const executeDeletePayroll = async (payroll: PayrollRecord) => {
+    setActionLoading(payroll.id);
+    try {
+      const response = await deletePayroll(payroll.id);
+      if (response.success) {
+        await fetchPayrollData();
+        toast.success("Payroll record deleted successfully!", {
+          description: `The payroll record for ${payroll.staff.name} has been removed`,
+        });
+      } else {
+        toast.error("Failed to delete payroll record", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to delete payroll record", {
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.type) return;
+
+    if (confirmDialog.type === 'delete' && confirmDialog.payroll) {
+      await executeDeletePayroll(confirmDialog.payroll);
+    }
+
+    setConfirmDialog({
+      open: false,
+      type: null,
+      payroll: null,
+    });
+  };
+
+  const handleCreatePayroll = async () => {
+    try {
+      const createData: CreatePayrollData = {
+        staffId: formData.staffId,
+        salary: formData.salary,
+        bonus: formData.bonus,
+        deductions: formData.deductions,
+        paidOn: new Date(formData.paidOn),
+        period: formData.period
+      };
+
+      const response = await createPayroll(createData);
+      if (response.success) {
+        await fetchPayrollData();
+        setIsCreateDialogOpen(false);
+        setFormData({
+          staffId: "",
+          salary: 0,
+          bonus: 0,
+          deductions: 0,
+          paidOn: new Date().toISOString().split('T')[0],
+          period: ""
+        });
+        toast.success("Payroll record created successfully!", {
+          description: "The new payroll record has been added",
+        });
+      } else {
+        toast.error("Failed to create payroll record", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to create payroll record", {
+        description: "An unexpected error occurred",
+      });
+    }
+  };
+
+  const handleUpdatePayroll = async () => {
+    if (!selectedPayroll) return;
+
+    try {
+      const updateData: UpdatePayrollData = {
+        salary: formData.salary,
+        bonus: formData.bonus,
+        deductions: formData.deductions,
+        paidOn: new Date(formData.paidOn)
+      };
+
+      const response = await updatePayroll(selectedPayroll.id, updateData);
+      if (response.success) {
+        await fetchPayrollData();
+        setIsEditDialogOpen(false);
+        setSelectedPayroll(null);
+        toast.success("Payroll record updated successfully!", {
+          description: `The payroll record for ${selectedPayroll.staff.name} has been updated`,
+        });
+      } else {
+        toast.error("Failed to update payroll record", {
+          description: response.message || "An unexpected error occurred",
+        });
+      }
+    } catch (err) {
+      toast.error("Failed to update payroll record", {
+        description: "An unexpected error occurred",
+      });
+    }
+  };
+
+  // Create table columns with handlers
+  const payrollColumns = createPayrollTableColumns({
+    onEdit: handleEditPayroll,
+    onDelete: handleDeletePayroll,
   });
 
   const totalStats = {
     totalPayroll: payrollData.reduce((sum, record) => sum + record.netSalary, 0),
-    paidAmount: payrollData.filter(r => r.status === "Paid").reduce((sum, record) => sum + record.netSalary, 0),
-    pendingAmount: payrollData.filter(r => r.status === "Pending").reduce((sum, record) => sum + record.netSalary, 0),
-    averageSalary: Math.round(payrollData.reduce((sum, record) => sum + record.netSalary, 0) / payrollData.length)
+    paidAmount: payrollData.reduce((sum, record) => sum + record.netSalary, 0), // All records are considered paid since they have a paidOn date
+    pendingAmount: 0, // No pending status in current schema
+    averageSalary: payrollData.length > 0 ? Math.round(payrollData.reduce((sum, record) => sum + record.netSalary, 0) / payrollData.length) : 0
   };
 
-  const handleEditPayroll = (payroll: any) => {
-    setSelectedPayroll(payroll);
-    setIsEditDialogOpen(true);
-  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading payroll data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={() => fetchPayrollData()}>Retry</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -157,10 +317,10 @@ export function PayrollManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Payroll</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">ETB</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalStats.totalPayroll.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{totalStats.totalPayroll.toLocaleString()} ETB</div>
             <p className="text-xs text-muted-foreground">
               This month
             </p>
@@ -173,7 +333,7 @@ export function PayrollManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${totalStats.paidAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">{totalStats.paidAmount.toLocaleString()} ETB</div>
             <p className="text-xs text-muted-foreground">
               Successfully processed
             </p>
@@ -186,7 +346,7 @@ export function PayrollManagement() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">${totalStats.pendingAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-yellow-600">{totalStats.pendingAmount.toLocaleString()} ETB</div>
             <p className="text-xs text-muted-foreground">
               Awaiting processing
             </p>
@@ -199,7 +359,7 @@ export function PayrollManagement() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalStats.averageSalary.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{totalStats.averageSalary.toLocaleString()} ETB</div>
             <p className="text-xs text-muted-foreground">
               Per staff member
             </p>
@@ -217,101 +377,19 @@ export function PayrollManagement() {
 
         {/* Payroll Records Tab */}
         <TabsContent value="records" className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Filters</CardTitle>
-              <CardDescription>
-                Filter payroll records by staff, status, or period.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search by staff name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Failed">Failed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payroll Table */}
           <Card>
             <CardHeader>
               <CardTitle>Payroll Records</CardTitle>
               <CardDescription>
-                All payroll records for staff members.
+                All payroll records for staff members with advanced filtering.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff Member</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Base Salary</TableHead>
-                    <TableHead>Bonus</TableHead>
-                    <TableHead>Deductions</TableHead>
-                    <TableHead>Net Salary</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Paid Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPayroll.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">{record.staffName}</TableCell>
-                      <TableCell>{record.period}</TableCell>
-                      <TableCell>${record.baseSalary.toLocaleString()}</TableCell>
-                      <TableCell>${record.bonus.toLocaleString()}</TableCell>
-                      <TableCell>${record.deductions.toLocaleString()}</TableCell>
-                      <TableCell className="font-medium">${record.netSalary.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[record.status as keyof typeof statusColors]}>
-                          {record.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {record.paidDate ? new Date(record.paidDate).toLocaleDateString() : "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPayroll(record)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <PayrollTable 
+                columns={payrollColumns} 
+                data={payrollData}
+                staffList={staffList}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -337,10 +415,11 @@ export function PayrollManagement() {
                       <SelectValue placeholder="Select staff member" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="john">John Doe</SelectItem>
-                      <SelectItem value="jane">Jane Smith</SelectItem>
-                      <SelectItem value="mike">Mike Johnson</SelectItem>
-                      <SelectItem value="sarah">Sarah Wilson</SelectItem>
+                      {staffList.map((staff) => (
+                        <SelectItem key={staff.id} value={staff.id}>
+                          {staff.name} ({staff.role})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -377,7 +456,7 @@ export function PayrollManagement() {
               <div className="p-4 bg-muted rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-medium">Net Salary:</span>
-                  <span className="text-2xl font-bold">$5,300.00</span>
+                  <span className="text-2xl font-bold">5,300.00 ETB</span>
                 </div>
               </div>
 
@@ -409,19 +488,19 @@ export function PayrollManagement() {
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span>Total Base Salary</span>
-                    <span className="font-medium">$15,000</span>
+                    <span className="font-medium">15,000 ETB</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Total Bonuses</span>
-                    <span className="font-medium">$1,000</span>
+                    <span className="font-medium">1,000 ETB</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Total Deductions</span>
-                    <span className="font-medium">$570</span>
+                    <span className="font-medium">570 ETB</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
                     <span className="font-medium">Net Payroll</span>
-                    <span className="font-bold">$15,430</span>
+                    <span className="font-bold">15,430 ETB</span>
                   </div>
                 </div>
               </CardContent>
@@ -438,15 +517,15 @@ export function PayrollManagement() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span>John Doe</span>
-                    <Badge className="bg-green-100 text-green-800">$5,300</Badge>
+                    <Badge className="bg-green-100 text-green-800">5,300 ETB</Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Jane Smith</span>
-                    <Badge className="bg-green-100 text-green-800">$4,150</Badge>
+                    <Badge className="bg-green-100 text-green-800">4,150 ETB</Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Sarah Wilson</span>
-                    <Badge className="bg-green-100 text-green-800">$3,080</Badge>
+                    <Badge className="bg-green-100 text-green-800">3,080 ETB</Badge>
                   </div>
                 </div>
               </CardContent>
@@ -497,45 +576,65 @@ export function PayrollManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Staff Member</label>
-                <Select>
+                  <Select value={formData.staffId} onValueChange={(value) => setFormData({...formData, staffId: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="john">John Doe</SelectItem>
-                    <SelectItem value="jane">Jane Smith</SelectItem>
-                    <SelectItem value="mike">Mike Johnson</SelectItem>
-                    <SelectItem value="sarah">Sarah Wilson</SelectItem>
+                      {staffList.map((staff) => (
+                        <SelectItem key={staff.id} value={staff.id}>
+                          {staff.name} ({staff.role})
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <label className="text-sm font-medium">Pay Period</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="jan-2024">January 2024</SelectItem>
-                    <SelectItem value="feb-2024">February 2024</SelectItem>
-                    <SelectItem value="mar-2024">March 2024</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Input 
+                    type="text" 
+                    placeholder="e.g., January 2024"
+                    value={formData.period}
+                    onChange={(e) => setFormData({...formData, period: e.target.value})}
+                  />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium">Base Salary</label>
-                <Input type="number" placeholder="5000" />
+                  <Input 
+                    type="number" 
+                    placeholder="5000" 
+                    value={formData.salary}
+                    onChange={(e) => setFormData({...formData, salary: Number(e.target.value)})}
+                  />
               </div>
               <div>
                 <label className="text-sm font-medium">Bonus</label>
-                <Input type="number" placeholder="500" />
+                  <Input 
+                    type="number" 
+                    placeholder="500" 
+                    value={formData.bonus}
+                    onChange={(e) => setFormData({...formData, bonus: Number(e.target.value)})}
+                  />
               </div>
               <div>
                 <label className="text-sm font-medium">Deductions</label>
-                <Input type="number" placeholder="200" />
+                  <Input 
+                    type="number" 
+                    placeholder="200" 
+                    value={formData.deductions}
+                    onChange={(e) => setFormData({...formData, deductions: Number(e.target.value)})}
+                  />
+                </div>
               </div>
+              <div>
+                <label className="text-sm font-medium">Paid Date</label>
+                <Input 
+                  type="date" 
+                  value={formData.paidOn}
+                  onChange={(e) => setFormData({...formData, paidOn: e.target.value})}
+                />
             </div>
             <div>
               <label className="text-sm font-medium">Payment Method</label>
@@ -555,7 +654,7 @@ export function PayrollManagement() {
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsCreateDialogOpen(false)}>
+            <Button onClick={handleCreatePayroll}>
               Create Payroll
             </Button>
           </DialogFooter>
@@ -576,40 +675,50 @@ export function PayrollManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Staff Member</label>
-                  <Input defaultValue={selectedPayroll.staffName} disabled />
+                  <Input value={selectedPayroll.staff.name} disabled />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Pay Period</label>
-                  <Input defaultValue={selectedPayroll.period} disabled />
+                  <Input 
+                    value={formData.period}
+                    onChange={(e) => setFormData({...formData, period: e.target.value})}
+                    placeholder="e.g., January 2024"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium">Base Salary</label>
-                  <Input type="number" defaultValue={selectedPayroll.baseSalary} />
+                  <Input 
+                    type="number" 
+                    value={formData.salary}
+                    onChange={(e) => setFormData({...formData, salary: Number(e.target.value)})}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Bonus</label>
-                  <Input type="number" defaultValue={selectedPayroll.bonus} />
+                  <Input 
+                    type="number" 
+                    value={formData.bonus}
+                    onChange={(e) => setFormData({...formData, bonus: Number(e.target.value)})}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Deductions</label>
-                  <Input type="number" defaultValue={selectedPayroll.deductions} />
+                  <Input 
+                    type="number" 
+                    value={formData.deductions}
+                    onChange={(e) => setFormData({...formData, deductions: Number(e.target.value)})}
+                  />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium">Status</label>
-                <Select defaultValue={selectedPayroll.status}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Failed">Failed</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium">Paid Date</label>
+                <Input 
+                  type="date" 
+                  value={formData.paidOn}
+                  onChange={(e) => setFormData({...formData, paidOn: e.target.value})}
+                />
               </div>
             </div>
           )}
@@ -617,12 +726,29 @@ export function PayrollManagement() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsEditDialogOpen(false)}>
+            <Button onClick={handleUpdatePayroll}>
               Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title="Delete Payroll Record"
+        desc={
+          confirmDialog.payroll
+            ? `Are you sure you want to delete the payroll record for ${confirmDialog.payroll.staff.name}? This action cannot be undone and the payroll record will be permanently removed.`
+            : 'Are you sure you want to proceed?'
+        }
+        confirmText="Delete Payroll Record"
+        cancelBtnText="Cancel"
+        destructive={true}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.payroll?.id}
+      />
     </div>
   );
 }

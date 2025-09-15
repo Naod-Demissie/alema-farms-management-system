@@ -210,7 +210,7 @@ export const getLeaveRequests = async (filters: LeaveFilters = {}): Promise<Pagi
           }
         },
         orderBy: {
-          createdAt: 'desc'
+          id: 'desc'
         },
         skip: offset,
         take: limit
@@ -288,7 +288,7 @@ export const getStaffLeaveRequests = async (staffId: string): Promise<ApiRespons
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        id: 'desc'
       }
     });
 
@@ -502,6 +502,188 @@ export const rejectLeaveRequest = async (leaveId: string, approverId: string, re
   }
 };
 
+// Update leave request
+export const updateLeaveRequest = async (leaveId: string, data: Partial<CreateLeaveRequestData>): Promise<ApiResponse> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+    
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { id: leaveId },
+      include: {
+        staff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!leaveRequest) {
+      return {
+        success: false,
+        message: "Leave request not found"
+      };
+    }
+
+    // Check permissions - only the staff member themselves or admin can update
+    if (currentUser.id !== leaveRequest.staffId && currentUser.role !== "ADMIN") {
+      return {
+        success: false,
+        message: "Insufficient permissions"
+      };
+    }
+
+    // Can only update pending requests
+    if (leaveRequest.status !== 'PENDING') {
+      return {
+        success: false,
+        message: "Only pending leave requests can be updated"
+      };
+    }
+
+    // Validate dates if provided
+    if (data.startDate && data.endDate) {
+      if (data.startDate >= data.endDate) {
+        return {
+          success: false,
+          message: "End date must be after start date"
+        };
+      }
+
+      if (data.startDate < new Date()) {
+        return {
+          success: false,
+          message: "Cannot update leave request for past dates"
+        };
+      }
+    }
+
+    // Update leave request
+    const updatedRequest = await prisma.leaveRequest.update({
+      where: { id: leaveId },
+      data: {
+        ...(data.leaveType && { leaveType: data.leaveType }),
+        ...(data.startDate && { startDate: data.startDate }),
+        ...(data.endDate && { endDate: data.endDate }),
+        ...(data.reason !== undefined && { reason: data.reason }),
+      },
+      include: {
+        staff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            name: true,
+            role: true
+          }
+        },
+        approver: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            name: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: updatedRequest,
+      message: "Leave request updated successfully"
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to update leave request"
+    };
+  }
+};
+
+// Delete leave request
+export const deleteLeaveRequest = async (leaveId: string): Promise<ApiResponse> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+    
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { id: leaveId },
+      include: {
+        staff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!leaveRequest) {
+      return {
+        success: false,
+        message: "Leave request not found"
+      };
+    }
+
+    // Check permissions - only the staff member themselves or admin can delete
+    if (currentUser.id !== leaveRequest.staffId && currentUser.role !== "ADMIN") {
+      return {
+        success: false,
+        message: "Insufficient permissions"
+      };
+    }
+
+    // Can only delete pending requests
+    if (leaveRequest.status !== 'PENDING') {
+      return {
+        success: false,
+        message: "Only pending leave requests can be deleted"
+      };
+    }
+
+    // Delete leave request
+    await prisma.leaveRequest.delete({
+      where: { id: leaveId }
+    });
+
+    return {
+      success: true,
+      message: "Leave request deleted successfully"
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to delete leave request"
+    };
+  }
+};
+
 // Cancel leave request
 export const cancelLeaveRequest = async (leaveId: string): Promise<ApiResponse> => {
   try {
@@ -665,6 +847,172 @@ export const updateLeaveBalance = async (staffId: string, data: LeaveBalanceData
 };
 
 // Get leave calendar
+// Get all leave balances
+export const getAllLeaveBalances = async (year?: number): Promise<ApiResponse> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+    
+    if (currentUser.role !== "ADMIN") {
+      return {
+        success: false,
+        message: "Insufficient permissions"
+      };
+    }
+
+    const targetYear = year || new Date().getFullYear();
+
+    const leaveBalances = await prisma.leaveBalance.findMany({
+      where: {
+        year: targetYear
+      },
+      include: {
+        staff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            name: true,
+            role: true
+          }
+        }
+      },
+      orderBy: {
+        staff: {
+          name: 'asc'
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: leaveBalances
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to fetch leave balances"
+    };
+  }
+};
+
+// Create leave balance for a staff member
+export const createLeaveBalance = async (data: LeaveBalanceData & { staffId: string }): Promise<ApiResponse> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+    
+    if (currentUser.role !== "ADMIN") {
+      return {
+        success: false,
+        message: "Insufficient permissions"
+      };
+    }
+
+    // Check if leave balance already exists for this staff member and year
+    const existingBalance = await prisma.leaveBalance.findUnique({
+      where: {
+        staffId: data.staffId
+      }
+    });
+
+    if (existingBalance) {
+      return {
+        success: false,
+        message: "Leave balance already exists for this staff member"
+      };
+    }
+
+    const leaveBalance = await prisma.leaveBalance.create({
+      data: {
+        staffId: data.staffId,
+        year: data.year,
+        totalLeaveDays: data.totalLeaveDays,
+        usedLeaveDays: data.usedLeaveDays || 0,
+        remainingLeaveDays: data.totalLeaveDays - (data.usedLeaveDays || 0)
+      },
+      include: {
+        staff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            name: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: leaveBalance,
+      message: "Leave balance created successfully"
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to create leave balance"
+    };
+  }
+};
+
+// Delete leave balance
+export const deleteLeaveBalance = async (balanceId: string): Promise<ApiResponse> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+    
+    if (currentUser.role !== "ADMIN") {
+      return {
+        success: false,
+        message: "Insufficient permissions"
+      };
+    }
+
+    await prisma.leaveBalance.delete({
+      where: { id: balanceId }
+    });
+
+    return {
+      success: true,
+      message: "Leave balance deleted successfully"
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to delete leave balance"
+    };
+  }
+};
+
 export const getLeaveCalendar = async (year: number, month: number): Promise<ApiResponse> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -787,7 +1135,7 @@ export const getLeaveReports = async (filters: LeaveFilters = {}): Promise<ApiRe
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        id: 'desc'
       }
     });
 

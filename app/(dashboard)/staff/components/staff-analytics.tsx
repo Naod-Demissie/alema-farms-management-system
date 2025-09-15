@@ -368,7 +368,7 @@ export function StaffAnalytics() {
               <CardContent>
                 <div className="h-[300px] flex items-center justify-center">
                   <div className="text-center">
-                    <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <span className="text-2xl font-bold text-muted-foreground">ETB</span>
                     <p className="text-muted-foreground mt-2">Payroll chart would be here</p>
                   </div>
                 </div>
