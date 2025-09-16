@@ -49,6 +49,7 @@ model Staff {
   leaveBalance                LeaveBalance?
   attendance                  Attendance[]
   approvedLeaves              LeaveRequest[] @relation("ApprovedLeaves")
+  feedUsageRecords            FeedUsage[] @relation("FeedUsageRecordedBy")
 
   @@map("staff")
 }
@@ -301,6 +302,7 @@ model Flocks {
   arrivalDate   DateTime
   initialCount  Int
   currentCount  Int
+  notes         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
@@ -386,17 +388,46 @@ model Mortality {
 }
 
 model FeedInventory {
-  id        String    @id @default(uuid())
-  feedType  FeedType
-  supplier  String?
-  quantity  Float
-  cost      Float?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  name        String    // Custom name for the feed
+  feedType    FeedType
+  supplierId  String?   // Reference to supplier
+  quantity    Float     // Current stock quantity
+  unit        String    @default("kg") // Unit of measurement (kg, bags, etc.)
+  costPerUnit Float?    // Cost per unit
+  minStock    Float?    // Minimum stock level for alerts
+  maxStock    Float?    // Maximum stock level
+  expiryDate  DateTime? // Feed expiry date
+  batchNumber String?   // Batch/lot number
+  notes       String?   // Additional notes
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  feedUsage FeedUsage[]
+  // Relations
+  supplier    FeedSupplier? @relation(fields: [supplierId], references: [id])
+  feedUsage   FeedUsage[]
   
   @@map("feed_inventory")
+}
+
+model FeedSupplier {
+  id          String    @id @default(uuid())
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  website     String?
+  notes       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  feedInventory FeedInventory[]
+  
+  @@map("feed_suppliers")
 }
 
 model FeedUsage {
@@ -405,11 +436,17 @@ model FeedUsage {
   feedId     String
   date       DateTime
   amountUsed Float
+  unit       String    @default("kg")
+  cost       Float?    // Cost of this usage
+  notes      String?   // Additional notes
+  recordedById String? // Staff who recorded the usage
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  flock Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
-  feed  FeedInventory @relation(fields: [feedId], references: [id])
+  // Relations
+  flock      Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  feed       FeedInventory @relation(fields: [feedId], references: [id])
+  recordedBy Staff?        @relation("FeedUsageRecordedBy", fields: [recordedById], references: [id])
   
   @@map("feed_usage")
 }

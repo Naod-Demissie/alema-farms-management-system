@@ -19,6 +19,12 @@ import {
   FileText,
   UserCheck,
   Settings,
+  Heart,
+  Bird,
+  Utensils,
+  Egg,
+  DollarSign,
+  BarChart3,
 } from "lucide-react";
 
 import {
@@ -87,25 +93,43 @@ const sidebarData: SidebarData = {
     {
       title: "General",
       items: [
-        // {
-        //   title: "Home",
-        //   url: "/home",
-        //   // icon: IconLayoutDashboard,
-        //   icon: Home,
-        //   visible: ["admin", "dentist", "receptionist"],
-        // },
-        // {
-        //   title: "Patients",
-        //   url: "/patients",
-        //   icon: Users,
-        //   visible: ["admin", "receptionist"],
-        // },
         {
-          title: "Staff",
-          url: "/staff",
-          icon: UserCheck,
+          title: "Dashboard",
+          url: "/home",
+          icon: Home,
+          visible: ["admin", "veterinarian", "worker"],
+        },
+        {
+          title: "Flock Management",
+          url: "/flocks",
+          icon: Bird,
+          visible: ["admin", "veterinarian", "worker"],
+        },
+        {
+          title: "Health & Veterinary",
+          url: "/health",
+          icon: Heart,
+          visible: ["admin", "veterinarian"],
+        },
+        {
+          title: "Feed Management",
+          url: "/feed",
+          icon: Utensils,
+          visible: ["admin", "veterinarian", "worker"],
+        },
+        {
+          title: "Production Management",
+          url: "/production",
+          icon: Egg,
+          visible: ["admin", "veterinarian", "worker"],
+        },
+        {
+          title: "Financial Management",
+          url: "/financial",
+          icon: DollarSign,
           visible: ["admin"],
         },
+
         // {
         //   title: "Prescriptions",
         //   url: "/prescriptions",
@@ -124,19 +148,24 @@ const sidebarData: SidebarData = {
     {
       title: "Other",
       items: [
-        // {
-        //   title: "Treatment Templates",
-        //   url: "/treatment-templates",
-        //   icon: Clipboard,
-        //   visible: ["admin", "dentist", "receptionist"],
-        // },
-
-        // {
-        //   title: "Account",
-        //   icon: Settings,
-        //   url: "/account",
-        //   visible: ["admin", "dentist", "receptionist"],
-        // },
+        {
+          title: "Reports & Analytics",
+          url: "/reports",
+          icon: BarChart3,
+          visible: ["admin"],
+        },
+        {
+          title: "Staff",
+          url: "/staff",
+          icon: UserCheck,
+          visible: ["admin"],
+        },
+        {
+          title: "Settings",
+          url: "/settings",
+          icon: Settings,
+          visible: ["admin", "veterinarian", "worker"],
+        },
       ],
     },
   ],

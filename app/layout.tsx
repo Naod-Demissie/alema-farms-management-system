@@ -13,9 +13,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Beka Dental Clinic Portal",
+  title: "Poultry Management System",
   description:
-    "Manage your patient appointments, records, and care — all in one secure platform.",
+    "Manage your flocks, production, staff, and reports — all in one secure platform.",
 };
 
 export default function RootLayout({
