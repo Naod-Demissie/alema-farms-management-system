@@ -1,36 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  BarChart3, 
-  TrendingUp, 
   Download, 
-  Calendar,
   FileText,
-  PieChart,
   Activity,
   DollarSign,
-  Users,
+  Bird,
   Egg,
   Heart,
   Utensils,
-  Filter,
   RefreshCw
 } from "lucide-react";
 import { exportData } from "@/lib/export-utils";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 // Import report components
 import { FinancialReports } from "./components/financial-reports";
@@ -51,15 +37,17 @@ interface ReportFilters {
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("financial");
-  const [filters, setFilters] = useState<ReportFilters>({
+  const [isExporting, setIsExporting] = useState(false);
+  
+  // Default filters - no longer editable since filter card is removed
+  const filters: ReportFilters = {
     dateRange: {
       startDate: new Date(new Date().getFullYear(), 0, 1), // Start of year
       endDate: new Date(), // Today
     },
     flockId: "",
     reportType: "summary"
-  });
-  const [isExporting, setIsExporting] = useState(false);
+  };
 
   const handleExport = async (format: 'csv' | 'pdf') => {
     setIsExporting(true);
@@ -94,7 +82,7 @@ export default function ReportsPage() {
     {
       id: "flock",
       label: "Flock Management",
-      icon: Users,
+      icon: Bird,
       description: "Flock performance and population analytics"
     },
     {
@@ -156,89 +144,6 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Report Filters
-          </CardTitle>
-          <CardDescription>
-            Customize your reports with date ranges and specific criteria
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="start-date">Start Date</Label>
-              <Input
-                id="start-date"
-                type="date"
-                value={filters.dateRange.startDate.toISOString().split('T')[0]}
-                onChange={(e) => setFilters({
-                  ...filters,
-                  dateRange: {
-                    ...filters.dateRange,
-                    startDate: e.target.value ? new Date(e.target.value) : new Date()
-                  }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="end-date">End Date</Label>
-              <Input
-                id="end-date"
-                type="date"
-                value={filters.dateRange.endDate.toISOString().split('T')[0]}
-                onChange={(e) => setFilters({
-                  ...filters,
-                  dateRange: {
-                    ...filters.dateRange,
-                    endDate: e.target.value ? new Date(e.target.value) : new Date()
-                  }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="flock-filter">Flock</Label>
-              <Select
-                value={filters.flockId || "all"}
-                onValueChange={(value) => setFilters({
-                  ...filters,
-                  flockId: value === "all" ? "" : value
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Flocks" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Flocks</SelectItem>
-                  {/* Add flock options here */}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="report-type">Report Type</Label>
-              <Select
-                value={filters.reportType}
-                onValueChange={(value) => setFilters({
-                  ...filters,
-                  reportType: value
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Report Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="summary">Summary</SelectItem>
-                  <SelectItem value="detailed">Detailed</SelectItem>
-                  <SelectItem value="comparative">Comparative</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -267,7 +172,7 @@ export default function ReportsPage() {
         {/* Flock Reports */}
         <TabsContent value="flock" className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
-            <Users className="h-5 w-5" />
+            <Bird className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Flock Management Reports</h2>
             <Badge variant="outline">Flock performance and population analytics</Badge>
           </div>
