@@ -23,7 +23,7 @@ import {
 
 export const vaccinationColumns = (
   onEdit: (vaccination: any) => void,
-  onDelete: (id: string) => void,
+  onDelete: (vaccination: any) => void,
   getStatusBadge: (status: string) => React.ReactNode
 ): ColumnDef<any>[] => [
   {
@@ -34,27 +34,7 @@ export const vaccinationColumns = (
       return (
         <div className="flex items-center space-x-2">
           <Syringe className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <div className="font-medium">{vaccination.vaccineName}</div>
-            <div className="text-sm text-muted-foreground">
-              Lot: {vaccination.lotNumber}
-            </div>
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "manufacturer",
-    header: "Manufacturer",
-    cell: ({ row }) => {
-      const vaccination = row.original;
-      return (
-        <div>
-          <div className="font-medium">{vaccination.manufacturer}</div>
-          <div className="text-sm text-muted-foreground">
-            Batch: {vaccination.batchNumber}
-          </div>
+          <div className="font-medium">{vaccination.vaccineName}</div>
         </div>
       );
     },
@@ -66,7 +46,7 @@ export const vaccinationColumns = (
       const vaccination = row.original;
       return (
         <Badge variant="outline" className="font-mono">
-          {vaccination.flockId}
+          {vaccination.flock?.batchCode || vaccination.flockId}
         </Badge>
       );
     },
@@ -106,35 +86,11 @@ export const vaccinationColumns = (
   },
   {
     accessorKey: "dosage",
-    header: "Dosage & Route",
+    header: "Dosage",
     cell: ({ row }) => {
       const vaccination = row.original;
       return (
-        <div>
-          <div className="font-medium">{vaccination.dosage}</div>
-          <div className="text-sm text-muted-foreground">
-            {vaccination.route}
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "expiryDate",
-    header: "Expiry Date",
-    cell: ({ row }) => {
-      const vaccination = row.original;
-      const expiryDate = new Date(vaccination.expiryDate);
-      const today = new Date();
-      const isExpired = expiryDate < today;
-      const isExpiringSoon = expiryDate <= new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-      
-      return (
-        <div className={`text-sm ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-yellow-600' : 'text-muted-foreground'}`}>
-          {expiryDate.toLocaleDateString()}
-          {isExpired && <div className="text-xs text-red-500">Expired</div>}
-          {isExpiringSoon && !isExpired && <div className="text-xs text-yellow-500">Expires Soon</div>}
-        </div>
+        <div className="font-medium">{vaccination.dosage}</div>
       );
     },
   },
@@ -193,7 +149,7 @@ export const vaccinationColumns = (
               Edit Record
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => onDelete(vaccination.id)}
+              onClick={() => onDelete(vaccination)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />

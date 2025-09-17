@@ -293,7 +293,6 @@ enum RevenueSource {
 
 
 // ------------------ MODELS ------------------
-
 model Flocks {
   id            String      @id @default(uuid())
   batchCode     String      @unique
@@ -322,13 +321,17 @@ model Flocks {
 }
 
 model Vaccinations {
-  id          String    @id @default(uuid())
-  flockId     String
-  vaccineName String
-  date        DateTime
-  lotNo       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(uuid())
+  flockId         String
+  vaccineName     String
+  administeredDate DateTime
+  administeredBy  String
+  quantity        Int
+  dosage          String
+  notes           String?
+  status          String    @default("completed")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   flock Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
   

@@ -3,22 +3,18 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ApiResponse } from "./types";
-import { requireAuth } from "./auth-middleware";
+import { getAuthenticatedUser } from "./auth-middleware";
 
 // Validation schemas
 const VaccinationSchema = z.object({
   vaccineName: z.string().min(1, "Vaccine name is required"),
-  lotNumber: z.string().min(1, "Lot number is required"),
-  manufacturer: z.string().min(1, "Manufacturer is required"),
-  batchNumber: z.string().min(1, "Batch number is required"),
-  expiryDate: z.string().min(1, "Expiry date is required"),
   flockId: z.string().min(1, "Flock ID is required"),
   administeredDate: z.string().min(1, "Administered date is required"),
   administeredBy: z.string().min(1, "Administered by is required"),
   quantity: z.number().min(1, "Quantity must be at least 1"),
   dosage: z.string().min(1, "Dosage is required"),
-  route: z.string().min(1, "Route is required"),
   notes: z.string().optional(),
+  status: z.string().optional().default("completed"),
 });
 
 const TreatmentSchema = z.object({
@@ -74,7 +70,15 @@ export async function getVaccinations(
   status?: string
 ): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    console.log("getVaccinations called with:", { page, limit, search, status });
+    const authResult = await getAuthenticatedUser();
+    console.log("Auth result:", authResult);
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -82,8 +86,8 @@ export async function getVaccinations(
     if (search) {
       where.OR = [
         { vaccineName: { contains: search, mode: "insensitive" } },
-        { lotNumber: { contains: search, mode: "insensitive" } },
         { flockId: { contains: search, mode: "insensitive" } },
+        { administeredBy: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -91,15 +95,26 @@ export async function getVaccinations(
       where.status = status;
     }
 
+    console.log("Querying vaccinations with where clause:", where);
     const [vaccinations, total] = await Promise.all([
       prisma.vaccinations.findMany({
         where,
         skip,
         take: limit,
         orderBy: { administeredDate: "desc" },
+        include: {
+          flock: {
+            select: {
+              id: true,
+              batchCode: true,
+            }
+          }
+        }
       }),
       prisma.vaccinations.count({ where }),
     ]);
+
+    console.log("Found vaccinations:", vaccinations.length, "Total:", total);
 
     return {
       success: true,
@@ -117,14 +132,21 @@ export async function getVaccinations(
     console.error("Error fetching vaccinations:", error);
     return {
       success: false,
-      error: "Failed to fetch vaccinations",
+      message: "Failed to fetch vaccinations",
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
 
 export async function createVaccination(data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = VaccinationSchema.parse(data);
     
@@ -132,8 +154,6 @@ export async function createVaccination(data: any): Promise<ApiResponse<any>> {
       data: {
         ...validatedData,
         administeredDate: new Date(validatedData.administeredDate),
-        expiryDate: new Date(validatedData.expiryDate),
-        status: "completed",
       },
     });
 
@@ -159,7 +179,13 @@ export async function createVaccination(data: any): Promise<ApiResponse<any>> {
 
 export async function updateVaccination(id: string, data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = VaccinationSchema.partial().parse(data);
     
@@ -168,7 +194,6 @@ export async function updateVaccination(id: string, data: any): Promise<ApiRespo
       data: {
         ...validatedData,
         administeredDate: validatedData.administeredDate ? new Date(validatedData.administeredDate) : undefined,
-        expiryDate: validatedData.expiryDate ? new Date(validatedData.expiryDate) : undefined,
       },
     });
 
@@ -194,7 +219,25 @@ export async function updateVaccination(id: string, data: any): Promise<ApiRespo
 
 export async function deleteVaccination(id: string): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
+
+    // Check if vaccination exists first
+    const existingVaccination = await prisma.vaccinations.findUnique({
+      where: { id },
+    });
+
+    if (!existingVaccination) {
+      return {
+        success: false,
+        message: "Vaccination record not found"
+      };
+    }
 
     await prisma.vaccinations.delete({
       where: { id },
@@ -203,12 +246,15 @@ export async function deleteVaccination(id: string): Promise<ApiResponse<any>> {
     return {
       success: true,
       data: { id },
+      message: "Vaccination record deleted successfully"
     };
   } catch (error) {
     console.error("Error deleting vaccination:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return {
       success: false,
-      error: "Failed to delete vaccination",
+      message: `Failed to delete vaccination: ${errorMessage}`,
+      error: errorMessage,
     };
   }
 }
@@ -222,7 +268,13 @@ export async function getTreatments(
   status?: string
 ): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -276,7 +328,13 @@ export async function getTreatments(
 
 export async function createTreatment(data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = TreatmentSchema.parse(data);
     
@@ -311,7 +369,13 @@ export async function createTreatment(data: any): Promise<ApiResponse<any>> {
 
 export async function updateTreatment(id: string, data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = TreatmentSchema.partial().parse(data);
     
@@ -346,7 +410,13 @@ export async function updateTreatment(id: string, data: any): Promise<ApiRespons
 
 export async function updateTreatmentResponse(id: string, response: string): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const treatment = await prisma.treatments.update({
       where: { id },
@@ -371,7 +441,13 @@ export async function updateTreatmentResponse(id: string, response: string): Pro
 
 export async function deleteTreatment(id: string): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     await prisma.treatments.delete({
       where: { id },
@@ -399,7 +475,13 @@ export async function getHealthMonitoring(
   status?: string
 ): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -453,7 +535,13 @@ export async function getHealthMonitoring(
 
 export async function createHealthMonitoring(data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = HealthMonitoringSchema.parse(data);
     
@@ -487,7 +575,13 @@ export async function createHealthMonitoring(data: any): Promise<ApiResponse<any
 
 export async function updateHealthMonitoring(id: string, data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = HealthMonitoringSchema.partial().parse(data);
     
@@ -521,7 +615,13 @@ export async function updateHealthMonitoring(id: string, data: any): Promise<Api
 
 export async function deleteHealthMonitoring(id: string): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     await prisma.healthMonitoring.delete({
       where: { id },
@@ -549,7 +649,13 @@ export async function getMortalityRecords(
   status?: string
 ): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -603,7 +709,13 @@ export async function getMortalityRecords(
 
 export async function createMortalityRecord(data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = MortalitySchema.parse(data);
     
@@ -637,7 +749,13 @@ export async function createMortalityRecord(data: any): Promise<ApiResponse<any>
 
 export async function updateMortalityRecord(id: string, data: any): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     const validatedData = MortalitySchema.partial().parse(data);
     
@@ -671,7 +789,13 @@ export async function updateMortalityRecord(id: string, data: any): Promise<ApiR
 
 export async function deleteMortalityRecord(id: string): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     await prisma.mortality.delete({
       where: { id },
@@ -696,7 +820,13 @@ export async function getHealthAnalytics(
   flockId?: string
 ): Promise<ApiResponse<any>> {
   try {
-    await requireAuth();
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
     // Calculate date range based on period
     const now = new Date();

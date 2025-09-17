@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,203 +28,283 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { 
-  Calendar, 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { 
+  Calendar as CalendarIcon, 
   Plus, 
-  Search, 
-  Filter, 
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
-  Download,
   Edit,
   Trash2,
   Syringe,
   CalendarDays,
   FileText
 } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
+import { VaccinationTable } from "./vaccination-table";
 import { vaccinationColumns } from "./vaccination-columns";
+import { getVaccinations, createVaccination, updateVaccination, deleteVaccination } from "@/server/health";
+import { getFlocks } from "@/server/flocks";
+import { getStaff } from "@/server/staff";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
-// Mock data - replace with actual API calls
-const mockVaccinations = [
-  {
-    id: "1",
-    vaccineName: "Newcastle Disease Vaccine",
-    lotNumber: "ND2024001",
-    manufacturer: "VetCorp",
-    batchNumber: "BATCH001",
-    expiryDate: "2024-12-31",
-    flockId: "Flock A-001",
-    administeredDate: "2024-01-15",
-    administeredBy: "Dr. Sarah Johnson",
-    quantity: 500,
-    dosage: "0.5ml per bird",
-    route: "Subcutaneous",
-    status: "completed",
-    notes: "All birds vaccinated successfully, no adverse reactions observed"
-  },
-  {
-    id: "2",
-    vaccineName: "Infectious Bursal Disease (IBD) Vaccine",
-    lotNumber: "IBD2024002",
-    manufacturer: "PoultryVax",
-    batchNumber: "BATCH002",
-    expiryDate: "2024-11-30",
-    flockId: "Flock B-002",
-    administeredDate: "2024-01-20",
-    administeredBy: "Dr. Mike Chen",
-    quantity: 300,
-    dosage: "0.3ml per bird",
-    route: "Intramuscular",
-    status: "scheduled",
-    notes: "Scheduled for next week, birds are healthy"
-  },
-  {
-    id: "3",
-    vaccineName: "Marek's Disease Vaccine",
-    lotNumber: "MD2024003",
-    manufacturer: "AvianHealth",
-    batchNumber: "BATCH003",
-    expiryDate: "2025-01-15",
-    flockId: "Flock C-003",
-    administeredDate: "2024-01-10",
-    administeredBy: "Dr. Sarah Johnson",
-    quantity: 750,
-    dosage: "0.2ml per bird",
-    route: "Subcutaneous",
-    status: "completed",
-    notes: "Vaccination completed, monitoring for any side effects"
-  },
-  {
-    id: "4",
-    vaccineName: "Avian Influenza Vaccine",
-    lotNumber: "AI2024004",
-    manufacturer: "GlobalVet",
-    batchNumber: "BATCH004",
-    expiryDate: "2024-10-20",
-    flockId: "Flock A-001",
-    administeredDate: "2024-01-25",
-    administeredBy: "Dr. Mike Chen",
-    quantity: 500,
-    dosage: "0.4ml per bird",
-    route: "Intramuscular",
-    status: "in_progress",
-    notes: "Half completed, continuing tomorrow"
-  }
-];
+// Validation schema
+const vaccinationSchema = z.object({
+  vaccineName: z.string().min(1, "Vaccine name is required"),
+  flockId: z.string().min(1, "Flock ID is required"),
+  administeredDate: z.date({
+    message: "Administered date is required",
+  }),
+  administeredBy: z.string().min(1, "Administered by is required"),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
+  dosage: z.string().min(1, "Dosage is required"),
+  notes: z.string().optional(),
+});
 
 export function VaccinationRecords() {
-  const [vaccinations, setVaccinations] = useState(mockVaccinations);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [vaccinations, setVaccinations] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<any[]>([]);
+  const [veterinarians, setVeterinarians] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingVaccination, setEditingVaccination] = useState(null);
+  const [editingVaccination, setEditingVaccination] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'delete' | null;
+    vaccination: any | null;
+  }>({
+    open: false,
+    type: null,
+    vaccination: null,
+  });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    vaccineName: "",
-    lotNumber: "",
-    manufacturer: "",
-    batchNumber: "",
-    expiryDate: "",
-    flockId: "",
-    administeredDate: "",
-    administeredBy: "",
-    quantity: "",
-    dosage: "",
-    route: "",
-    notes: ""
+  // Form setup
+  const form = useForm<z.infer<typeof vaccinationSchema>>({
+    resolver: zodResolver(vaccinationSchema),
+    defaultValues: {
+      vaccineName: "",
+      flockId: "",
+      administeredDate: new Date(),
+      administeredBy: "",
+      quantity: 0,
+      dosage: "",
+      notes: "",
+    },
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchVaccinations();
+    fetchFlocks();
+    fetchVeterinarians();
+  }, []);
+
+  const fetchVaccinations = async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching vaccinations...");
+      console.log("getVaccinations function:", typeof getVaccinations);
+      const result = await getVaccinations(1, 100);
+      console.log("Vaccinations result:", result);
+      console.log("Result type:", typeof result);
+      console.log("Result keys:", result ? Object.keys(result) : "result is null/undefined");
+      
+      if (result && result.success) {
+        setVaccinations(result.data.vaccinations || []);
+        console.log("Vaccinations set:", result.data.vaccinations);
+      } else {
+        console.error("Failed to fetch vaccinations:", result?.message || "Unknown error", result);
+        setVaccinations([]);
+      }
+    } catch (error) {
+      console.error("Error fetching vaccinations:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      setVaccinations([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newVaccination = {
-      id: Date.now().toString(),
-      ...formData,
-      status: "completed",
-      quantity: parseInt(formData.quantity)
-    };
-    
-    setVaccinations(prev => [newVaccination, ...prev]);
-    setIsAddDialogOpen(false);
-    setFormData({
-      vaccineName: "",
-      lotNumber: "",
-      manufacturer: "",
-      batchNumber: "",
-      expiryDate: "",
-      flockId: "",
-      administeredDate: "",
-      administeredBy: "",
-      quantity: "",
-      dosage: "",
-      route: "",
-      notes: ""
-    });
+  const fetchFlocks = async () => {
+    try {
+      console.log("Fetching flocks...");
+      const result = await getFlocks({}, { page: 1, limit: 100 });
+      console.log("Flocks result:", result);
+      if (result && result.success && result.data) {
+        setFlocks(result.data);
+        console.log("Flocks set:", result.data);
+      } else {
+        console.error("Failed to fetch flocks:", result?.message || "Unknown error", result);
+        setFlocks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching flocks:", error);
+      setFlocks([]);
+    }
+  };
+
+  const fetchVeterinarians = async () => {
+    try {
+      console.log("Fetching veterinarians...");
+      const result = await getStaff();
+      console.log("Staff result:", result);
+      if (result && result.success && result.data) {
+        // Filter staff to only include veterinarians
+        const vets = result.data.filter((staff: any) => staff.role === "VETERINARIAN" && staff.isActive);
+        setVeterinarians(vets);
+        console.log("Veterinarians set:", vets);
+      } else {
+        console.error("Failed to fetch staff:", result?.message || "Unknown error", result);
+        setVeterinarians([]);
+      }
+    } catch (error) {
+      console.error("Error fetching veterinarians:", error);
+      setVeterinarians([]);
+    }
+  };
+
+  const handleSubmit = async (data: z.infer<typeof vaccinationSchema>) => {
+    try {
+      setLoading(true);
+      const result = await createVaccination({
+        ...data,
+        administeredDate: data.administeredDate.toISOString(),
+      });
+      
+      if (result.success) {
+        toast.success("Vaccination record created successfully!", {
+          description: `${data.vaccineName} vaccination has been recorded for the flock`,
+        });
+        await fetchVaccinations();
+        setIsAddDialogOpen(false);
+        form.reset();
+      } else {
+        toast.error("Failed to create vaccination record", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating vaccination:", error);
+      toast.error("Failed to create vaccination record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (vaccination: any) => {
     setEditingVaccination(vaccination);
-    setFormData({
+    form.reset({
       vaccineName: vaccination.vaccineName,
-      lotNumber: vaccination.lotNumber,
-      manufacturer: vaccination.manufacturer,
-      batchNumber: vaccination.batchNumber,
-      expiryDate: vaccination.expiryDate,
       flockId: vaccination.flockId,
-      administeredDate: vaccination.administeredDate,
+      administeredDate: new Date(vaccination.administeredDate),
       administeredBy: vaccination.administeredBy,
-      quantity: vaccination.quantity.toString(),
+      quantity: vaccination.quantity,
       dosage: vaccination.dosage,
-      route: vaccination.route,
-      notes: vaccination.notes
+      notes: vaccination.notes || "",
     });
     setIsAddDialogOpen(true);
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setVaccinations(prev => 
-      prev.map(v => 
-        v.id === editingVaccination?.id 
-          ? { ...v, ...formData, quantity: parseInt(formData.quantity) }
-          : v
-      )
-    );
-    setIsAddDialogOpen(false);
-    setEditingVaccination(null);
-    setFormData({
-      vaccineName: "",
-      lotNumber: "",
-      manufacturer: "",
-      batchNumber: "",
-      expiryDate: "",
-      flockId: "",
-      administeredDate: "",
-      administeredBy: "",
-      quantity: "",
-      dosage: "",
-      route: "",
-      notes: ""
+  const handleUpdate = async (data: z.infer<typeof vaccinationSchema>) => {
+    if (!editingVaccination) return;
+    
+    try {
+      setLoading(true);
+      const result = await updateVaccination(editingVaccination.id, {
+        ...data,
+        administeredDate: data.administeredDate.toISOString(),
+      });
+      
+      if (result.success) {
+        toast.success("Vaccination record updated successfully!", {
+          description: `${data.vaccineName} vaccination record has been updated`,
+        });
+        await fetchVaccinations();
+        setIsAddDialogOpen(false);
+        setEditingVaccination(null);
+        form.reset();
+      } else {
+        toast.error("Failed to update vaccination record", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating vaccination:", error);
+      toast.error("Failed to update vaccination record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (vaccination: any) => {
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      vaccination: vaccination,
     });
   };
 
-  const handleDelete = (id: string) => {
-    setVaccinations(prev => prev.filter(v => v.id !== id));
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.type) return;
+
+    if (confirmDialog.type === 'delete' && confirmDialog.vaccination) {
+      await executeDeleteVaccination(confirmDialog.vaccination);
+    }
+
+    setConfirmDialog({
+      open: false,
+      type: null,
+      vaccination: null,
+    });
   };
 
-  const filteredVaccinations = vaccinations.filter(vaccination => {
-    const matchesSearch = vaccination.vaccineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vaccination.lotNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vaccination.flockId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || vaccination.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const executeDeleteVaccination = async (vaccination: any) => {
+    setActionLoading(vaccination.id);
+    try {
+      const result = await deleteVaccination(vaccination.id);
+      
+      if (result.success) {
+        toast.success("Vaccination record deleted successfully!", {
+          description: `${vaccination.vaccineName} vaccination record has been removed`,
+        });
+        await fetchVaccinations();
+      } else {
+        toast.error("Failed to delete vaccination record", {
+          description: result.message || result.error || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting vaccination:", error);
+      toast.error("Failed to delete vaccination record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -247,10 +330,6 @@ export function VaccinationRecords() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -264,209 +343,250 @@ export function VaccinationRecords() {
                   {editingVaccination ? "Edit Vaccination Record" : "Add New Vaccination Record"}
                 </DialogTitle>
                 <DialogDescription>
-                  Record vaccine administration details including lot numbers and dosage information.
+                  Record vaccine administration details including dosage and administration information.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={editingVaccination ? handleUpdate : handleSubmit} className="space-y-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(editingVaccination ? handleUpdate : handleSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="vaccineName">Vaccine Name *</Label>
-                    <Input
-                      id="vaccineName"
-                      value={formData.vaccineName}
-                      onChange={(e) => handleInputChange("vaccineName", e.target.value)}
-                      placeholder="e.g., Newcastle Disease Vaccine"
-                      required
+                    <FormField
+                      control={form.control}
+                      name="vaccineName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Vaccine Name <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Newcastle Disease Vaccine" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lotNumber">Lot Number *</Label>
-                    <Input
-                      id="lotNumber"
-                      value={formData.lotNumber}
-                      onChange={(e) => handleInputChange("lotNumber", e.target.value)}
-                      placeholder="e.g., ND2024001"
-                      required
+                    <FormField
+                      control={form.control}
+                      name="flockId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Flock ID <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select flock" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {flocks.map((flock: any) => (
+                                <SelectItem key={flock.id} value={flock.id}>
+                                  {flock.batchCode}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="manufacturer">Manufacturer *</Label>
-                    <Input
-                      id="manufacturer"
-                      value={formData.manufacturer}
-                      onChange={(e) => handleInputChange("manufacturer", e.target.value)}
-                      placeholder="e.g., VetCorp"
-                      required
+                    <FormField
+                      control={form.control}
+                      name="administeredDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Administered Date <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal h-10",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                                }
+                                captionLayout="dropdown"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="batchNumber">Batch Number *</Label>
-                    <Input
-                      id="batchNumber"
-                      value={formData.batchNumber}
-                      onChange={(e) => handleInputChange("batchNumber", e.target.value)}
-                      placeholder="e.g., BATCH001"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="expiryDate">Expiry Date *</Label>
-                    <Input
-                      id="expiryDate"
-                      type="date"
-                      value={formData.expiryDate}
-                      onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="flockId">Flock ID *</Label>
-                    <Select value={formData.flockId} onValueChange={(value) => handleInputChange("flockId", value)}>
+                    <FormField
+                      control={form.control}
+                      name="administeredBy"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Administered By <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select flock" />
+                                <SelectValue placeholder="Select veterinarian" />
                       </SelectTrigger>
+                            </FormControl>
                       <SelectContent>
-                        <SelectItem value="Flock A-001">Flock A-001</SelectItem>
-                        <SelectItem value="Flock B-002">Flock B-002</SelectItem>
-                        <SelectItem value="Flock C-003">Flock C-003</SelectItem>
-                        <SelectItem value="Flock D-004">Flock D-004</SelectItem>
+                              {veterinarians.map((vet: any) => (
+                                <SelectItem key={vet.id} value={vet.name}>
+                                  {vet.name}
+                                </SelectItem>
+                              ))}
                       </SelectContent>
                     </Select>
-                  </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="administeredDate">Administered Date *</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="quantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Quantity <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
                     <Input
-                      id="administeredDate"
-                      type="date"
-                      value={formData.administeredDate}
-                      onChange={(e) => handleInputChange("administeredDate", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="administeredBy">Administered By *</Label>
-                    <Input
-                      id="administeredBy"
-                      value={formData.administeredBy}
-                      onChange={(e) => handleInputChange("administeredBy", e.target.value)}
-                      placeholder="e.g., Dr. Sarah Johnson"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity">Quantity *</Label>
-                    <Input
-                      id="quantity"
                       type="number"
-                      value={formData.quantity}
-                      onChange={(e) => handleInputChange("quantity", e.target.value)}
                       placeholder="500"
-                      required
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dosage">Dosage *</Label>
-                    <Input
-                      id="dosage"
-                      value={formData.dosage}
-                      onChange={(e) => handleInputChange("dosage", e.target.value)}
-                      placeholder="e.g., 0.5ml per bird"
-                      required
+                    <FormField
+                      control={form.control}
+                      name="dosage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Dosage <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., 0.5ml per bird" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="route">Route *</Label>
-                    <Select value={formData.route} onValueChange={(value) => handleInputChange("route", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select route" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Subcutaneous">Subcutaneous</SelectItem>
-                        <SelectItem value="Intramuscular">Intramuscular</SelectItem>
-                        <SelectItem value="Intranasal">Intranasal</SelectItem>
-                        <SelectItem value="Oral">Oral</SelectItem>
-                        <SelectItem value="Ocular">Ocular</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
                   <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange("notes", e.target.value)}
                     placeholder="Additional notes about the vaccination..."
                     rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">
-                    {editingVaccination ? "Update Record" : "Add Record"}
+                    <Button type="submit" disabled={loading}>
+                      {loading ? "Saving..." : editingVaccination ? "Update Record" : "Add Record"}
                   </Button>
                 </DialogFooter>
               </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search vaccinations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="scheduled">Scheduled</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Vaccination Records Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Vaccination Records</CardTitle>
+          <CardTitle>Vaccination Records ({vaccinations.length})</CardTitle>
           <CardDescription>
-            {filteredVaccinations.length} vaccination records found
+            Manage and track vaccination records for your poultry flocks
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={vaccinationColumns(handleEdit, handleDelete, getStatusBadge)}
-            data={filteredVaccinations}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+              </div>
+            </div>
+          ) : (
+            <VaccinationTable
+            columns={vaccinationColumns(handleEdit, handleDeleteClick, getStatusBadge)}
+              data={vaccinations}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
           />
+          )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={
+          confirmDialog.type === 'delete'
+            ? 'Delete Vaccination Record'
+            : 'Confirm Action'
+        }
+        desc={
+          confirmDialog.type === 'delete'
+            ? `Are you sure you want to delete the vaccination record for "${confirmDialog.vaccination?.vaccineName}"? This action cannot be undone and the vaccination record will be permanently removed.`
+            : 'Are you sure you want to proceed?'
+        }
+        confirmText={
+          confirmDialog.type === 'delete'
+            ? 'Delete Vaccination Record'
+            : 'Continue'
+        }
+        cancelBtnText="Cancel"
+        destructive={confirmDialog.type === 'delete'}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.vaccination?.id}
+      />
     </div>
   );
 }
