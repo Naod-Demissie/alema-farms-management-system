@@ -302,6 +302,7 @@ model Flocks {
   arrivalDate   DateTime
   initialCount  Int
   currentCount  Int
+  ageInDays     Int?        // Age of birds in days at arrival
   notes         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt

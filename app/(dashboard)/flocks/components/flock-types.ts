@@ -8,6 +8,7 @@ export interface Flock {
   arrivalDate: Date;
   initialCount: number;
   currentCount: number;
+  ageInDays?: number;
   createdAt: Date;
   updatedAt: Date;
   _count?: {
@@ -29,6 +30,7 @@ export interface FlockFormData {
   arrivalDate: Date;
   initialCount: number;
   currentCount: number;
+  ageInDays: number;
   notes?: string;
 }
 

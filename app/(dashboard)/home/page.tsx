@@ -104,8 +104,6 @@ export default function HomePage() {
       actions: [
         { id: "add-flock", title: "Add New Flock", description: "Register a new flock batch", icon: Bird, color: "bg-blue-500", href: "/flocks" },
         { id: "view-flocks", title: "View All Flocks", description: "Manage existing flocks", icon: Eye, color: "bg-blue-600", href: "/flocks" },
-        { id: "population-tracking", title: "Population Tracking", description: "Track flock population changes", icon: Activity, color: "bg-blue-700", href: "/flocks?tab=population" },
-        { id: "flock-analytics", title: "Flock Analytics", description: "View flock performance metrics", icon: BarChart3, color: "bg-blue-800", href: "/flocks?tab=analytics" },
       ]
     },
     // Health & Veterinary

@@ -27,6 +27,7 @@ export interface CreateFlockData {
   arrivalDate: Date;
   initialCount: number;
   currentCount: number;
+  ageInDays?: number;
   notes?: string;
 }
 
@@ -37,6 +38,7 @@ export interface UpdateFlockData {
   arrivalDate?: Date;
   initialCount?: number;
   currentCount?: number;
+  ageInDays?: number;
   notes?: string;
 }
 
@@ -101,6 +103,8 @@ export async function createFlock(data: CreateFlockData): Promise<ApiResponse> {
         arrivalDate: data.arrivalDate,
         initialCount: data.initialCount,
         currentCount: data.currentCount,
+        ageInDays: data.ageInDays,
+        notes: data.notes,
       }
     });
 
