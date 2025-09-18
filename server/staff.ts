@@ -171,20 +171,6 @@ export const getStaffById = async (id: string) => {
                     },
                     take: 5, // Last 5 treatments
                 },
-                healthMonitoring: {
-                    select: {
-                        id: true,
-                        date: true,
-                        avgWeight: true,
-                        bodyCondition: true,
-                        behavior: true,
-                        createdAt: true,
-                    },
-                    orderBy: {
-                        createdAt: "desc",
-                    },
-                    take: 5, // Last 5 health monitoring records
-                },
             },
         });
 

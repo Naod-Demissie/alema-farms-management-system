@@ -300,7 +300,7 @@ export const getProductivityMetrics = async (staffId: string, period: string = '
       }
     });
 
-    // Get work-related activities (treatments, health monitoring, etc.)
+    // Get work-related activities (treatments, etc.)
     const treatments = await prisma.treatments.count({
       where: {
         treatedById: staffId,
@@ -311,15 +311,6 @@ export const getProductivityMetrics = async (staffId: string, period: string = '
       }
     });
 
-    const healthMonitoring = await prisma.healthMonitoring.count({
-      where: {
-        recordedById: staffId,
-        createdAt: {
-          gte: startDate,
-          lte: endDate
-        }
-      }
-    });
 
     const mortalityRecords = await prisma.mortality.count({
       where: {
@@ -353,9 +344,8 @@ export const getProductivityMetrics = async (staffId: string, period: string = '
       },
       activities: {
         treatments,
-        healthMonitoring,
         mortalityRecords,
-        totalActivities: treatments + healthMonitoring + mortalityRecords
+        totalActivities: treatments + mortalityRecords
       },
       leave: {
         totalRequests: leaveRequests.length,

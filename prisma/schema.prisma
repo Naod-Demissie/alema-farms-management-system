@@ -41,7 +41,6 @@ model Staff {
   accounts                    Accounts[]
   invitesCreated              Invite[]  @relation("InviteCreatedByStaff")
   treatments                  Treatments[] @relation("TreatedByStaff")
-  healthMonitoring            HealthMonitoring[] @relation("RecordedByStaff")
   mortalityRecords            Mortality[] @relation("RecordedByStaff")
   notifications               Notifications[] @relation("StaffNotifications")
   payrolls                    Payroll[]
@@ -228,17 +227,6 @@ enum DiseaseClass {
   other
 }
 
-enum BodyCondition {
-  underweight
-  normal
-  overweight
-}
-
-enum BehaviorStatus {
-  active
-  lethargic
-  abnormal
-}
 
 enum DeathCause {
   disease
@@ -303,7 +291,6 @@ model Flocks {
   // Relations
   vaccinations      Vaccinations[]
   treatments        Treatments[]
-  healthMonitoring  HealthMonitoring[]
   mortality         Mortality[]
   feedUsage         FeedUsage[]
   eggProduction     EggProduction[]
@@ -336,8 +323,15 @@ model Treatments {
   id           String            @id @default(uuid())
   flockId      String
   disease      DiseaseClass
+  diseaseName  String?           // Specific name of the disease
   medication   String?
   dosage       String?
+  frequency    String?           // How often medication is given
+  duration     String?           // How long treatment lasts
+  startDate    DateTime?         // When treatment started
+  endDate      DateTime?         // When treatment ended
+  notes        String?           // Additional notes
+  symptoms     String?           // Symptoms observed
   response     TreatmentResponse?
   treatedById  String?           // Staff who administered the treatment
   createdAt    DateTime          @default(now())
@@ -349,23 +343,6 @@ model Treatments {
   @@map("treatments")
 }
 
-model HealthMonitoring {
-  id            String          @id @default(uuid())
-  flockId       String
-  date          DateTime
-  avgWeight     Float?
-  bodyCondition BodyCondition?
-  behavior      BehaviorStatus?
-  observations  String?
-  recordedById  String?         // Staff who recorded the monitoring
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  flock     Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
-  recordedBy Staff? @relation("RecordedByStaff", fields: [recordedById], references: [id])
-  
-  @@map("health_monitoring")
-}
 
 model Mortality {
   id               String         @id @default(uuid())

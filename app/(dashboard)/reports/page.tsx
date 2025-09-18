@@ -95,7 +95,7 @@ export default function ReportsPage() {
       id: "health",
       label: "Health & Mortality",
       icon: Heart,
-      description: "Health monitoring and mortality reports"
+      description: "Health and mortality reports"
     },
     {
       id: "staff",
@@ -194,7 +194,7 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 mb-4">
             <Heart className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Health & Mortality Reports</h2>
-            <Badge variant="outline">Health monitoring and mortality reports</Badge>
+            <Badge variant="outline">Health and mortality reports</Badge>
           </div>
           <HealthReports filters={filters} />
         </TabsContent>

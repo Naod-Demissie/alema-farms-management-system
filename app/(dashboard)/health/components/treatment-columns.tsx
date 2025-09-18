@@ -11,10 +11,7 @@ import {
   Calendar,
   Pill,
   Stethoscope,
-  FileText,
-  CheckCircle,
-  XCircle,
-  Clock
+  FileText
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,50 +21,44 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export const treatmentColumns = (
   onEdit: (treatment: any) => void,
-  onDelete: (id: string) => void,
+  onDelete: (treatment: any) => void,
   getDiseaseBadge: (disease: string) => React.ReactNode,
-  getResponseBadge: (response: string) => React.ReactNode,
-  getStatusBadge: (status: string) => React.ReactNode,
-  onResponseUpdate: (id: string, response: string) => void
+  getResponseBadge: (response: string) => React.ReactNode
 ): ColumnDef<any>[] => [
   {
+    accessorKey: "flockId",
+    header: "Flock ID",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <Badge variant="outline" className="font-mono">
+          {treatment.flock?.batchCode || treatment.flockId}
+        </Badge>
+      );
+    },
+  },
+  {
     accessorKey: "diseaseName",
-    header: "Disease & Classification",
+    header: "Disease Name",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Stethoscope className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <div className="font-medium">{treatment.diseaseName}</div>
-            <div className="flex items-center space-x-2 mt-1">
-              {getDiseaseBadge(treatment.disease)}
-            </div>
-          </div>
+          <div className="font-medium">{treatment.diseaseName}</div>
         </div>
       );
     },
   },
   {
-    accessorKey: "flockId",
-    header: "Flock",
+    accessorKey: "disease",
+    header: "Disease Type",
     cell: ({ row }) => {
       const treatment = row.original;
-      return (
-        <Badge variant="outline" className="font-mono">
-          {treatment.flockId}
-        </Badge>
-      );
+      return getDiseaseBadge(treatment.disease);
     },
   },
   {
@@ -86,20 +77,27 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "medication",
-    header: "Medication & Dosage",
+    header: "Medication",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Pill className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <div className="font-medium">{treatment.medication}</div>
-            <div className="text-sm text-muted-foreground">
-              {treatment.dosage}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {treatment.frequency} • {treatment.duration}
-            </div>
+          <div className="font-medium">{treatment.medication}</div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "dosage",
+    header: "Dosage",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <div className="text-sm">
+          <div className="font-medium">{treatment.dosage}</div>
+          <div className="text-muted-foreground">
+            {treatment.frequency} • {treatment.duration}
           </div>
         </div>
       );
@@ -107,25 +105,42 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "startDate",
-    header: "Treatment Period",
+    header: "Start Date",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <div className="font-medium">
-              {new Date(treatment.startDate).toLocaleDateString()}
-            </div>
-            {treatment.endDate && (
-              <div className="text-sm text-muted-foreground">
-                to {new Date(treatment.endDate).toLocaleDateString()}
-              </div>
-            )}
-            <div className="text-xs text-muted-foreground">
-              by {treatment.treatedBy}
-            </div>
+          <div className="font-medium">
+            {new Date(treatment.startDate).toLocaleDateString()}
           </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "endDate",
+    header: "End Date",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <div className="flex items-center space-x-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <div className="font-medium">
+            {treatment.endDate ? new Date(treatment.endDate).toLocaleDateString() : "Ongoing"}
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "treatedBy",
+    header: "Treated By",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <div className="text-sm">
+          <div className="font-medium">{treatment.treatedBy?.name || treatment.treatedBy || "Unknown"}</div>
         </div>
       );
     },
@@ -135,49 +150,7 @@ export const treatmentColumns = (
     header: "Response",
     cell: ({ row }) => {
       const treatment = row.original;
-      return (
-        <div className="space-y-2">
-          {getResponseBadge(treatment.response)}
-          {treatment.status === "in_progress" && (
-            <Select
-              value={treatment.response}
-              onValueChange={(value) => onResponseUpdate(treatment.id, value)}
-            >
-              <SelectTrigger className="w-32 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="improved">
-                  <div className="flex items-center space-x-1">
-                    <CheckCircle className="w-3 h-3 text-green-600" />
-                    <span>Improved</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="no_change">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-3 h-3 text-yellow-600" />
-                    <span>No Change</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="worsened">
-                  <div className="flex items-center space-x-1">
-                    <XCircle className="w-3 h-3 text-red-600" />
-                    <span>Worsened</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const treatment = row.original;
-      return getStatusBadge(treatment.status);
+      return getResponseBadge(treatment.response);
     },
   },
   {
@@ -227,7 +200,7 @@ export const treatmentColumns = (
               Edit Treatment
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => onDelete(treatment.id)}
+              onClick={() => onDelete(treatment)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />

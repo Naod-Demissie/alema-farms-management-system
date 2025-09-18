@@ -269,7 +269,7 @@ export const getAvailableRoles = async (): Promise<ApiResponse> => {
       {
         value: 'VETERINARIAN',
         label: 'Veterinarian',
-        description: 'Health monitoring and treatment management',
+        description: 'Health and treatment management',
         permissions: ROLE_PERMISSIONS.VETERINARIAN.length
       },
       {

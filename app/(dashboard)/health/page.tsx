@@ -3,29 +3,22 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Heart, 
   Syringe, 
   Activity, 
   Skull, 
-  BarChart3, 
-  Plus,
   AlertTriangle,
   CheckCircle,
   TrendingUp,
-  Calendar,
-  Users,
   Shield
 } from "lucide-react";
 
 // Import components (we'll create these)
 import { VaccinationRecords } from "./components/vaccination-records";
 import { DiseaseTreatment } from "./components/disease-treatment";
-import { HealthMonitoring } from "./components/health-monitoring";
 import { MortalityManagement } from "./components/mortality-management";
-import { HealthAnalytics } from "./components/health-analytics";
 
 export default function HealthManagementPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -43,28 +36,20 @@ export default function HealthManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Health & Veterinary Management</h1>
-          <p className="text-muted-foreground">
-            Comprehensive health monitoring, vaccination tracking, and veterinary care management
-          </p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Record
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Health & Veterinary Management</h1>
+        <p className="text-muted-foreground">
+          Comprehensive vaccination tracking and veterinary care management
+        </p>
       </div>
 
       {/* Main Content with Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="vaccinations">Vaccinations</TabsTrigger>
           <TabsTrigger value="treatments">Treatments</TabsTrigger>
-          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
           <TabsTrigger value="mortality">Mortality</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -230,20 +215,12 @@ export default function HealthManagementPage() {
           <DiseaseTreatment />
         </TabsContent>
 
-        {/* Health Monitoring Tab */}
-        <TabsContent value="monitoring">
-          <HealthMonitoring />
-        </TabsContent>
 
         {/* Mortality Management Tab */}
         <TabsContent value="mortality">
           <MortalityManagement />
         </TabsContent>
 
-        {/* Analytics Tab */}
-        <TabsContent value="analytics">
-          <HealthAnalytics />
-        </TabsContent>
       </Tabs>
     </div>
   );

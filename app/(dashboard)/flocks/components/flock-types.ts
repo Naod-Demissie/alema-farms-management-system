@@ -14,7 +14,6 @@ export interface Flock {
   _count?: {
     vaccinations: number;
     treatments: number;
-    healthMonitoring: number;
     mortality: number;
     feedUsage: number;
     eggProduction: number;

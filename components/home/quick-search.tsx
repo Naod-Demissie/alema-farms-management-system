@@ -75,7 +75,6 @@ export function QuickSearch({ onResultSelect }: QuickSearchProps) {
     
     // Health & Veterinary
     { id: "record-vaccination", title: "Record Vaccination", description: "Log vaccination details", category: "Health & Veterinary", href: "/health", icon: Heart, type: "action" },
-    { id: "health-monitoring", title: "Health Monitoring", description: "Monitor flock health status", category: "Health & Veterinary", href: "/health?tab=monitoring", icon: Activity, type: "page" },
     { id: "mortality-record", title: "Mortality Record", description: "Record bird deaths", category: "Health & Veterinary", href: "/health?tab=mortality", icon: Heart, type: "action" },
     
     // Production Management

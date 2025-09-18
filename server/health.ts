@@ -32,20 +32,6 @@ const TreatmentSchema = z.object({
   symptoms: z.string().optional(),
 });
 
-const HealthMonitoringSchema = z.object({
-  flockId: z.string().min(1, "Flock ID is required"),
-  date: z.string().min(1, "Date is required"),
-  avgWeight: z.number().min(0, "Average weight must be positive"),
-  bodyCondition: z.enum(["underweight", "normal", "overweight"]),
-  behavior: z.enum(["active", "lethargic", "abnormal"]),
-  observations: z.string().min(1, "Observations are required"),
-  recordedBy: z.string().min(1, "Recorded by is required"),
-  temperature: z.number().optional(),
-  humidity: z.number().optional(),
-  feedConsumption: z.number().optional(),
-  waterConsumption: z.number().optional(),
-  mortalityCount: z.number().min(0, "Mortality count must be non-negative"),
-});
 
 const MortalitySchema = z.object({
   flockId: z.string().min(1, "Flock ID is required"),
@@ -161,7 +147,7 @@ export async function createVaccination(data: any): Promise<ApiResponse<any>> {
       return {
         success: false,
         error: "Validation error",
-        details: error.errors,
+        details: error.issues,
       };
     }
     return {
@@ -201,7 +187,7 @@ export async function updateVaccination(id: string, data: any): Promise<ApiRespo
       return {
         success: false,
         error: "Validation error",
-        details: error.errors,
+        details: error.issues,
       };
     }
     return {
@@ -295,6 +281,20 @@ export async function getTreatments(
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
+        include: {
+          treatedBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          flock: {
+            select: {
+              id: true,
+              batchCode: true,
+            },
+          },
+        },
       }),
       prisma.treatments.count({ where }),
     ]);
@@ -334,9 +334,18 @@ export async function createTreatment(data: any): Promise<ApiResponse<any>> {
     
     const treatment = await prisma.treatments.create({
       data: {
-        ...validatedData,
+        flockId: validatedData.flockId,
+        disease: validatedData.disease,
+        diseaseName: validatedData.diseaseName,
+        medication: validatedData.medication,
+        dosage: validatedData.dosage,
+        frequency: validatedData.frequency,
+        duration: validatedData.duration,
         startDate: new Date(validatedData.startDate),
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
+        notes: validatedData.notes,
+        symptoms: validatedData.symptoms,
+        treatedById: validatedData.treatedBy,
         response: "no_change",
       },
     });
@@ -351,7 +360,7 @@ export async function createTreatment(data: any): Promise<ApiResponse<any>> {
       return {
         success: false,
         error: "Validation error",
-        details: error.errors,
+        details: error.issues,
       };
     }
     return {
@@ -373,13 +382,23 @@ export async function updateTreatment(id: string, data: any): Promise<ApiRespons
 
     const validatedData = TreatmentSchema.partial().parse(data);
     
+    const updateData: any = {};
+    if (validatedData.flockId) updateData.flockId = validatedData.flockId;
+    if (validatedData.disease) updateData.disease = validatedData.disease;
+    if (validatedData.diseaseName) updateData.diseaseName = validatedData.diseaseName;
+    if (validatedData.medication) updateData.medication = validatedData.medication;
+    if (validatedData.dosage) updateData.dosage = validatedData.dosage;
+    if (validatedData.frequency) updateData.frequency = validatedData.frequency;
+    if (validatedData.duration) updateData.duration = validatedData.duration;
+    if (validatedData.startDate) updateData.startDate = new Date(validatedData.startDate);
+    if (validatedData.endDate) updateData.endDate = new Date(validatedData.endDate);
+    if (validatedData.notes) updateData.notes = validatedData.notes;
+    if (validatedData.symptoms) updateData.symptoms = validatedData.symptoms;
+    if (validatedData.treatedBy) updateData.treatedById = validatedData.treatedBy;
+
     const treatment = await prisma.treatments.update({
       where: { id },
-      data: {
-        ...validatedData,
-        startDate: validatedData.startDate ? new Date(validatedData.startDate) : undefined,
-        endDate: validatedData.endDate ? new Date(validatedData.endDate) : undefined,
-      },
+      data: updateData,
     });
 
     return {
@@ -392,7 +411,7 @@ export async function updateTreatment(id: string, data: any): Promise<ApiRespons
       return {
         success: false,
         error: "Validation error",
-        details: error.errors,
+        details: error.issues,
       };
     }
     return {
@@ -416,7 +435,6 @@ export async function updateTreatmentResponse(id: string, response: string): Pro
       where: { id },
       data: {
         response: response as any,
-        status: response === "improved" ? "completed" : undefined,
       },
     });
 
@@ -460,179 +478,6 @@ export async function deleteTreatment(id: string): Promise<ApiResponse<any>> {
   }
 }
 
-// Health Monitoring Management
-export async function getHealthMonitoring(
-  page: number = 1,
-  limit: number = 10,
-  search?: string,
-  flockId?: string,
-  status?: string
-): Promise<ApiResponse<any>> {
-  try {
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.success) {
-      return {
-        success: false,
-        message: authResult.message || "Authentication required"
-      };
-    }
-
-    const skip = (page - 1) * limit;
-    const where: any = {};
-
-    if (search) {
-      where.OR = [
-        { observations: { contains: search, mode: "insensitive" } },
-        { recordedBy: { contains: search, mode: "insensitive" } },
-        { flockId: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    if (flockId && flockId !== "all") {
-      where.flockId = flockId;
-    }
-
-    if (status && status !== "all") {
-      where.status = status;
-    }
-
-    const [records, total] = await Promise.all([
-      prisma.healthMonitoring.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { date: "desc" },
-      }),
-      prisma.healthMonitoring.count({ where }),
-    ]);
-
-    return {
-      success: true,
-      data: {
-        records,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit),
-        },
-      },
-    };
-  } catch (error) {
-    console.error("Error fetching health monitoring records:", error);
-    return {
-      success: false,
-      error: "Failed to fetch health monitoring records",
-    };
-  }
-}
-
-export async function createHealthMonitoring(data: any): Promise<ApiResponse<any>> {
-  try {
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.success) {
-      return {
-        success: false,
-        message: authResult.message || "Authentication required"
-      };
-    }
-
-    const validatedData = HealthMonitoringSchema.parse(data);
-    
-    const record = await prisma.healthMonitoring.create({
-      data: {
-        ...validatedData,
-        date: new Date(validatedData.date),
-        status: "healthy",
-      },
-    });
-
-    return {
-      success: true,
-      data: record,
-    };
-  } catch (error) {
-    console.error("Error creating health monitoring record:", error);
-    if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        error: "Validation error",
-        details: error.errors,
-      };
-    }
-    return {
-      success: false,
-      error: "Failed to create health monitoring record",
-    };
-  }
-}
-
-export async function updateHealthMonitoring(id: string, data: any): Promise<ApiResponse<any>> {
-  try {
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.success) {
-      return {
-        success: false,
-        message: authResult.message || "Authentication required"
-      };
-    }
-
-    const validatedData = HealthMonitoringSchema.partial().parse(data);
-    
-    const record = await prisma.healthMonitoring.update({
-      where: { id },
-      data: {
-        ...validatedData,
-        date: validatedData.date ? new Date(validatedData.date) : undefined,
-      },
-    });
-
-    return {
-      success: true,
-      data: record,
-    };
-  } catch (error) {
-    console.error("Error updating health monitoring record:", error);
-    if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        error: "Validation error",
-        details: error.errors,
-      };
-    }
-    return {
-      success: false,
-      error: "Failed to update health monitoring record",
-    };
-  }
-}
-
-export async function deleteHealthMonitoring(id: string): Promise<ApiResponse<any>> {
-  try {
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.success) {
-      return {
-        success: false,
-        message: authResult.message || "Authentication required"
-      };
-    }
-
-    await prisma.healthMonitoring.delete({
-      where: { id },
-    });
-
-    return {
-      success: true,
-      data: { id },
-    };
-  } catch (error) {
-    console.error("Error deleting health monitoring record:", error);
-    return {
-      success: false,
-      error: "Failed to delete health monitoring record",
-    };
-  }
-}
 
 // Mortality Management
 export async function getMortalityRecords(
@@ -778,7 +623,7 @@ export async function createMortalityRecord(data: any): Promise<ApiResponse<any>
       return {
         success: false,
         error: "Validation error",
-        details: error.errors,
+        details: error.issues,
       };
     }
     return {
@@ -868,7 +713,7 @@ export async function updateMortalityRecord(id: string, data: any): Promise<ApiR
       return {
         success: false,
         error: "Validation error",
-        details: error.errors,
+        details: error.issues,
       };
     }
     return {
@@ -947,101 +792,3 @@ export async function deleteMortalityRecord(id: string): Promise<ApiResponse<any
   }
 }
 
-// Health Analytics
-export async function getHealthAnalytics(
-  period: string = "6months",
-  flockId?: string
-): Promise<ApiResponse<any>> {
-  try {
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.success) {
-      return {
-        success: false,
-        message: authResult.message || "Authentication required"
-      };
-    }
-
-    // Calculate date range based on period
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (period) {
-      case "1month":
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        break;
-      case "3months":
-        startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-        break;
-      case "6months":
-        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-        break;
-      case "1year":
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-        break;
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-    }
-
-    const where: any = {
-      createdAt: {
-        gte: startDate,
-        lte: now,
-      },
-    };
-
-    if (flockId && flockId !== "all") {
-      where.flockId = flockId;
-    }
-
-    // Get vaccination statistics
-    const vaccinationStats = await prisma.vaccinations.groupBy({
-      by: ["status"],
-      where,
-      _count: true,
-    });
-
-    // Get treatment statistics
-    const treatmentStats = await prisma.treatments.groupBy({
-      by: ["disease", "response"],
-      where,
-      _count: true,
-    });
-
-    // Get mortality statistics
-    const mortalityStats = await prisma.mortality.groupBy({
-      by: ["cause"],
-      where,
-      _count: true,
-      _sum: {
-        count: true,
-      },
-    });
-
-    // Get health monitoring statistics
-    const healthMonitoringStats = await prisma.healthMonitoring.aggregate({
-      where,
-      _avg: {
-        avgWeight: true,
-      },
-      _count: true,
-    });
-
-    return {
-      success: true,
-      data: {
-        vaccinationStats,
-        treatmentStats,
-        mortalityStats,
-        healthMonitoringStats,
-        period,
-        flockId,
-      },
-    };
-  } catch (error) {
-    console.error("Error fetching health analytics:", error);
-    return {
-      success: false,
-      error: "Failed to fetch health analytics",
-    };
-  }
-}

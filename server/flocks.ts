@@ -199,7 +199,6 @@ export async function getFlocks(
           select: {
             vaccinations: true,
             treatments: true,
-            healthMonitoring: true,
             mortality: true,
             feedUsage: true,
             eggProduction: true,
@@ -249,15 +248,11 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
       where: { id: flockId },
       include: {
         vaccinations: {
-          orderBy: { date: 'desc' },
+          orderBy: { createdAt: 'desc' },
           take: 5
         },
         treatments: {
           orderBy: { createdAt: 'desc' },
-          take: 5
-        },
-        healthMonitoring: {
-          orderBy: { date: 'desc' },
           take: 5
         },
         mortality: {
@@ -287,7 +282,6 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
           select: {
             vaccinations: true,
             treatments: true,
-            healthMonitoring: true,
             mortality: true,
             feedUsage: true,
             eggProduction: true,
@@ -443,7 +437,6 @@ export async function deleteFlock(flockId: string): Promise<ApiResponse> {
           select: {
             vaccinations: true,
             treatments: true,
-            healthMonitoring: true,
             mortality: true,
             feedUsage: true,
             eggProduction: true,

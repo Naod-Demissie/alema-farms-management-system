@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -23,17 +25,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { 
-  Calendar, 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { 
+  Calendar as CalendarIcon, 
   Plus, 
-  Search, 
-  Filter, 
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
-  Download,
   Edit,
   Trash2,
   Activity,
@@ -42,139 +55,137 @@ import {
   Pill,
   Stethoscope
 } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
+import { TreatmentTable } from "./treatment-table";
 import { treatmentColumns } from "./treatment-columns";
+import { getTreatments, createTreatment, updateTreatment, deleteTreatment } from "@/server/health";
+import { getFlocks } from "@/server/flocks";
+import { getStaff } from "@/server/staff";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
-// Mock data - replace with actual API calls
-const mockTreatments = [
-  {
-    id: "1",
-    flockId: "Flock A-001",
-    disease: "respiratory",
-    diseaseName: "Infectious Bronchitis",
-    medication: "Amoxicillin",
-    dosage: "10mg/kg body weight",
-    frequency: "Twice daily",
-    duration: "5 days",
-    response: "improved",
-    treatedBy: "Dr. Sarah Johnson",
-    startDate: "2024-01-15",
-    endDate: "2024-01-20",
-    status: "completed",
-    notes: "Significant improvement in respiratory symptoms after 3 days of treatment",
-    symptoms: "Coughing, nasal discharge, difficulty breathing"
-  },
-  {
-    id: "2",
-    flockId: "Flock B-002",
-    disease: "digestive",
-    diseaseName: "Coccidiosis",
-    medication: "Sulfadimethoxine",
-    dosage: "0.1% in drinking water",
-    frequency: "Once daily",
-    duration: "7 days",
-    response: "no_change",
-    treatedBy: "Dr. Mike Chen",
-    startDate: "2024-01-18",
-    endDate: "2024-01-25",
-    status: "in_progress",
-    notes: "No improvement observed after 3 days, considering alternative treatment",
-    symptoms: "Diarrhea, blood in feces, lethargy"
-  },
-  {
-    id: "3",
-    flockId: "Flock C-003",
-    disease: "parasitic",
-    diseaseName: "External Parasites (Mites)",
-    medication: "Ivermectin",
-    dosage: "0.2mg/kg body weight",
-    frequency: "Single dose",
-    duration: "1 day",
-    response: "improved",
-    treatedBy: "Dr. Sarah Johnson",
-    startDate: "2024-01-12",
-    endDate: "2024-01-13",
-    status: "completed",
-    notes: "Complete elimination of mites observed within 48 hours",
-    symptoms: "Excessive scratching, feather loss, restlessness"
-  },
-  {
-    id: "4",
-    flockId: "Flock A-001",
-    disease: "nutritional",
-    diseaseName: "Vitamin D Deficiency",
-    medication: "Vitamin D3 Supplement",
-    dosage: "2000 IU per bird",
-    frequency: "Daily",
-    duration: "14 days",
-    response: "improved",
-    treatedBy: "Dr. Mike Chen",
-    startDate: "2024-01-10",
-    endDate: "2024-01-24",
-    status: "completed",
-    notes: "Bone strength improved, no more leg weakness observed",
-    symptoms: "Leg weakness, soft bones, reduced egg production"
-  }
-];
+// Validation schema
+const treatmentSchema = z.object({
+  flockId: z.string().min(1, "Flock ID is required"),
+  disease: z.enum(["respiratory", "digestive", "parasitic", "nutritional", "other"], {
+    message: "Disease type is required",
+  }),
+  diseaseName: z.string().min(1, "Disease name is required"),
+  medication: z.string().min(1, "Medication is required"),
+  dosage: z.string().min(1, "Dosage is required"),
+  frequency: z.string().min(1, "Frequency is required"),
+  duration: z.string().min(1, "Duration is required"),
+  treatedBy: z.string().min(1, "Treated by is required"),
+  startDate: z.date({
+    message: "Start date is required",
+  }),
+  endDate: z.date().optional(),
+  notes: z.string().optional(),
+  symptoms: z.string().optional(),
+});
 
 export function DiseaseTreatment() {
-  const [treatments, setTreatments] = useState(mockTreatments);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [diseaseFilter, setDiseaseFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [treatments, setTreatments] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<any[]>([]);
+  const [veterinarians, setVeterinarians] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingTreatment, setEditingTreatment] = useState(null);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    flockId: "",
-    disease: "",
-    diseaseName: "",
-    medication: "",
-    dosage: "",
-    frequency: "",
-    duration: "",
-    treatedBy: "",
-    startDate: "",
-    endDate: "",
-    notes: "",
-    symptoms: ""
+  const [editingTreatment, setEditingTreatment] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'delete' | null;
+    treatment: any | null;
+  }>({
+    open: false,
+    type: null,
+    treatment: null,
   });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newTreatment = {
-      id: Date.now().toString(),
-      ...formData,
-      status: "in_progress",
-      response: "no_change"
-    };
-    
-    setTreatments(prev => [newTreatment, ...prev]);
-    setIsAddDialogOpen(false);
-    setFormData({
+  // Form setup
+  const form = useForm<z.infer<typeof treatmentSchema>>({
+    resolver: zodResolver(treatmentSchema),
+    defaultValues: {
       flockId: "",
-      disease: "",
+      disease: "respiratory",
       diseaseName: "",
       medication: "",
       dosage: "",
       frequency: "",
       duration: "",
       treatedBy: "",
-      startDate: "",
-      endDate: "",
+      startDate: new Date(),
+      endDate: undefined,
       notes: "",
-      symptoms: ""
-    });
+      symptoms: "",
+    },
+  });
+
+  // Load data on component mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [treatmentsRes, flocksRes, staffRes] = await Promise.all([
+        getTreatments(1, 100),
+        getFlocks(),
+        getStaff(),
+      ]);
+
+      if (treatmentsRes.success) {
+        setTreatments(treatmentsRes.data?.treatments || []);
+      }
+      if (flocksRes.success) {
+        setFlocks(flocksRes.data || []);
+      }
+      if (staffRes.success) {
+        setVeterinarians((staffRes.data || []).filter((staff: any) => 
+          staff.role === 'VETERINARIAN' || staff.role === 'ADMIN'
+        ));
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      toast.error("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (data: z.infer<typeof treatmentSchema>) => {
+    setActionLoading("create");
+    try {
+      const treatmentData = {
+        ...data,
+        startDate: data.startDate.toISOString(),
+        endDate: data.endDate?.toISOString(),
+      };
+
+      const result = await createTreatment(treatmentData);
+      
+      if (result.success) {
+        toast.success("Treatment created successfully");
+        await loadData();
+        setIsAddDialogOpen(false);
+        form.reset();
+      } else {
+        toast.error(result.error || "Failed to create treatment");
+      }
+    } catch (error) {
+      console.error("Error creating treatment:", error);
+      toast.error("Failed to create treatment");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleEdit = (treatment: any) => {
+    console.log("handleEdit called with treatment:", treatment);
     setEditingTreatment(treatment);
-    setFormData({
+    
+    const formData = {
       flockId: treatment.flockId,
       disease: treatment.disease,
       diseaseName: treatment.diseaseName,
@@ -182,64 +193,82 @@ export function DiseaseTreatment() {
       dosage: treatment.dosage,
       frequency: treatment.frequency,
       duration: treatment.duration,
-      treatedBy: treatment.treatedBy,
-      startDate: treatment.startDate,
-      endDate: treatment.endDate,
-      notes: treatment.notes,
-      symptoms: treatment.symptoms
-    });
+      treatedBy: treatment.treatedBy?.id || treatment.treatedById,
+      startDate: new Date(treatment.startDate),
+      endDate: treatment.endDate ? new Date(treatment.endDate) : undefined,
+      notes: treatment.notes || "",
+      symptoms: treatment.symptoms || "",
+    };
+    
+    console.log("Form data to reset:", formData);
+    form.reset(formData);
+    console.log("Setting dialog open to true, editingTreatment:", treatment);
     setIsAddDialogOpen(true);
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setTreatments(prev => 
-      prev.map(t => 
-        t.id === editingTreatment?.id 
-          ? { ...t, ...formData }
-          : t
-      )
-    );
-    setIsAddDialogOpen(false);
-    setEditingTreatment(null);
-    setFormData({
-      flockId: "",
-      disease: "",
-      diseaseName: "",
-      medication: "",
-      dosage: "",
-      frequency: "",
-      duration: "",
-      treatedBy: "",
-      startDate: "",
-      endDate: "",
-      notes: "",
-      symptoms: ""
+  const handleUpdate = async (data: z.infer<typeof treatmentSchema>) => {
+    if (!editingTreatment) return;
+    
+    setActionLoading("update");
+    try {
+      const treatmentData = {
+        ...data,
+        startDate: data.startDate.toISOString(),
+        endDate: data.endDate?.toISOString(),
+      };
+
+      const result = await updateTreatment(editingTreatment.id, treatmentData);
+      
+      if (result.success) {
+        toast.success("Treatment updated successfully");
+        await loadData();
+        setIsAddDialogOpen(false);
+        setEditingTreatment(null);
+        form.reset();
+      } else {
+        toast.error(result.error || "Failed to update treatment");
+      }
+    } catch (error) {
+      console.error("Error updating treatment:", error);
+      toast.error("Failed to update treatment");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = (treatment: any) => {
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      treatment,
     });
   };
 
-  const handleDelete = (id: string) => {
-    setTreatments(prev => prev.filter(t => t.id !== id));
+  const confirmDelete = async () => {
+    if (!confirmDialog.treatment) return;
+    
+    setActionLoading("delete");
+    try {
+      const result = await deleteTreatment(confirmDialog.treatment.id);
+      
+      if (result.success) {
+        toast.success("Treatment deleted successfully");
+        await loadData();
+      } else {
+        toast.error(result.error || "Failed to delete treatment");
+      }
+    } catch (error) {
+      console.error("Error deleting treatment:", error);
+      toast.error("Failed to delete treatment");
+    } finally {
+      setActionLoading(null);
+      setConfirmDialog({
+        open: false,
+        type: null,
+        treatment: null,
+      });
+    }
   };
-
-  const handleResponseUpdate = (id: string, response: string) => {
-    setTreatments(prev => 
-      prev.map(t => 
-        t.id === id 
-          ? { ...t, response, status: response === "improved" ? "completed" : t.status }
-          : t
-      )
-    );
-  };
-
-  const filteredTreatments = treatments.filter(treatment => {
-    const matchesSearch = treatment.diseaseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         treatment.medication.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         treatment.flockId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDisease = diseaseFilter === "all" || treatment.disease === diseaseFilter;
-    const matchesStatus = statusFilter === "all" || treatment.status === statusFilter;
-    return matchesSearch && matchesDisease && matchesStatus;
-  });
 
   const getDiseaseBadge = (disease: string) => {
     const colors = {
@@ -247,11 +276,20 @@ export function DiseaseTreatment() {
       digestive: "bg-green-100 text-green-800",
       parasitic: "bg-purple-100 text-purple-800",
       nutritional: "bg-yellow-100 text-yellow-800",
-      other: "bg-gray-100 text-gray-800"
+      other: "bg-gray-100 text-gray-800",
     };
+    
+    const labels = {
+      respiratory: "Respiratory",
+      digestive: "Digestive",
+      parasitic: "Parasitic",
+      nutritional: "Nutritional",
+      other: "Other",
+    };
+
     return (
-      <Badge className={colors[disease as keyof typeof colors] || colors.other}>
-        {disease.charAt(0).toUpperCase() + disease.slice(1)}
+      <Badge variant="outline" className={colors[disease as keyof typeof colors]}>
+        {labels[disease as keyof typeof labels]}
       </Badge>
     );
   };
@@ -263,22 +301,9 @@ export function DiseaseTreatment() {
       case "no_change":
         return <Badge variant="outline" className="border-yellow-200 text-yellow-800"><Clock className="w-3 h-3 mr-1" />No Change</Badge>;
       case "worsened":
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Worsened</Badge>;
+        return <Badge variant="destructive" className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />Worsened</Badge>;
       default:
         return <Badge variant="secondary">{response}</Badge>;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
-      case "in_progress":
-        return <Badge variant="outline" className="border-blue-200 text-blue-800"><Activity className="w-3 h-3 mr-1" />In Progress</Badge>;
-      case "scheduled":
-        return <Badge variant="outline" className="border-yellow-200 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Scheduled</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
@@ -293,227 +318,331 @@ export function DiseaseTreatment() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+            console.log("Dialog onOpenChange called with:", open, "editingTreatment:", editingTreatment);
+            setIsAddDialogOpen(open);
+            if (!open) {
+              setEditingTreatment(null);
+              form.reset();
+            }
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
                 Add Treatment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {editingTreatment ? "Edit Treatment Record" : "Add New Treatment Record"}
+                  {editingTreatment ? "Edit Treatment" : "Add New Treatment"}
                 </DialogTitle>
                 <DialogDescription>
-                  Record disease treatment details including medication and dosage information.
+                  {editingTreatment 
+                    ? "Update the treatment information below."
+                    : "Fill in the details below to add a new treatment record."
+                  }
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={editingTreatment ? handleUpdate : handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="flockId">Flock ID *</Label>
-                    <Select value={formData.flockId} onValueChange={(value) => handleInputChange("flockId", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select flock" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Flock A-001">Flock A-001</SelectItem>
-                        <SelectItem value="Flock B-002">Flock B-002</SelectItem>
-                        <SelectItem value="Flock C-003">Flock C-003</SelectItem>
-                        <SelectItem value="Flock D-004">Flock D-004</SelectItem>
-                      </SelectContent>
-                    </Select>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(editingTreatment ? handleUpdate : handleSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="flockId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Flock ID</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select flock" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {flocks.map((flock) => (
+                                <SelectItem key={flock.id} value={flock.id}>
+                                  {flock.batchCode}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="disease"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Disease Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select disease type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="respiratory">Respiratory</SelectItem>
+                              <SelectItem value="digestive">Digestive</SelectItem>
+                              <SelectItem value="parasitic">Parasitic</SelectItem>
+                              <SelectItem value="nutritional">Nutritional</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="disease">Disease Classification *</Label>
-                    <Select value={formData.disease} onValueChange={(value) => handleInputChange("disease", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select disease type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="respiratory">Respiratory</SelectItem>
-                        <SelectItem value="digestive">Digestive</SelectItem>
-                        <SelectItem value="parasitic">Parasitic</SelectItem>
-                        <SelectItem value="nutritional">Nutritional</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="diseaseName">Disease Name *</Label>
-                  <Input
-                    id="diseaseName"
-                    value={formData.diseaseName}
-                    onChange={(e) => handleInputChange("diseaseName", e.target.value)}
-                    placeholder="e.g., Infectious Bronchitis"
-                    required
+                  <FormField
+                    control={form.control}
+                    name="diseaseName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Disease Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Infectious Bronchitis" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="symptoms">Symptoms Observed *</Label>
-                  <Textarea
-                    id="symptoms"
-                    value={formData.symptoms}
-                    onChange={(e) => handleInputChange("symptoms", e.target.value)}
-                    placeholder="Describe the symptoms observed..."
-                    rows={2}
-                    required
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="medication"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Medication</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Amoxicillin" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="dosage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dosage</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., 10mg/kg body weight" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="frequency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Frequency</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Twice daily" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="duration"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Duration</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., 5 days" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="treatedBy"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Treated By</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select veterinarian" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {veterinarians.map((vet) => (
+                                <SelectItem key={vet.id} value={vet.id}>
+                                  {vet.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Start Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Date (Optional)</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="medication">Medication *</Label>
-                    <Input
-                      id="medication"
-                      value={formData.medication}
-                      onChange={(e) => handleInputChange("medication", e.target.value)}
-                      placeholder="e.g., Amoxicillin"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dosage">Dosage *</Label>
-                    <Input
-                      id="dosage"
-                      value={formData.dosage}
-                      onChange={(e) => handleInputChange("dosage", e.target.value)}
-                      placeholder="e.g., 10mg/kg body weight"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="frequency">Frequency *</Label>
-                    <Select value={formData.frequency} onValueChange={(value) => handleInputChange("frequency", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Once daily">Once daily</SelectItem>
-                        <SelectItem value="Twice daily">Twice daily</SelectItem>
-                        <SelectItem value="Three times daily">Three times daily</SelectItem>
-                        <SelectItem value="Every 6 hours">Every 6 hours</SelectItem>
-                        <SelectItem value="Every 8 hours">Every 8 hours</SelectItem>
-                        <SelectItem value="Single dose">Single dose</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Duration *</Label>
-                    <Input
-                      id="duration"
-                      value={formData.duration}
-                      onChange={(e) => handleInputChange("duration", e.target.value)}
-                      placeholder="e.g., 5 days"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="treatedBy">Treated By *</Label>
-                    <Input
-                      id="treatedBy"
-                      value={formData.treatedBy}
-                      onChange={(e) => handleInputChange("treatedBy", e.target.value)}
-                      placeholder="e.g., Dr. Sarah Johnson"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date *</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => handleInputChange("startDate", e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleInputChange("endDate", e.target.value)}
+                  <FormField
+                    control={form.control}
+                    name="symptoms"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Symptoms</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Describe the symptoms observed..."
+                            className="resize-none"
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Treatment Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder="Additional notes about the treatment..."
-                    rows={3}
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Additional notes about the treatment..."
+                            className="resize-none"
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingTreatment ? "Update Treatment" : "Add Treatment"}
-                  </Button>
-                </DialogFooter>
-              </form>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => {
+                      setIsAddDialogOpen(false);
+                      setEditingTreatment(null);
+                      form.reset();
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={actionLoading === "create" || actionLoading === "update"}
+                    >
+                      {actionLoading === "create" || actionLoading === "update" ? (
+                        "Saving..."
+                      ) : editingTreatment ? (
+                        "Update Treatment"
+                      ) : (
+                        "Add Treatment"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search treatments..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={diseaseFilter} onValueChange={setDiseaseFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by disease" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Diseases</SelectItem>
-            <SelectItem value="respiratory">Respiratory</SelectItem>
-            <SelectItem value="digestive">Digestive</SelectItem>
-            <SelectItem value="parasitic">Parasitic</SelectItem>
-            <SelectItem value="nutritional">Nutritional</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="scheduled">Scheduled</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Treatment Records Table */}
@@ -521,16 +650,40 @@ export function DiseaseTreatment() {
         <CardHeader>
           <CardTitle>Treatment Records</CardTitle>
           <CardDescription>
-            {filteredTreatments.length} treatment records found
+            {treatments.length} treatment records found
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={treatmentColumns(handleEdit, handleDelete, getDiseaseBadge, getResponseBadge, getStatusBadge, handleResponseUpdate)}
-            data={filteredTreatments}
-          />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+              </div>
+            </div>
+          ) : (
+            <TreatmentTable
+              columns={treatmentColumns(handleEdit, handleDelete, getDiseaseBadge, getResponseBadge)}
+              data={treatments}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
         </CardContent>
       </Card>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        handleConfirm={confirmDelete}
+        title="Delete Treatment"
+        desc="Are you sure you want to delete this treatment record? This action cannot be undone."
+        confirmText="Delete"
+        cancelBtnText="Cancel"
+        isLoading={actionLoading === "delete"}
+        destructive
+      />
     </div>
   );
 }

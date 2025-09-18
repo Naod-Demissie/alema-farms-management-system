@@ -112,7 +112,6 @@ export default function HomePage() {
       actions: [
         { id: "record-vaccination", title: "Record Vaccination", description: "Log vaccination details", icon: Heart, color: "bg-red-500", href: "/health" },
         { id: "add-treatment", title: "Add Treatment", description: "Record medical treatments", icon: Activity, color: "bg-red-600", href: "/health" },
-        { id: "health-monitoring", title: "Health Monitoring", description: "Monitor flock health status", icon: Settings, color: "bg-red-700", href: "/health?tab=monitoring" },
         { id: "mortality-record", title: "Mortality Record", description: "Record bird deaths", icon: AlertTriangle, color: "bg-red-800", href: "/health?tab=mortality" },
       ]
     },
