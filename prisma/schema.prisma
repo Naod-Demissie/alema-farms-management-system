@@ -389,10 +389,8 @@ model FeedSupplier {
   id          String    @id @default(uuid())
   name        String
   contactName String?
-  email       String?
   phone       String?
   address     String?
-  website     String?
   notes       String?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())

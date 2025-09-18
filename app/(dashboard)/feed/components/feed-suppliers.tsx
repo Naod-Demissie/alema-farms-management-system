@@ -1,115 +1,137 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Mail, Phone, Globe, MapPin, Building2 } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
+import { Plus, Building2, CheckCircle, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
-// Mock data for demonstration
-const mockSuppliers = [
-  {
-    id: "1",
-    name: "AgriFeed Co.",
-    contactName: "John Smith",
-    email: "john@agrifeed.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Farm Road, Agriculture City, AC 12345",
-    website: "https://agrifeed.com",
-    notes: "Primary feed supplier, reliable delivery",
-    isActive: true,
-    createdAt: new Date("2024-01-01"),
-  },
-  {
-    id: "2",
-    name: "Farm Supplies Ltd",
-    contactName: "Sarah Johnson",
-    email: "sarah@farmsupplies.com",
-    phone: "+1 (555) 987-6543",
-    address: "456 Rural Street, Farm Town, FT 67890",
-    website: "https://farmsupplies.com",
-    notes: "Good prices, bulk discounts available",
-    isActive: true,
-    createdAt: new Date("2024-01-15"),
-  },
-  {
-    id: "3",
-    name: "Poultry Nutrition Inc",
-    contactName: "Mike Wilson",
-    email: "mike@poultrynutrition.com",
-    phone: "+1 (555) 456-7890",
-    address: "789 Poultry Lane, Chicken City, CC 54321",
-    website: "https://poultrynutrition.com",
-    notes: "Specialized poultry feeds, premium quality",
-    isActive: false,
-    createdAt: new Date("2024-02-01"),
-  },
-];
+import { SupplierTable } from "./supplier-table";
+import { supplierColumns } from "./supplier-columns";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { 
+  getFeedSuppliersAction, 
+  createFeedSupplierAction, 
+  updateFeedSupplierAction, 
+  deleteFeedSupplierAction 
+} from "@/app/actions/feed-suppliers";
 
 const supplierSchema = z.object({
   name: z.string().min(1, "Supplier name is required"),
   contactName: z.string().optional(),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
-  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
   notes: z.string().optional(),
 });
 
 type SupplierFormData = z.infer<typeof supplierSchema>;
 
 export function FeedSuppliers() {
-  const [suppliers, setSuppliers] = useState(mockSuppliers);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [viewingSupplier, setViewingSupplier] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'delete' | null;
+    supplier: any | null;
+  }>({
+    open: false,
+    type: null,
+    supplier: null,
+  });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const form = useForm<SupplierFormData>({
     resolver: zodResolver(supplierSchema),
     defaultValues: {
       name: "",
       contactName: "",
-      email: "",
       phone: "",
       address: "",
-      website: "",
       notes: "",
     },
   });
 
-  const onSubmit = (data: SupplierFormData) => {
-    if (editingSupplier) {
-      // Update existing supplier
-      setSuppliers(prev => 
-        prev.map(supplier => 
-          supplier.id === editingSupplier.id 
-            ? { ...supplier, ...data, id: editingSupplier.id }
-            : supplier
-        )
-      );
-    } else {
-      // Add new supplier
-      const newSupplier = {
-        ...data,
-        id: Date.now().toString(),
-        isActive: true,
-        createdAt: new Date(),
-      };
-      setSuppliers(prev => [...prev, newSupplier]);
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoading(true);
+      const result = await getFeedSuppliersAction();
+      if (result && result.success) {
+        setSuppliers(result.data || []);
+      } else {
+        console.error("Failed to fetch suppliers:", result?.error || "Unknown error");
+        setSuppliers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching suppliers:", error);
+      setSuppliers([]);
+    } finally {
+      setLoading(false);
     }
-    
-    setIsAddDialogOpen(false);
-    setEditingSupplier(null);
-    form.reset();
+  };
+
+  const onSubmit = async (data: SupplierFormData) => {
+    try {
+      setLoading(true);
+      let result;
+      
+      if (editingSupplier) {
+        // Update existing supplier
+        result = await updateFeedSupplierAction(editingSupplier.id, data);
+        if (result.success) {
+          toast.success("Supplier updated successfully!");
+        } else {
+          toast.error("Failed to update supplier", {
+            description: result.error || "An unexpected error occurred",
+          });
+          return;
+        }
+      } else {
+        // Add new supplier
+        result = await createFeedSupplierAction(data);
+        if (result.success) {
+          toast.success("Supplier created successfully!");
+        } else {
+          toast.error("Failed to create supplier", {
+            description: result.error || "An unexpected error occurred",
+          });
+          return;
+        }
+      }
+      
+      await fetchSuppliers();
+      setIsAddDialogOpen(false);
+      setEditingSupplier(null);
+      form.reset();
+    } catch (error) {
+      console.error("Error saving supplier:", error);
+      toast.error("Failed to save supplier", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleView = (supplier: any) => {
+    setViewingSupplier(supplier);
+    setIsViewDialogOpen(true);
   };
 
   const handleEdit = (supplier: any) => {
@@ -117,158 +139,77 @@ export function FeedSuppliers() {
     form.reset({
       name: supplier.name,
       contactName: supplier.contactName,
-      email: supplier.email,
       phone: supplier.phone,
       address: supplier.address,
-      website: supplier.website,
       notes: supplier.notes,
     });
     setIsAddDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setSuppliers(prev => prev.filter(supplier => supplier.id !== id));
+  const handleDeleteClick = (supplier: any) => {
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      supplier: supplier,
+    });
   };
 
-  const handleToggleActive = (id: string) => {
-    setSuppliers(prev => 
-      prev.map(supplier => 
-        supplier.id === id 
-          ? { ...supplier, isActive: !supplier.isActive }
-          : supplier
-      )
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.type) return;
+
+    if (confirmDialog.type === 'delete' && confirmDialog.supplier) {
+      await executeDeleteSupplier(confirmDialog.supplier);
+    }
+
+    setConfirmDialog({
+      open: false,
+      type: null,
+      supplier: null,
+    });
+  };
+
+  const executeDeleteSupplier = async (supplier: any) => {
+    setActionLoading(supplier.id);
+    try {
+      const result = await deleteFeedSupplierAction(supplier.id);
+      
+      if (result.success) {
+        toast.success("Supplier deleted successfully!", {
+          description: `Supplier ${supplier.name} has been removed`,
+        });
+        await fetchSuppliers();
+      } else {
+        toast.error("Failed to delete supplier", {
+          description: result.error || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting supplier:", error);
+      toast.error("Failed to delete supplier", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive ? (
+      <Badge variant="default" className="bg-green-100 text-green-800">
+        <CheckCircle className="w-3 h-3 mr-1" />
+        Active
+      </Badge>
+    ) : (
+      <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+        <XCircle className="w-3 h-3 mr-1" />
+        Inactive
+      </Badge>
     );
   };
-
-  const filteredSuppliers = suppliers.filter(supplier => 
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const activeSuppliers = suppliers.filter(supplier => supplier.isActive);
   const inactiveSuppliers = suppliers.filter(supplier => !supplier.isActive);
 
-  const columns = [
-    {
-      accessorKey: "name",
-      header: "Supplier Name",
-      cell: ({ row }: any) => (
-        <div className="flex items-center space-x-2">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{row.getValue("name")}</span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "contactName",
-      header: "Contact Person",
-      cell: ({ row }: any) => (
-        <span>{row.getValue("contactName") || "N/A"}</span>
-      ),
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ row }: any) => {
-        const email = row.getValue("email");
-        return email ? (
-          <div className="flex items-center space-x-1">
-            <Mail className="h-3 w-3 text-muted-foreground" />
-            <a 
-              href={`mailto:${email}`}
-              className="text-blue-600 hover:underline text-sm"
-            >
-              {email}
-            </a>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">N/A</span>
-        );
-      },
-    },
-    {
-      accessorKey: "phone",
-      header: "Phone",
-      cell: ({ row }: any) => {
-        const phone = row.getValue("phone");
-        return phone ? (
-          <div className="flex items-center space-x-1">
-            <Phone className="h-3 w-3 text-muted-foreground" />
-            <a 
-              href={`tel:${phone}`}
-              className="text-blue-600 hover:underline text-sm"
-            >
-              {phone}
-            </a>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">N/A</span>
-        );
-      },
-    },
-    {
-      accessorKey: "website",
-      header: "Website",
-      cell: ({ row }: any) => {
-        const website = row.getValue("website");
-        return website ? (
-          <div className="flex items-center space-x-1">
-            <Globe className="h-3 w-3 text-muted-foreground" />
-            <a 
-              href={website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline text-sm"
-            >
-              Visit Site
-            </a>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">N/A</span>
-        );
-      },
-    },
-    {
-      accessorKey: "isActive",
-      header: "Status",
-      cell: ({ row }: any) => (
-        <Badge variant={row.getValue("isActive") ? "default" : "secondary"}>
-          {row.getValue("isActive") ? "Active" : "Inactive"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }: any) => (
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleEdit(row.original)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleToggleActive(row.original.id)}
-          >
-            {row.original.isActive ? "Deactivate" : "Activate"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDelete(row.original.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -305,7 +246,7 @@ export function FeedSuppliers() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {suppliers.filter(s => s.email || s.phone).length}
+              {suppliers.filter(s => s.phone).length}
             </div>
           </CardContent>
         </Card>
@@ -374,38 +315,19 @@ export function FeedSuppliers() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="supplier@example.com" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input placeholder="+1 (555) 123-4567" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+1 (555) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}
@@ -424,22 +346,6 @@ export function FeedSuppliers() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="website"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Website</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="https://supplier-website.com" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
                     <FormField
                       control={form.control}
@@ -462,8 +368,8 @@ export function FeedSuppliers() {
                       <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button type="submit">
-                        {editingSupplier ? "Update" : "Add"} Supplier
+                      <Button type="submit" disabled={loading}>
+                        {loading ? "Saving..." : editingSupplier ? "Update" : "Add"} Supplier
                       </Button>
                     </DialogFooter>
                   </form>
@@ -473,21 +379,112 @@ export function FeedSuppliers() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search suppliers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading suppliers...</p>
+              </div>
             </div>
-          </div>
-          
-          <DataTable columns={columns} data={filteredSuppliers} />
+          ) : (
+            <SupplierTable
+              columns={supplierColumns(handleView, handleEdit, handleDeleteClick, getStatusBadge)}
+              data={suppliers}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+            />
+          )}
         </CardContent>
       </Card>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Supplier Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the supplier
+            </DialogDescription>
+          </DialogHeader>
+          {viewingSupplier && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Supplier Name</Label>
+                  <p className="text-sm font-medium">{viewingSupplier.name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Contact Person</Label>
+                  <p className="text-sm font-medium">{viewingSupplier.contactName || "N/A"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                  <p className="text-sm font-medium">{viewingSupplier.phone || "N/A"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                  <div className="mt-1">{getStatusBadge(viewingSupplier.isActive)}</div>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Address</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingSupplier.address || "N/A"}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Notes</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingSupplier.notes || "N/A"}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Created At</Label>
+                  <p className="text-sm font-medium">{new Date(viewingSupplier.createdAt).toLocaleString()}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Updated At</Label>
+                  <p className="text-sm font-medium">{new Date(viewingSupplier.updatedAt).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setIsViewDialogOpen(false);
+              handleEdit(viewingSupplier);
+            }}>
+              Edit Supplier
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={
+          confirmDialog.type === 'delete'
+            ? 'Delete Supplier'
+            : 'Confirm Action'
+        }
+        desc={
+          confirmDialog.type === 'delete'
+            ? `Are you sure you want to delete the supplier "${confirmDialog.supplier?.name}"? This action cannot be undone and the supplier will be permanently removed.`
+            : 'Are you sure you want to proceed?'
+        }
+        confirmText={
+          confirmDialog.type === 'delete'
+            ? 'Delete Supplier'
+            : 'Continue'
+        }
+        cancelBtnText="Cancel"
+        destructive={confirmDialog.type === 'delete'}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.supplier?.id}
+      />
     </div>
   );
 }

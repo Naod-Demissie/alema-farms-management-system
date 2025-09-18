@@ -238,10 +238,8 @@ export async function getFeedSuppliers() {
 export async function createFeedSupplier(data: {
   name: string;
   contactName?: string;
-  email?: string;
   phone?: string;
   address?: string;
-  website?: string;
   notes?: string;
 }) {
   try {
@@ -261,10 +259,8 @@ export async function createFeedSupplier(data: {
 export async function updateFeedSupplier(id: string, data: {
   name?: string;
   contactName?: string;
-  email?: string;
   phone?: string;
   address?: string;
-  website?: string;
   notes?: string;
   isActive?: boolean;
 }) {
