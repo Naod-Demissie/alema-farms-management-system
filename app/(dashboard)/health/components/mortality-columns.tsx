@@ -9,16 +9,12 @@ import {
   Trash2, 
   Eye,
   Calendar,
-  Skull,
-  FileText,
   CheckCircle,
   AlertCircle,
   Clock,
   AlertTriangle,
   Activity,
-  XCircle,
-  MapPin,
-  User
+  XCircle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,39 +27,44 @@ import {
 
 export const mortalityColumns = (
   onEdit: (record: any) => void,
-  onDelete: (id: string) => void,
-  getCauseBadge: (cause: string) => React.ReactNode,
-  getDisposalBadge: (method: string) => React.ReactNode,
-  getStatusBadge: (status: string) => React.ReactNode
+  onDelete: (record: any) => void,
+  getCauseBadge: (cause: string) => React.ReactNode
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flockId",
-    header: "Flock",
+    header: "Flock ID",
     cell: ({ row }) => {
       const record = row.original;
       return (
         <Badge variant="outline" className="font-mono">
-          {record.flockId}
+          {record.flock?.batchCode || record.flockId}
         </Badge>
       );
     },
   },
   {
     accessorKey: "date",
-    header: "Date",
+    header: "Recorded Date",
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <div className="font-medium">
-              {new Date(record.date).toLocaleDateString()}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              by {record.recordedBy}
-            </div>
+          <div className="font-medium">
+            {new Date(record.date).toLocaleDateString()}
           </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "recordedBy",
+    header: "Recorded By",
+    cell: ({ row }) => {
+      const record = row.original;
+      return (
+        <div className="text-sm">
+          <div className="font-medium">{record.recordedBy?.name || record.recordedBy || "Unknown"}</div>
         </div>
       );
     },
@@ -74,12 +75,8 @@ export const mortalityColumns = (
     cell: ({ row }) => {
       const record = row.original;
       return (
-        <div className="flex items-center space-x-2">
-          <Skull className="h-4 w-4 text-muted-foreground" />
-          <div className="text-center">
-            <div className="font-medium text-red-600">{record.count}</div>
-            <div className="text-xs text-muted-foreground">birds</div>
-          </div>
+        <div className="text-center">
+          <div className="font-medium text-red-600">{record.count}</div>
         </div>
       );
     },
@@ -89,10 +86,17 @@ export const mortalityColumns = (
     header: "Cause",
     cell: ({ row }) => {
       const record = row.original;
+      return getCauseBadge(record.cause);
+    },
+  },
+  {
+    accessorKey: "causeDescription",
+    header: "Cause Description",
+    cell: ({ row }) => {
+      const record = row.original;
       return (
-        <div>
-          {getCauseBadge(record.cause)}
-          <div className="text-xs text-muted-foreground mt-1 truncate max-w-32">
+        <div className="text-sm">
+          <div className="truncate max-w-48">
             {record.causeDescription}
           </div>
         </div>
@@ -101,85 +105,56 @@ export const mortalityColumns = (
   },
   {
     accessorKey: "age",
-    header: "Age & Weight",
+    header: "Age at Death",
     cell: ({ row }) => {
       const record = row.original;
+      
+      // Calculate age from flock arrival date, age at arrival, and death date
+      const calculateAge = () => {
+        // Debug logging
+        console.log('Mortality record data:', {
+          flock: record.flock,
+          date: record.date,
+          arrivalDate: record.flock?.arrivalDate,
+          ageInDays: record.flock?.ageInDays
+        });
+        
+        if (!record.flock?.arrivalDate || !record.date) {
+          console.log('Missing data - arrivalDate:', record.flock?.arrivalDate, 'date:', record.date);
+          return "N/A";
+        }
+        
+        const arrivalDate = new Date(record.flock.arrivalDate);
+        const deathDate = new Date(record.date);
+        const ageAtArrival = record.flock.ageInDays || 0;
+        
+        // Calculate days since arrival
+        const daysSinceArrival = Math.floor((deathDate.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Total age = age at arrival + days since arrival
+        const totalAgeInDays = ageAtArrival + daysSinceArrival;
+        
+        const weeks = Math.floor(totalAgeInDays / 7);
+        const days = totalAgeInDays % 7;
+        
+        return (
+          <div>
+            {weeks > 0 && `${weeks}w`}
+            {weeks > 0 && days > 0 && ' '}
+            {days > 0 && `${days}d`}
+            {totalAgeInDays === 0 && '0d'}
+            <span className="text-muted-foreground text-sm">
+              ({totalAgeInDays}d)
+            </span>
+          </div>
+        );
+      };
+      
       return (
         <div className="text-sm">
-          <div className="font-medium">{record.age} days</div>
-          <div className="text-muted-foreground">{record.weight} kg</div>
+          <div className="font-medium">{calculateAge()}</div>
         </div>
       );
-    },
-  },
-  {
-    accessorKey: "location",
-    header: "Location",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="flex items-center space-x-1">
-          <MapPin className="h-3 w-3 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground truncate max-w-24">
-            {record.location}
-          </span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "symptoms",
-    header: "Symptoms",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="max-w-xs">
-          {record.symptoms ? (
-            <div className="text-sm text-muted-foreground truncate">
-              {record.symptoms}
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">No symptoms</span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "disposalMethod",
-    header: "Disposal",
-    cell: ({ row }) => {
-      const record = row.original;
-      return getDisposalBadge(record.disposalMethod);
-    },
-  },
-  {
-    accessorKey: "postMortem",
-    header: "Post-Mortem",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="max-w-xs">
-          {record.postMortem ? (
-            <div className="flex items-center space-x-1">
-              <FileText className="h-3 w-3 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground truncate">
-                {record.postMortem}
-              </span>
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">No findings</span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const record = row.original;
-      return getStatusBadge(record.status);
     },
   },
   {
@@ -208,7 +183,7 @@ export const mortalityColumns = (
               Edit Record
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => onDelete(record.id)}
+              onClick={() => onDelete(record)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />

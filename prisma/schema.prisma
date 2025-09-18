@@ -247,12 +247,6 @@ enum DeathCause {
   unknown
 }
 
-enum DisposalMethod {
-  burial
-  incineration
-  composting
-  other
-}
 
 enum FeedType {
   starter
@@ -374,16 +368,15 @@ model HealthMonitoring {
 }
 
 model Mortality {
-  id             String         @id @default(uuid())
-  flockId        String
-  date           DateTime
-  count          Int
-  cause          DeathCause?
-  disposalMethod DisposalMethod?
-  postMortem     String?
-  recordedById   String?        // Staff who recorded the mortality
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id               String         @id @default(uuid())
+  flockId          String
+  date             DateTime
+  count            Int
+  cause            DeathCause?
+  causeDescription String?
+  recordedById     String?        // Staff who recorded the mortality
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   flock      Flocks @relation(fields: [flockId], references: [id], onDelete: Cascade)
   recordedBy Staff? @relation("RecordedByStaff", fields: [recordedById], references: [id])

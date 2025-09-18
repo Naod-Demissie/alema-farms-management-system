@@ -53,13 +53,7 @@ const MortalitySchema = z.object({
   count: z.number().min(1, "Count must be at least 1"),
   cause: z.enum(["disease", "injury", "environmental", "unknown"]),
   causeDescription: z.string().min(1, "Cause description is required"),
-  disposalMethod: z.enum(["incineration", "burial", "rendering", "composting"]),
-  postMortem: z.string().optional(),
   recordedBy: z.string().min(1, "Recorded by is required"),
-  age: z.number().optional(),
-  weight: z.number().optional(),
-  location: z.string().optional(),
-  symptoms: z.string().optional(),
 });
 
 // Vaccination Management
@@ -663,7 +657,6 @@ export async function getMortalityRecords(
     if (search) {
       where.OR = [
         { causeDescription: { contains: search, mode: "insensitive" } },
-        { recordedBy: { contains: search, mode: "insensitive" } },
         { flockId: { contains: search, mode: "insensitive" } },
       ];
     }
@@ -682,6 +675,22 @@ export async function getMortalityRecords(
         skip,
         take: limit,
         orderBy: { date: "desc" },
+        include: {
+          flock: {
+            select: {
+              id: true,
+              batchCode: true,
+              arrivalDate: true,
+              ageInDays: true,
+            }
+          },
+          recordedBy: {
+            select: {
+              id: true,
+              name: true,
+            }
+          }
+        }
       }),
       prisma.mortality.count({ where }),
     ]);
@@ -719,17 +728,49 @@ export async function createMortalityRecord(data: any): Promise<ApiResponse<any>
 
     const validatedData = MortalitySchema.parse(data);
     
-    const record = await prisma.mortality.create({
-      data: {
-        ...validatedData,
-        date: new Date(validatedData.date),
-        status: "completed",
-      },
+    // Use transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Get current flock data
+      const flock = await tx.flocks.findUnique({
+        where: { id: validatedData.flockId },
+        select: { currentCount: true, initialCount: true }
+      });
+
+      if (!flock) {
+        throw new Error("Flock not found");
+      }
+
+      // Check if we have enough birds to remove
+      if (flock.currentCount < validatedData.count) {
+        throw new Error(`Cannot remove ${validatedData.count} birds. Only ${flock.currentCount} birds available.`);
+      }
+
+      // Create mortality record
+      const record = await tx.mortality.create({
+        data: {
+          flockId: validatedData.flockId,
+          date: new Date(validatedData.date),
+          count: validatedData.count,
+          cause: validatedData.cause,
+          causeDescription: validatedData.causeDescription,
+          recordedById: validatedData.recordedBy,
+        },
+      });
+
+      // Update flock current count
+      const updatedFlock = await tx.flocks.update({
+        where: { id: validatedData.flockId },
+        data: {
+          currentCount: flock.currentCount - validatedData.count,
+        },
+      });
+
+      return { record, updatedFlock };
     });
 
     return {
       success: true,
-      data: record,
+      data: result.record,
     };
   } catch (error) {
     console.error("Error creating mortality record:", error);
@@ -742,7 +783,7 @@ export async function createMortalityRecord(data: any): Promise<ApiResponse<any>
     }
     return {
       success: false,
-      error: "Failed to create mortality record",
+      error: error instanceof Error ? error.message : "Failed to create mortality record",
     };
   }
 }
@@ -759,17 +800,67 @@ export async function updateMortalityRecord(id: string, data: any): Promise<ApiR
 
     const validatedData = MortalitySchema.partial().parse(data);
     
-    const record = await prisma.mortality.update({
-      where: { id },
-      data: {
-        ...validatedData,
-        date: validatedData.date ? new Date(validatedData.date) : undefined,
-      },
+    // Use transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Get current mortality record
+      const currentRecord = await tx.mortality.findUnique({
+        where: { id },
+        select: { count: true, flockId: true }
+      });
+
+      if (!currentRecord) {
+        throw new Error("Mortality record not found");
+      }
+
+      // Get current flock data
+      const flock = await tx.flocks.findUnique({
+        where: { id: currentRecord.flockId },
+        select: { currentCount: true, initialCount: true }
+      });
+
+      if (!flock) {
+        throw new Error("Flock not found");
+      }
+
+      // Calculate count difference
+      const countDifference = (validatedData.count || currentRecord.count) - currentRecord.count;
+      const newFlockCount = flock.currentCount - countDifference;
+
+      // Check if we have enough birds
+      if (newFlockCount < 0) {
+        throw new Error(`Cannot update. Would result in negative flock count.`);
+      }
+
+      // Update mortality record
+      const updateData: any = {};
+      if (validatedData.flockId) updateData.flockId = validatedData.flockId;
+      if (validatedData.date) updateData.date = new Date(validatedData.date);
+      if (validatedData.count) updateData.count = validatedData.count;
+      if (validatedData.cause) updateData.cause = validatedData.cause;
+      if (validatedData.causeDescription) updateData.causeDescription = validatedData.causeDescription;
+      if (validatedData.recordedBy) updateData.recordedById = validatedData.recordedBy;
+
+      const record = await tx.mortality.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // Update flock current count if count changed
+      if (countDifference !== 0) {
+        await tx.flocks.update({
+          where: { id: currentRecord.flockId },
+          data: {
+            currentCount: newFlockCount,
+          },
+        });
+      }
+
+      return record;
     });
 
     return {
       success: true,
-      data: record,
+      data: result,
     };
   } catch (error) {
     console.error("Error updating mortality record:", error);
@@ -782,7 +873,7 @@ export async function updateMortalityRecord(id: string, data: any): Promise<ApiR
     }
     return {
       success: false,
-      error: "Failed to update mortality record",
+      error: error instanceof Error ? error.message : "Failed to update mortality record",
     };
   }
 }
@@ -797,19 +888,61 @@ export async function deleteMortalityRecord(id: string): Promise<ApiResponse<any
       };
     }
 
-    await prisma.mortality.delete({
-      where: { id },
+    // Use transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Get mortality record data before deletion
+      const mortalityRecord = await tx.mortality.findUnique({
+        where: { id },
+        select: { count: true, flockId: true }
+      });
+
+      if (!mortalityRecord) {
+        throw new Error("Mortality record not found");
+      }
+
+      // Get current flock data
+      const flock = await tx.flocks.findUnique({
+        where: { id: mortalityRecord.flockId },
+        select: { currentCount: true, initialCount: true }
+      });
+
+      if (!flock) {
+        throw new Error("Flock not found");
+      }
+
+      // Calculate new flock count (restore the birds)
+      const newFlockCount = flock.currentCount + mortalityRecord.count;
+
+      // Check if restoring would exceed initial count
+      if (newFlockCount > flock.initialCount) {
+        throw new Error(`Cannot delete. Would result in flock count exceeding initial count.`);
+      }
+
+      // Delete mortality record
+      await tx.mortality.delete({
+        where: { id },
+      });
+
+      // Restore flock current count
+      await tx.flocks.update({
+        where: { id: mortalityRecord.flockId },
+        data: {
+          currentCount: newFlockCount,
+        },
+      });
+
+      return { id, restoredCount: mortalityRecord.count };
     });
 
     return {
       success: true,
-      data: { id },
+      data: result,
     };
   } catch (error) {
     console.error("Error deleting mortality record:", error);
     return {
       success: false,
-      error: "Failed to delete mortality record",
+      error: error instanceof Error ? error.message : "Failed to delete mortality record",
     };
   }
 }

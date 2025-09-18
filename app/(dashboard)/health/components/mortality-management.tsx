@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,215 +28,261 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { 
-  Calendar, 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { 
   Plus, 
-  Search, 
-  Filter, 
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
-  Download,
   Edit,
   Trash2,
-  Skull,
   CalendarDays,
   FileText,
   AlertTriangle,
   Activity
 } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
+import { MortalityTable } from "./mortality-table";
 import { mortalityColumns } from "./mortality-columns";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { getFlocks } from "@/server/flocks";
+import { getStaff } from "@/server/staff";
+import { 
+  getMortalityRecords, 
+  createMortalityRecord, 
+  updateMortalityRecord, 
+  deleteMortalityRecord 
+} from "@/server/health";
 
-// Mock data - replace with actual API calls
-const mockMortalityRecords = [
-  {
-    id: "1",
-    flockId: "Flock A-001",
-    date: "2024-01-25",
-    count: 2,
-    cause: "disease",
-    causeDescription: "Respiratory infection - suspected IB",
-    disposalMethod: "incineration",
-    postMortem: "Lungs showed signs of inflammation and fluid accumulation. Trachea had mucus buildup.",
-    recordedBy: "Dr. Sarah Johnson",
-    age: 45,
-    weight: 1.8,
-    location: "House 1, Section A",
-    symptoms: "Difficulty breathing, nasal discharge, lethargy",
-    status: "completed"
-  },
-  {
-    id: "2",
-    flockId: "Flock B-002",
-    date: "2024-01-24",
-    count: 1,
-    cause: "injury",
-    causeDescription: "Broken leg from equipment accident",
-    disposalMethod: "burial",
-    postMortem: "Compound fracture of left leg, internal bleeding from bone fragments.",
-    recordedBy: "Dr. Mike Chen",
-    age: 32,
-    weight: 2.1,
-    location: "House 2, Section B",
-    symptoms: "Unable to stand, visible leg deformity",
-    status: "completed"
-  },
-  {
-    id: "3",
-    flockId: "Flock C-003",
-    date: "2024-01-23",
-    count: 3,
-    cause: "environmental",
-    causeDescription: "Heat stress during power outage",
-    disposalMethod: "incineration",
-    postMortem: "Signs of heat stress, dehydration, and organ failure.",
-    recordedBy: "Dr. Sarah Johnson",
-    age: 28,
-    weight: 1.9,
-    location: "House 3, Section C",
-    symptoms: "Panting, weakness, collapse",
-    status: "completed"
-  },
-  {
-    id: "4",
-    flockId: "Flock A-001",
-    date: "2024-01-22",
-    count: 1,
-    cause: "unknown",
-    causeDescription: "Sudden death, no obvious cause",
-    disposalMethod: "incineration",
-    postMortem: "No obvious external or internal signs of disease or injury. Sent for lab analysis.",
-    recordedBy: "Dr. Mike Chen",
-    age: 38,
-    weight: 2.0,
-    location: "House 1, Section A",
-    symptoms: "Found dead, no prior symptoms",
-    status: "pending_analysis"
-  }
-];
+// Validation schema
+const mortalitySchema = z.object({
+  flockId: z.string().min(1, "Flock ID is required"),
+  date: z.date({
+    message: "Date is required",
+  }),
+  count: z.number().min(1, "Count must be at least 1"),
+  cause: z.enum(["disease", "injury", "environmental", "unknown"]),
+  causeDescription: z.string().min(1, "Cause description is required"),
+  recordedBy: z.string().min(1, "Recorded by is required"),
+});
 
 export function MortalityManagement() {
-  const [mortalityRecords, setMortalityRecords] = useState(mockMortalityRecords);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [causeFilter, setCauseFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [mortalityRecords, setMortalityRecords] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'delete' | null;
+    record: any | null;
+  }>({
+    open: false,
+    type: null,
+    record: null,
+  });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    flockId: "",
-    date: "",
-    count: "",
-    cause: "",
-    causeDescription: "",
-    disposalMethod: "",
-    postMortem: "",
-    recordedBy: "",
-    age: "",
-    weight: "",
-    location: "",
-    symptoms: ""
+  // Form setup
+  const form = useForm<z.infer<typeof mortalitySchema>>({
+    resolver: zodResolver(mortalitySchema),
+    defaultValues: {
+      flockId: "",
+      date: new Date(),
+      count: 0,
+      cause: "disease",
+      causeDescription: "",
+      recordedBy: "",
+    },
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchMortalityRecords();
+    fetchFlocks();
+    fetchStaff();
+  }, []);
+
+  const fetchMortalityRecords = async () => {
+    try {
+      setLoading(true);
+      const result = await getMortalityRecords(1, 100);
+      if (result && result.success) {
+        setMortalityRecords(result.data.records || []);
+      } else {
+        console.error("Failed to fetch mortality records:", result?.message || "Unknown error");
+        setMortalityRecords([]);
+      }
+    } catch (error) {
+      console.error("Error fetching mortality records:", error);
+      setMortalityRecords([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newRecord = {
-      id: Date.now().toString(),
-      ...formData,
-      count: parseInt(formData.count),
-      age: parseInt(formData.age),
-      weight: parseFloat(formData.weight),
-      status: "completed"
-    };
-    
-    setMortalityRecords(prev => [newRecord, ...prev]);
-    setIsAddDialogOpen(false);
-    setFormData({
-      flockId: "",
-      date: "",
-      count: "",
-      cause: "",
-      causeDescription: "",
-      disposalMethod: "",
-      postMortem: "",
-      recordedBy: "",
-      age: "",
-      weight: "",
-      location: "",
-      symptoms: ""
-    });
+  const fetchFlocks = async () => {
+    try {
+      const result = await getFlocks({}, { page: 1, limit: 100 });
+      if (result && result.success && result.data) {
+        setFlocks(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching flocks:", error);
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      const result = await getStaff();
+      if (result && result.success && result.data) {
+        setStaff(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    }
+  };
+
+  const handleSubmit = async (data: z.infer<typeof mortalitySchema>) => {
+    try {
+      setLoading(true);
+      const result = await createMortalityRecord({
+        ...data,
+        date: data.date.toISOString(),
+      });
+      
+      if (result.success) {
+        toast.success("Mortality record created successfully!", {
+          description: `Record for ${data.count} deaths has been added`,
+        });
+        await fetchMortalityRecords();
+        setIsAddDialogOpen(false);
+        form.reset();
+      } else {
+        toast.error("Failed to create mortality record", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating mortality record:", error);
+      toast.error("Failed to create mortality record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (record: any) => {
     setEditingRecord(record);
-    setFormData({
+    form.reset({
       flockId: record.flockId,
-      date: record.date,
-      count: record.count.toString(),
+      date: new Date(record.date),
+      count: record.count,
       cause: record.cause,
       causeDescription: record.causeDescription,
-      disposalMethod: record.disposalMethod,
-      postMortem: record.postMortem,
-      recordedBy: record.recordedBy,
-      age: record.age.toString(),
-      weight: record.weight.toString(),
-      location: record.location,
-      symptoms: record.symptoms
+      recordedBy: record.recordedById || record.recordedBy,
     });
     setIsAddDialogOpen(true);
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setMortalityRecords(prev => 
-      prev.map(r => 
-        r.id === editingRecord?.id 
-          ? { 
-              ...r, 
-              ...formData,
-              count: parseInt(formData.count),
-              age: parseInt(formData.age),
-              weight: parseFloat(formData.weight)
-            }
-          : r
-      )
-    );
-    setIsAddDialogOpen(false);
-    setEditingRecord(null);
-    setFormData({
-      flockId: "",
-      date: "",
-      count: "",
-      cause: "",
-      causeDescription: "",
-      disposalMethod: "",
-      postMortem: "",
-      recordedBy: "",
-      age: "",
-      weight: "",
-      location: "",
-      symptoms: ""
+  const handleUpdate = async (data: z.infer<typeof mortalitySchema>) => {
+    if (!editingRecord) return;
+    
+    try {
+      setLoading(true);
+      const result = await updateMortalityRecord(editingRecord.id, {
+        ...data,
+        date: data.date.toISOString(),
+      });
+      
+      if (result.success) {
+        toast.success("Mortality record updated successfully!", {
+          description: `Record for ${data.count} deaths has been updated`,
+        });
+        await fetchMortalityRecords();
+        setIsAddDialogOpen(false);
+        setEditingRecord(null);
+        form.reset();
+      } else {
+        toast.error("Failed to update mortality record", {
+          description: result.message || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating mortality record:", error);
+      toast.error("Failed to update mortality record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (record: any) => {
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      record: record,
     });
   };
 
-  const handleDelete = (id: string) => {
-    setMortalityRecords(prev => prev.filter(r => r.id !== id));
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.type) return;
+
+    if (confirmDialog.type === 'delete' && confirmDialog.record) {
+      await executeDeleteRecord(confirmDialog.record);
+    }
+
+    setConfirmDialog({
+      open: false,
+      type: null,
+      record: null,
+    });
   };
 
-  const filteredRecords = mortalityRecords.filter(record => {
-    const matchesSearch = record.flockId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.causeDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.recordedBy.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCause = causeFilter === "all" || record.cause === causeFilter;
-    const matchesStatus = statusFilter === "all" || record.status === statusFilter;
-    return matchesSearch && matchesCause && matchesStatus;
-  });
+  const executeDeleteRecord = async (record: any) => {
+    setActionLoading(record.id);
+    try {
+      const result = await deleteMortalityRecord(record.id);
+      
+      if (result.success) {
+        toast.success("Mortality record deleted successfully!", {
+          description: `Record for ${record.count} deaths has been removed`,
+        });
+        await fetchMortalityRecords();
+      } else {
+        toast.error("Failed to delete mortality record", {
+          description: result.message || result.error || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting mortality record:", error);
+      toast.error("Failed to delete mortality record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
 
   const getCauseBadge = (cause: string) => {
     switch (cause) {
@@ -265,18 +314,6 @@ export function MortalityManagement() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
-      case "pending_analysis":
-        return <Badge variant="outline" className="border-yellow-200 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending Analysis</Badge>;
-      case "under_investigation":
-        return <Badge variant="outline" className="border-blue-200 text-blue-800"><AlertCircle className="w-3 h-3 mr-1" />Under Investigation</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
 
   // Calculate mortality statistics
   const totalMortality = mortalityRecords.reduce((sum, record) => sum + record.count, 0);
@@ -298,10 +335,6 @@ export function MortalityManagement() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -309,173 +342,198 @@ export function MortalityManagement() {
                 Add Record
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh]">
               <DialogHeader>
                 <DialogTitle>
                   {editingRecord ? "Edit Mortality Record" : "Add New Mortality Record"}
                 </DialogTitle>
                 <DialogDescription>
-                  Record mortality details including cause, disposal method, and post-mortem findings.
+                  Record mortality details including cause and description.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={editingRecord ? handleUpdate : handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="flockId">Flock ID *</Label>
-                    <Select value={formData.flockId} onValueChange={(value) => handleInputChange("flockId", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select flock" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Flock A-001">Flock A-001</SelectItem>
-                        <SelectItem value="Flock B-002">Flock B-002</SelectItem>
-                        <SelectItem value="Flock C-003">Flock C-003</SelectItem>
-                        <SelectItem value="Flock D-004">Flock D-004</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Date *</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => handleInputChange("date", e.target.value)}
-                      required
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(editingRecord ? handleUpdate : handleSubmit)} className="space-y-4">
+                  {/* Row 1: Flock ID, Date, and Number of Deaths */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <FormField
+                      control={form.control}
+                      name="flockId"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className="flex items-center gap-1">
+                            Flock ID <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select flock" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {flocks.map((flock: any) => (
+                                <SelectItem key={flock.id} value={flock.id}>
+                                  {flock.batchCode}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className="flex items-center gap-1">
+                            Date <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal h-10",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                                }
+                                captionLayout="dropdown"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="count"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className="flex items-center gap-1 whitespace-nowrap">
+                            Number of Deaths <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="1"
+                              className="h-10"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="count">Number of Deaths *</Label>
-                    <Input
-                      id="count"
-                      type="number"
-                      value={formData.count}
-                      onChange={(e) => handleInputChange("count", e.target.value)}
-                      placeholder="1"
-                      required
+                  {/* Row 2: Recorded By and Cause of Death - Full Width */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <FormField
+                      control={form.control}
+                      name="recordedBy"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className="flex items-center gap-1">
+                            Recorded By <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select staff member" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {staff.map((person: any) => (
+                                <SelectItem key={person.id} value={person.id}>
+                                  {person.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="cause"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel className="flex items-center gap-1">
+                            Cause of Death <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select cause" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="disease">Disease</SelectItem>
+                              <SelectItem value="injury">Injury</SelectItem>
+                              <SelectItem value="environmental">Environmental</SelectItem>
+                              <SelectItem value="unknown">Unknown</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age (days)</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      value={formData.age}
-                      onChange={(e) => handleInputChange("age", e.target.value)}
-                      placeholder="45"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="weight">Weight (kg)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      step="0.1"
-                      value={formData.weight}
-                      onChange={(e) => handleInputChange("weight", e.target.value)}
-                      placeholder="2.1"
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange("location", e.target.value)}
-                    placeholder="e.g., House 1, Section A"
+                  {/* Row 3: Cause Description */}
+                  <FormField
+                    control={form.control}
+                    name="causeDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1">
+                          Cause Description <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Detailed description of the cause of death..."
+                            rows={3}
+                            className="resize-none min-h-[80px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="symptoms">Symptoms Observed</Label>
-                  <Textarea
-                    id="symptoms"
-                    value={formData.symptoms}
-                    onChange={(e) => handleInputChange("symptoms", e.target.value)}
-                    placeholder="Describe any symptoms observed before death..."
-                    rows={2}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cause">Cause of Death *</Label>
-                    <Select value={formData.cause} onValueChange={(value) => handleInputChange("cause", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select cause" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="disease">Disease</SelectItem>
-                        <SelectItem value="injury">Injury</SelectItem>
-                        <SelectItem value="environmental">Environmental</SelectItem>
-                        <SelectItem value="unknown">Unknown</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="disposalMethod">Disposal Method *</Label>
-                    <Select value={formData.disposalMethod} onValueChange={(value) => handleInputChange("disposalMethod", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="incineration">Incineration</SelectItem>
-                        <SelectItem value="burial">Burial</SelectItem>
-                        <SelectItem value="rendering">Rendering</SelectItem>
-                        <SelectItem value="composting">Composting</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="causeDescription">Cause Description *</Label>
-                  <Textarea
-                    id="causeDescription"
-                    value={formData.causeDescription}
-                    onChange={(e) => handleInputChange("causeDescription", e.target.value)}
-                    placeholder="Detailed description of the cause of death..."
-                    rows={2}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="postMortem">Post-Mortem Findings</Label>
-                  <Textarea
-                    id="postMortem"
-                    value={formData.postMortem}
-                    onChange={(e) => handleInputChange("postMortem", e.target.value)}
-                    placeholder="Detailed post-mortem examination findings..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="recordedBy">Recorded By *</Label>
-                  <Input
-                    id="recordedBy"
-                    value={formData.recordedBy}
-                    onChange={(e) => handleInputChange("recordedBy", e.target.value)}
-                    placeholder="e.g., Dr. Sarah Johnson"
-                    required
-                  />
-                </div>
-
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingRecord ? "Update Record" : "Add Record"}
-                  </Button>
-                </DialogFooter>
-              </form>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading ? "Saving..." : editingRecord ? "Update Record" : "Add Record"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>
@@ -486,7 +544,7 @@ export function MortalityManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Mortality</CardTitle>
-            <Skull className="h-4 w-4 text-muted-foreground" />
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalMortality}</div>
@@ -534,57 +592,58 @@ export function MortalityManagement() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search records..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={causeFilter} onValueChange={setCauseFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by cause" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Causes</SelectItem>
-            <SelectItem value="disease">Disease</SelectItem>
-            <SelectItem value="injury">Injury</SelectItem>
-            <SelectItem value="environmental">Environmental</SelectItem>
-            <SelectItem value="unknown">Unknown</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="pending_analysis">Pending Analysis</SelectItem>
-            <SelectItem value="under_investigation">Under Investigation</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Mortality Records Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Mortality Records</CardTitle>
+          <CardTitle>Mortality Records ({mortalityRecords.length})</CardTitle>
           <CardDescription>
-            {filteredRecords.length} mortality records found
+            Manage and track mortality records for your poultry flocks
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={mortalityColumns(handleEdit, handleDelete, getCauseBadge, getDisposalBadge, getStatusBadge)}
-            data={filteredRecords}
-          />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+              </div>
+            </div>
+          ) : (
+            <MortalityTable
+              columns={mortalityColumns(handleEdit, handleDeleteClick, getCauseBadge)}
+              data={mortalityRecords}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+            />
+          )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={
+          confirmDialog.type === 'delete'
+            ? 'Delete Mortality Record'
+            : 'Confirm Action'
+        }
+        desc={
+          confirmDialog.type === 'delete'
+            ? `Are you sure you want to delete the mortality record for ${confirmDialog.record?.count} deaths? This action cannot be undone and the record will be permanently removed.`
+            : 'Are you sure you want to proceed?'
+        }
+        confirmText={
+          confirmDialog.type === 'delete'
+            ? 'Delete Mortality Record'
+            : 'Continue'
+        }
+        cancelBtnText="Cancel"
+        destructive={confirmDialog.type === 'delete'}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.record?.id}
+      />
     </div>
   );
 }
