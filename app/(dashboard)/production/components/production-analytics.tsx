@@ -84,7 +84,7 @@ export function ProductionAnalytics({
     const total = summary.totalEggs;
     if (total === 0) return 0;
     
-    const qualityEggs = summary.gradeBreakdown.A + summary.gradeBreakdown.B;
+    const qualityEggs = summary.gradeBreakdown.normal;
     return Math.round((qualityEggs / total) * 100);
   };
 
@@ -166,7 +166,7 @@ export function ProductionAnalytics({
           <CardContent>
             <div className="text-2xl font-bold">{getQualityPercentage()}%</div>
             <p className="text-xs text-muted-foreground">
-              Grade A & B eggs
+              Normal quality eggs
             </p>
           </CardContent>
         </Card>
@@ -231,45 +231,6 @@ export function ProductionAnalytics({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Fertility Status</CardTitle>
-                <CardDescription>
-                  Distribution of eggs by fertility
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {summary?.fertilityBreakdown && (
-                  <div className="space-y-4">
-                    {Object.entries(summary.fertilityBreakdown).map(([fertility, count]) => {
-                      const percentage = summary.totalEggs > 0 
-                        ? Math.round((count as number / summary.totalEggs) * 100) 
-                        : 0;
-                      
-                      return (
-                        <div key={fertility} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className={
-                                fertility === 'fertile' 
-                                  ? "bg-green-100 text-green-800" 
-                                  : "bg-red-100 text-red-800"
-                              }>
-                                {fertility.charAt(0).toUpperCase() + fertility.slice(1)}
-                              </Badge>
-                            </div>
-                            <div className="text-sm font-medium">
-                              {count as number} ({percentage}%)
-                            </div>
-                          </div>
-                          <Progress value={percentage} className="h-2" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
@@ -294,26 +255,18 @@ export function ProductionAnalytics({
                           {day.total} eggs
                         </span>
                       </div>
-                      <div className="grid grid-cols-5 gap-2 text-xs">
+                      <div className="grid grid-cols-3 gap-2 text-xs">
                         <div className="text-center">
-                          <div className="font-medium text-green-600">{day.gradeA}</div>
-                          <div className="text-muted-foreground">Grade A</div>
+                          <div className="font-medium text-green-600">{day.normal}</div>
+                          <div className="text-muted-foreground">Normal</div>
                         </div>
                         <div className="text-center">
-                          <div className="font-medium text-yellow-600">{day.gradeB}</div>
-                          <div className="text-muted-foreground">Grade B</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-medium text-orange-600">{day.gradeC}</div>
-                          <div className="text-muted-foreground">Grade C</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-medium text-red-600">{day.cracked}</div>
+                          <div className="font-medium text-orange-600">{day.cracked}</div>
                           <div className="text-muted-foreground">Cracked</div>
                         </div>
                         <div className="text-center">
-                          <div className="font-medium text-gray-600">{day.discard}</div>
-                          <div className="text-muted-foreground">Discard</div>
+                          <div className="font-medium text-red-600">{day.spoiled}</div>
+                          <div className="text-muted-foreground">Spoiled</div>
                         </div>
                       </div>
                     </div>

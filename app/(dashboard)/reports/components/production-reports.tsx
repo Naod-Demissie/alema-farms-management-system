@@ -38,24 +38,16 @@ interface ProductionData {
   averageDailyProduction: number;
   qualityScore: number;
   gradeBreakdown: {
-    A: number;
-    B: number;
-    C: number;
+    normal: number;
     cracked: number;
-    discard: number;
-  };
-  fertilityBreakdown: {
-    fertile: number;
-    infertile: number;
+    spoiled: number;
   };
   dailyProduction: Array<{
     date: string;
     total: number;
-    gradeA: number;
-    gradeB: number;
-    gradeC: number;
+    normal: number;
     cracked: number;
-    discard: number;
+    spoiled: number;
   }>;
   flockProduction: Array<{
     flockId: string;
@@ -96,24 +88,18 @@ export function ProductionReports({ filters }: ProductionReportsProps) {
         averageDailyProduction: 1520,
         qualityScore: 87.5,
         gradeBreakdown: {
-          A: 25000,
-          B: 15000,
-          C: 4000,
-          cracked: 1200,
-          discard: 400
-        },
-        fertilityBreakdown: {
-          fertile: 38000,
-          infertile: 7600
+          normal: 25000,
+          cracked: 15000,
+          spoiled: 4000
         },
         dailyProduction: [
-          { date: "2024-01-01", total: 1500, gradeA: 850, gradeB: 500, gradeC: 100, cracked: 40, discard: 10 },
-          { date: "2024-01-02", total: 1520, gradeA: 900, gradeB: 480, gradeC: 90, cracked: 35, discard: 15 },
-          { date: "2024-01-03", total: 1480, gradeA: 820, gradeB: 520, gradeC: 95, cracked: 30, discard: 13 },
-          { date: "2024-01-04", total: 1560, gradeA: 950, gradeB: 480, gradeC: 85, cracked: 35, discard: 10 },
-          { date: "2024-01-05", total: 1540, gradeA: 880, gradeB: 510, gradeC: 100, cracked: 38, discard: 12 },
-          { date: "2024-01-06", total: 1510, gradeA: 860, gradeB: 490, gradeC: 110, cracked: 32, discard: 18 },
-          { date: "2024-01-07", total: 1530, gradeA: 890, gradeB: 500, gradeC: 95, cracked: 30, discard: 15 }
+          { date: "2024-01-01", total: 1500, normal: 1350, cracked: 100, spoiled: 50 },
+          { date: "2024-01-02", total: 1520, normal: 1380, cracked: 90, spoiled: 50 },
+          { date: "2024-01-03", total: 1480, normal: 1340, cracked: 95, spoiled: 45 },
+          { date: "2024-01-04", total: 1560, normal: 1430, cracked: 85, spoiled: 45 },
+          { date: "2024-01-05", total: 1540, normal: 1390, cracked: 100, spoiled: 50 },
+          { date: "2024-01-06", total: 1510, normal: 1350, cracked: 110, spoiled: 50 },
+          { date: "2024-01-07", total: 1530, normal: 1390, cracked: 95, spoiled: 45 }
         ],
         flockProduction: [
           { flockId: "1", flockCode: "A-001", breed: "layer", totalEggs: 18000, qualityScore: 92, dailyAverage: 600 },
@@ -150,22 +136,18 @@ export function ProductionReports({ filters }: ProductionReportsProps) {
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
-      case 'A': return 'bg-green-500';
-      case 'B': return 'bg-yellow-500';
-      case 'C': return 'bg-orange-500';
-      case 'cracked': return 'bg-red-500';
-      case 'discard': return 'bg-gray-500';
+      case 'normal': return 'bg-green-500';
+      case 'cracked': return 'bg-orange-500';
+      case 'spoiled': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
   };
 
   const getGradeLabel = (grade: string) => {
     switch (grade) {
-      case 'A': return 'Grade A';
-      case 'B': return 'Grade B';
-      case 'C': return 'Grade C';
+      case 'normal': return 'Normal';
       case 'cracked': return 'Cracked';
-      case 'discard': return 'Discard';
+      case 'spoiled': return 'Spoiled';
       default: return grade;
     }
   };
@@ -238,7 +220,7 @@ export function ProductionReports({ filters }: ProductionReportsProps) {
           <CardContent>
             <div className="text-2xl font-bold">{data.qualityScore}%</div>
             <p className="text-xs text-muted-foreground">
-              Grade A & B eggs
+              Normal quality eggs
             </p>
           </CardContent>
         </Card>
@@ -316,41 +298,6 @@ export function ProductionReports({ filters }: ProductionReportsProps) {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Fertility Status
-                </CardTitle>
-                <CardDescription>Distribution of eggs by fertility</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(data.fertilityBreakdown).map(([fertility, count]) => {
-                    const percentage = (count / data.totalEggs) * 100;
-                    return (
-                      <div key={fertility} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-3 h-3 rounded-full ${
-                              fertility === 'fertile' ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
-                            <span className="font-medium capitalize">{fertility}</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold">{count.toLocaleString()}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {percentage.toFixed(1)}%
-                            </div>
-                          </div>
-                        </div>
-                        <Progress value={percentage} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
@@ -426,26 +373,18 @@ export function ProductionReports({ filters }: ProductionReportsProps) {
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-5 gap-2 text-xs">
+                    <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="text-center">
-                        <div className="font-medium text-green-600">{day.gradeA}</div>
-                        <div className="text-muted-foreground">Grade A</div>
+                        <div className="font-medium text-green-600">{day.normal}</div>
+                        <div className="text-muted-foreground">Normal</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-medium text-yellow-600">{day.gradeB}</div>
-                        <div className="text-muted-foreground">Grade B</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-medium text-orange-600">{day.gradeC}</div>
-                        <div className="text-muted-foreground">Grade C</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-medium text-red-600">{day.cracked}</div>
+                        <div className="font-medium text-orange-600">{day.cracked}</div>
                         <div className="text-muted-foreground">Cracked</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-medium text-gray-600">{day.discard}</div>
-                        <div className="text-muted-foreground">Discard</div>
+                        <div className="font-medium text-red-600">{day.spoiled}</div>
+                        <div className="text-muted-foreground">Spoiled</div>
                       </div>
                     </div>
                   </div>

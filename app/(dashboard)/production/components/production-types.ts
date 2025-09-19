@@ -4,9 +4,13 @@ export interface EggProduction {
   id: string;
   flockId: string;
   date: Date;
-  quantity: number;
-  grade: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  totalCount: number;
+  gradeCounts: {
+    normal: number;
+    cracked: number;
+    spoiled: number;
+  };
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
   flock?: {
@@ -20,24 +24,96 @@ export interface EggProduction {
 export interface CreateEggProductionData {
   flockId: string;
   date: Date;
-  quantity: number;
-  grade: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  totalCount: number;
+  gradeCounts: {
+    normal: number;
+    cracked: number;
+    spoiled: number;
+  };
   notes?: string;
 }
 
 export interface UpdateEggProductionData {
+  totalCount?: number;
+  gradeCounts?: {
+    normal: number;
+    cracked: number;
+    spoiled: number;
+  };
+  notes?: string;
+}
+
+// Broiler Sales Interfaces
+export interface BroilerSales {
+  id: string;
+  flockId: string;
+  date: Date;
+  quantity: number;
+  unit: string;
+  pricePerUnit?: number;
+  totalAmount?: number;
+  buyer?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  flock?: {
+    id: string;
+    batchCode: string;
+    breed: string;
+    currentCount: number;
+  };
+}
+
+export interface CreateBroilerSalesData {
+  flockId: string;
+  date: Date;
+  quantity: number;
+  unit?: string;
+  pricePerUnit?: number;
+  totalAmount?: number;
+  buyer?: string;
+  notes?: string;
+}
+
+export interface UpdateBroilerSalesData {
   quantity?: number;
-  grade?: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  unit?: string;
+  pricePerUnit?: number;
+  totalAmount?: number;
+  buyer?: string;
+  notes?: string;
+}
+
+// Manure Production Interfaces
+export interface ManureProduction {
+  id: string;
+  flockId: string;
+  date: Date;
+  quantity: number;
+  unit: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  flock?: {
+    id: string;
+    batchCode: string;
+    breed: string;
+    currentCount: number;
+  };
+}
+
+export interface CreateManureProductionData {
+  flockId: string;
+  date: Date;
+  quantity: number;
+  unit?: string;
   notes?: string;
 }
 
 export interface ProductionFilters {
   search?: string;
   flockId?: string;
-  grade?: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  productionType?: 'eggs' | 'broiler' | 'manure';
   dateRange?: {
     start: Date;
     end: Date;
@@ -47,26 +123,41 @@ export interface ProductionFilters {
 export interface EggProductionSummary {
   totalEggs: number;
   gradeBreakdown: {
-    A: number;
-    B: number;
-    C: number;
+    normal: number;
     cracked: number;
-    discard: number;
-  };
-  fertilityBreakdown: {
-    fertile: number;
-    infertile: number;
+    spoiled: number;
   };
   averageDailyProduction: number;
   productionTrend: Array<{
     date: string;
     total: number;
-    gradeA: number;
-    gradeB: number;
-    gradeC: number;
+    normal: number;
     cracked: number;
-    discard: number;
+    spoiled: number;
   }>;
+}
+
+export interface BroilerSalesSummary {
+  totalBirds: number;
+  totalRevenue: number;
+  averagePricePerBird: number;
+  averageDailySales: number;
+  salesTrend: Array<{
+    date: string;
+    birds: number;
+    revenue: number;
+  }>;
+}
+
+export interface ManureProductionSummary {
+  totalWeight: number;
+  averageDailyProduction: number;
+  averageNutrientContent: {
+    moisture: number;
+    nitrogen: number;
+    phosphorus: number;
+    potassium: number;
+  };
 }
 
 export interface DailyProductionData {
@@ -75,37 +166,34 @@ export interface DailyProductionData {
   flockCode: string;
   breed: string;
   totalEggs: number;
-  gradeA: number;
-  gradeB: number;
-  gradeC: number;
+  normal: number;
   cracked: number;
-  discard: number;
-  fertile: number;
-  infertile: number;
+  spoiled: number;
   qualityScore: number;
 }
 
 export interface ProductionFormData {
   flockId: string;
   date: string;
-  quantity: number;
-  grade: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  totalCount: number;
+  normalCount: number;
+  crackedCount: number;
+  spoiledCount: number;
   notes?: string;
 }
 
 export const EGG_GRADES = [
-  { value: 'A', label: 'Grade A', color: 'bg-green-100 text-green-800' },
-  { value: 'B', label: 'Grade B', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'C', label: 'Grade C', color: 'bg-orange-100 text-orange-800' },
-  { value: 'cracked', label: 'Cracked', color: 'bg-red-100 text-red-800' },
-  { value: 'discard', label: 'Discard', color: 'bg-gray-100 text-gray-800' }
+  { value: 'normal', label: 'Normal', color: 'bg-green-100 text-green-800' },
+  { value: 'cracked', label: 'Cracked', color: 'bg-orange-100 text-orange-800' },
+  { value: 'spoiled', label: 'Spoiled', color: 'bg-red-100 text-red-800' }
 ] as const;
 
-export const FERTILITY_OPTIONS = [
-  { value: 'fertile', label: 'Fertile', color: 'bg-green-100 text-green-800' },
-  { value: 'infertile', label: 'Infertile', color: 'bg-red-100 text-red-800' }
+export const BROILER_UNITS = [
+  { value: 'birds', label: 'Birds' },
+  { value: 'kg', label: 'Kilograms' },
+  { value: 'lbs', label: 'Pounds' }
 ] as const;
+
 
 export const BREED_OPTIONS = [
   { value: 'layer', label: 'Layer' },

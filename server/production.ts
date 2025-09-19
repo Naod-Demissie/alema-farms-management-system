@@ -12,8 +12,7 @@ import { ApiResponse, PaginatedResponse, FilterParams, PaginationParams, SortPar
 
 export interface ProductionFilters extends FilterParams {
   flockId?: string;
-  grade?: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  productionType?: 'eggs' | 'broiler' | 'manure';
   dateRange?: {
     start: Date;
     end: Date;
@@ -23,42 +22,99 @@ export interface ProductionFilters extends FilterParams {
 export interface CreateEggProductionData {
   flockId: string;
   date: Date;
-  quantity: number;
-  grade: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  totalCount: number;
+  gradeCounts: {
+    normal: number;
+    cracked: number;
+    spoiled: number;
+  };
   notes?: string;
 }
 
 export interface UpdateEggProductionData {
+  totalCount?: number;
+  gradeCounts?: {
+    normal: number;
+    cracked: number;
+    spoiled: number;
+  };
+  notes?: string;
+}
+
+// Broiler Sales Interfaces
+export interface CreateBroilerSalesData {
+  flockId: string;
+  date: Date;
+  quantity: number;
+  unit?: string;
+  pricePerUnit?: number;
+  totalAmount?: number;
+  buyer?: string;
+  notes?: string;
+}
+
+export interface UpdateBroilerSalesData {
   quantity?: number;
-  grade?: 'A' | 'B' | 'C' | 'cracked' | 'discard';
-  fertility?: 'fertile' | 'infertile';
+  unit?: string;
+  pricePerUnit?: number;
+  totalAmount?: number;
+  buyer?: string;
+  notes?: string;
+}
+
+// Manure Production Interfaces
+export interface CreateManureProductionData {
+  flockId: string;
+  date: Date;
+  quantity: number;
+  unit?: string;
+  notes?: string;
+}
+
+export interface UpdateManureProductionData {
+  quantity?: number;
+  unit?: string;
   notes?: string;
 }
 
 export interface EggProductionSummary {
   totalEggs: number;
   gradeBreakdown: {
-    A: number;
-    B: number;
-    C: number;
+    normal: number;
     cracked: number;
-    discard: number;
-  };
-  fertilityBreakdown: {
-    fertile: number;
-    infertile: number;
+    spoiled: number;
   };
   averageDailyProduction: number;
   productionTrend: Array<{
     date: string;
     total: number;
-    gradeA: number;
-    gradeB: number;
-    gradeC: number;
+    normal: number;
     cracked: number;
-    discard: number;
+    spoiled: number;
   }>;
+}
+
+export interface BroilerSalesSummary {
+  totalBirds: number;
+  totalRevenue: number;
+  averagePricePerBird: number;
+  averageDailySales: number;
+  salesTrend: Array<{
+    date: string;
+    birds: number;
+    revenue: number;
+  }>;
+}
+
+export interface ManureProductionSummary {
+  totalWeight: number;
+  averageDailyProduction: number;
+  averageNutrientContent: {
+    moisture: number;
+    nitrogen: number;
+    phosphorus: number;
+    potassium: number;
+  };
 }
 
 export interface DailyProductionData {
@@ -67,13 +123,9 @@ export interface DailyProductionData {
   flockCode: string;
   breed: string;
   totalEggs: number;
-  gradeA: number;
-  gradeB: number;
-  gradeC: number;
+  normal: number;
   cracked: number;
-  discard: number;
-  fertile: number;
-  infertile: number;
+  spoiled: number;
   qualityScore: number; // Calculated based on grade distribution
 }
 
@@ -124,11 +176,28 @@ export async function createEggProduction(data: CreateEggProductionData): Promis
       };
     }
 
-    // Validate quantity
-    if (data.quantity < 0) {
+    // Validate totalCount
+    if (data.totalCount < 0) {
       return {
         success: false,
-        message: "Quantity cannot be negative"
+        message: "Total count cannot be negative"
+      };
+    }
+
+    // Validate grade counts
+    const { normal, cracked, spoiled } = data.gradeCounts;
+    if (normal < 0 || cracked < 0 || spoiled < 0) {
+      return {
+        success: false,
+        message: "Grade counts cannot be negative"
+      };
+    }
+
+    // Validate that grade counts sum to total count
+    if (normal + cracked + spoiled !== data.totalCount) {
+      return {
+        success: false,
+        message: "Grade counts must sum to total count"
       };
     }
 
@@ -137,9 +206,9 @@ export async function createEggProduction(data: CreateEggProductionData): Promis
       data: {
         flockId: data.flockId,
         date: data.date,
-        quantity: data.quantity,
-        grade: data.grade,
-        fertility: data.fertility
+        totalCount: data.totalCount,
+        gradeCounts: data.gradeCounts,
+        notes: data.notes
       },
       include: {
         flock: {
@@ -152,16 +221,15 @@ export async function createEggProduction(data: CreateEggProductionData): Promis
     });
 
     // Log the action
-    await logAction({
-      action: 'CREATE_EGG_PRODUCTION',
-      staffId: currentUser.id,
-      details: {
+    await logAction(
+      'CREATE_EGG_PRODUCTION',
+      currentUser.id,
+      {
         flockId: data.flockId,
-        quantity: data.quantity,
-        grade: data.grade,
-        fertility: data.fertility
+        totalCount: data.totalCount,
+        gradeCounts: data.gradeCounts
       }
-    });
+    );
 
     return {
       success: true,
@@ -204,13 +272,7 @@ export async function getEggProduction(
       where.flockId = filters.flockId;
     }
 
-    if (filters.grade) {
-      where.grade = filters.grade;
-    }
 
-    if (filters.fertility) {
-      where.fertility = filters.fertility;
-    }
 
     if (filters.dateRange) {
       where.date = {
@@ -352,12 +414,32 @@ export async function updateEggProduction(
       };
     }
 
-    // Validate quantity if provided
-    if (data.quantity !== undefined && data.quantity < 0) {
+    // Validate totalCount if provided
+    if (data.totalCount !== undefined && data.totalCount < 0) {
       return {
         success: false,
-        message: "Quantity cannot be negative"
+        message: "Total count cannot be negative"
       };
+    }
+
+    // Validate grade counts if provided
+    if (data.gradeCounts) {
+      const { normal, cracked, spoiled } = data.gradeCounts;
+      if (normal < 0 || cracked < 0 || spoiled < 0) {
+        return {
+          success: false,
+          message: "Grade counts cannot be negative"
+        };
+      }
+
+      // If totalCount is also being updated, validate they match
+      const totalFromCounts = normal + cracked + spoiled;
+      if (data.totalCount !== undefined && totalFromCounts !== data.totalCount) {
+        return {
+          success: false,
+          message: "Grade counts must sum to total count"
+        };
+      }
     }
 
     // Update egg production record
@@ -378,14 +460,14 @@ export async function updateEggProduction(
     });
 
     // Log the action
-    await logAction({
-      action: 'UPDATE_EGG_PRODUCTION',
-      staffId: currentUser.id,
-      details: {
+    await logAction(
+      'UPDATE_EGG_PRODUCTION',
+      currentUser.id,
+      {
         productionId,
         changes: data
       }
-    });
+    );
 
     return {
       success: true,
@@ -434,16 +516,16 @@ export async function deleteEggProduction(productionId: string): Promise<ApiResp
     });
 
     // Log the action
-    await logAction({
-      action: 'DELETE_EGG_PRODUCTION',
-      staffId: currentUser.id,
-      details: {
+    await logAction(
+      'DELETE_EGG_PRODUCTION',
+      currentUser.id,
+      {
         productionId,
         flockId: existingRecord.flockId,
-        quantity: existingRecord.quantity,
-        grade: existingRecord.grade
+        totalCount: existingRecord.totalCount,
+        gradeCounts: existingRecord.gradeCounts
       }
-    });
+    );
 
     return {
       success: true,
@@ -455,6 +537,627 @@ export async function deleteEggProduction(productionId: string): Promise<ApiResp
     return {
       success: false,
       message: "Failed to delete egg production record",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+// ===================
+// Broiler Sales Management
+// ===================
+
+export async function createBroilerSales(data: CreateBroilerSalesData): Promise<ApiResponse> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+
+    // Validate flock exists
+    const flock = await prisma.flocks.findUnique({
+      where: { id: data.flockId }
+    });
+
+    if (!flock) {
+      return {
+        success: false,
+        message: "Flock not found"
+      };
+    }
+
+    // Validate quantity
+    if (data.quantity < 0) {
+      return {
+        success: false,
+        message: "Quantity cannot be negative"
+      };
+    }
+
+    // Create broiler sales record
+    const broilerSales = await prisma.broilerSales.create({
+      data: {
+        flockId: data.flockId,
+        date: data.date,
+        quantity: data.quantity,
+        unit: data.unit || 'birds',
+        pricePerUnit: data.pricePerUnit,
+        totalAmount: data.totalAmount,
+        buyer: data.buyer,
+        notes: data.notes
+      },
+      include: {
+        flock: {
+          select: {
+            batchCode: true,
+            breed: true
+          }
+        }
+      }
+    });
+
+    // Log the action
+    await logAction(
+      'CREATE_BROILER_SALES',
+      currentUser.id,
+      {
+        flockId: data.flockId,
+        quantity: data.quantity,
+        pricePerUnit: data.pricePerUnit,
+        totalAmount: data.totalAmount
+      }
+    );
+
+    return {
+      success: true,
+      data: broilerSales,
+      message: "Broiler sales record created successfully"
+    };
+
+  } catch (error) {
+    console.error("Error creating broiler sales:", error);
+    return {
+      success: false,
+      message: "Failed to create broiler sales record",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+export async function getBroilerSales(
+  filters: ProductionFilters = {},
+  pagination: PaginationParams = {},
+  sort: SortParams = { field: 'date', direction: 'desc' }
+): Promise<PaginatedResponse<any>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const { page = 1, limit = 10 } = pagination;
+    const offset = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+
+    if (filters.flockId) {
+      where.flockId = filters.flockId;
+    }
+
+    // Note: meatQuality filter not implemented in current schema
+
+    if (filters.dateRange) {
+      where.date = {
+        gte: filters.dateRange.start,
+        lte: filters.dateRange.end
+      };
+    }
+
+    if (filters.search) {
+      where.OR = [
+        {
+          flock: {
+            batchCode: {
+              contains: filters.search,
+              mode: 'insensitive'
+            }
+          }
+        }
+      ];
+    }
+
+    // Get total count
+    const total = await prisma.broilerSales.count({ where });
+
+    // Get broiler sales records
+    const broilerSales = await prisma.broilerSales.findMany({
+      where,
+      include: {
+        flock: {
+          select: {
+            id: true,
+            batchCode: true,
+            breed: true,
+            currentCount: true
+          }
+        }
+      },
+      orderBy: {
+        [sort.field]: sort.direction
+      },
+      skip: offset,
+      take: limit
+    });
+
+    return {
+      success: true,
+      data: broilerSales,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+
+  } catch (error) {
+    console.error("Error fetching meat production:", error);
+    return {
+      success: false,
+      message: "Failed to fetch meat production records",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+export async function updateBroilerSales(
+  productionId: string,
+  data: UpdateBroilerSalesData
+): Promise<ApiResponse> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+
+    // Check if production record exists
+    const existingRecord = await prisma.broilerSales.findUnique({
+      where: { id: productionId }
+    });
+
+    if (!existingRecord) {
+      return {
+        success: false,
+        message: "Meat production record not found"
+      };
+    }
+
+    // Validate quantity if provided
+    if (data.quantity !== undefined && data.quantity < 0) {
+      return {
+        success: false,
+        message: "Quantity cannot be negative"
+      };
+    }
+
+    // Update meat production record
+    const updatedProduction = await prisma.broilerSales.update({
+      where: { id: productionId },
+      data: {
+        ...data,
+        updatedAt: new Date()
+      },
+      include: {
+        flock: {
+          select: {
+            batchCode: true,
+            breed: true
+          }
+        }
+      }
+    });
+
+    // Log the action
+    await logAction(
+      'UPDATE_MEAT_PRODUCTION',
+      currentUser.id,
+      {
+        productionId,
+        changes: data
+      }
+    );
+
+    return {
+      success: true,
+      data: updatedProduction,
+      message: "Meat production record updated successfully"
+    };
+
+  } catch (error) {
+    console.error("Error updating meat production:", error);
+    return {
+      success: false,
+      message: "Failed to update meat production record",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+export async function deleteBroilerSales(productionId: string): Promise<ApiResponse> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+
+    // Check if production record exists
+    const existingRecord = await prisma.broilerSales.findUnique({
+      where: { id: productionId }
+    });
+
+    if (!existingRecord) {
+      return {
+        success: false,
+        message: "Meat production record not found"
+      };
+    }
+
+    // Delete meat production record
+    await prisma.broilerSales.delete({
+      where: { id: productionId }
+    });
+
+    // Log the action
+    await logAction(
+      'DELETE_MEAT_PRODUCTION',
+      currentUser.id,
+      {
+        productionId,
+        flockId: existingRecord.flockId,
+        quantity: existingRecord.quantity
+      }
+    );
+
+    return {
+      success: true,
+      message: "Meat production record deleted successfully"
+    };
+
+  } catch (error) {
+    console.error("Error deleting meat production:", error);
+    return {
+      success: false,
+      message: "Failed to delete meat production record",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+// ===================
+// Manure Production Management
+// ===================
+
+export async function createManureProduction(data: CreateManureProductionData): Promise<ApiResponse> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+
+    // Validate flock exists
+    const flock = await prisma.flocks.findUnique({
+      where: { id: data.flockId }
+    });
+
+    if (!flock) {
+      return {
+        success: false,
+        message: "Flock not found"
+      };
+    }
+
+    // Validate quantity
+    if (data.quantity < 0) {
+      return {
+        success: false,
+        message: "Quantity cannot be negative"
+      };
+    }
+
+    // Create manure production record
+    const manureProduction = await prisma.manureProduction.create({
+      data: {
+        flockId: data.flockId,
+        date: data.date,
+        quantity: data.quantity,
+        unit: data.unit || 'kg',
+        notes: data.notes
+      },
+      include: {
+        flock: {
+          select: {
+            batchCode: true,
+            breed: true
+          }
+        }
+      }
+    });
+
+    // Log the action
+    await logAction(
+      'CREATE_MANURE_PRODUCTION',
+      currentUser.id,
+      {
+        flockId: data.flockId,
+        quantity: data.quantity
+      }
+    );
+
+    return {
+      success: true,
+      data: manureProduction,
+      message: "Manure production record created successfully"
+    };
+
+  } catch (error) {
+    console.error("Error creating manure production:", error);
+    return {
+      success: false,
+      message: "Failed to create manure production record",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+export async function getManureProduction(
+  filters: ProductionFilters = {},
+  pagination: PaginationParams = {},
+  sort: SortParams = { field: 'date', direction: 'desc' }
+): Promise<PaginatedResponse<any>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const { page = 1, limit = 10 } = pagination;
+    const offset = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+
+    if (filters.flockId) {
+      where.flockId = filters.flockId;
+    }
+
+    // Note: manureQuality filter not implemented in current schema
+
+    if (filters.dateRange) {
+      where.date = {
+        gte: filters.dateRange.start,
+        lte: filters.dateRange.end
+      };
+    }
+
+    if (filters.search) {
+      where.OR = [
+        {
+          flock: {
+            batchCode: {
+              contains: filters.search,
+              mode: 'insensitive'
+            }
+          }
+        }
+      ];
+    }
+
+    // Get total count
+    const total = await prisma.manureProduction.count({ where });
+
+    // Get manure production records
+    const manureProduction = await prisma.manureProduction.findMany({
+      where,
+      include: {
+        flock: {
+          select: {
+            id: true,
+            batchCode: true,
+            breed: true,
+            currentCount: true
+          }
+        }
+      },
+      orderBy: {
+        [sort.field]: sort.direction
+      },
+      skip: offset,
+      take: limit
+    });
+
+    return {
+      success: true,
+      data: manureProduction,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+
+  } catch (error) {
+    console.error("Error fetching manure production:", error);
+    return {
+      success: false,
+      message: "Failed to fetch manure production records",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+export async function updateManureProduction(
+  productionId: string,
+  data: UpdateManureProductionData
+): Promise<ApiResponse> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+
+    // Check if production record exists
+    const existingRecord = await prisma.manureProduction.findUnique({
+      where: { id: productionId }
+    });
+
+    if (!existingRecord) {
+      return {
+        success: false,
+        message: "Manure production record not found"
+      };
+    }
+
+    // Validate quantity if provided
+    if (data.quantity !== undefined && data.quantity < 0) {
+      return {
+        success: false,
+        message: "Quantity cannot be negative"
+      };
+    }
+
+    // Update manure production record
+    const updatedProduction = await prisma.manureProduction.update({
+      where: { id: productionId },
+      data: {
+        ...data,
+        updatedAt: new Date()
+      },
+      include: {
+        flock: {
+          select: {
+            batchCode: true,
+            breed: true
+          }
+        }
+      }
+    });
+
+    // Log the action
+    await logAction(
+      'UPDATE_MANURE_PRODUCTION',
+      currentUser.id,
+      {
+        productionId,
+        changes: data
+      }
+    );
+
+    return {
+      success: true,
+      data: updatedProduction,
+      message: "Manure production record updated successfully"
+    };
+
+  } catch (error) {
+    console.error("Error updating manure production:", error);
+    return {
+      success: false,
+      message: "Failed to update manure production record",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+export async function deleteManureProduction(productionId: string): Promise<ApiResponse> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+
+    // Check if production record exists
+    const existingRecord = await prisma.manureProduction.findUnique({
+      where: { id: productionId }
+    });
+
+    if (!existingRecord) {
+      return {
+        success: false,
+        message: "Manure production record not found"
+      };
+    }
+
+    // Delete manure production record
+    await prisma.manureProduction.delete({
+      where: { id: productionId }
+    });
+
+    // Log the action
+    await logAction(
+      'DELETE_MANURE_PRODUCTION',
+      currentUser.id,
+      {
+        productionId,
+        flockId: existingRecord.flockId,
+        quantity: existingRecord.quantity
+      }
+    );
+
+    return {
+      success: true,
+      message: "Manure production record deleted successfully"
+    };
+
+  } catch (error) {
+    console.error("Error deleting manure production:", error);
+    return {
+      success: false,
+      message: "Failed to delete manure production record",
       error: error instanceof Error ? error.message : "Unknown error"
     };
   }
@@ -506,27 +1209,20 @@ export async function getProductionSummary(
     });
 
     // Calculate summary statistics
-    const totalEggs = productionRecords.reduce((sum, record) => sum + record.quantity, 0);
+    const totalEggs = productionRecords.reduce((sum, record) => sum + record.totalCount, 0);
 
     const gradeBreakdown = {
-      A: 0,
-      B: 0,
-      C: 0,
+      normal: 0,
       cracked: 0,
-      discard: 0
-    };
-
-    const fertilityBreakdown = {
-      fertile: 0,
-      infertile: 0
+      spoiled: 0
     };
 
     productionRecords.forEach(record => {
-      if (record.grade) {
-        gradeBreakdown[record.grade]++;
-      }
-      if (record.fertility) {
-        fertilityBreakdown[record.fertility]++;
+      const counts = record.gradeCounts as { normal: number; cracked: number; spoiled: number };
+      if (counts) {
+        gradeBreakdown.normal += counts.normal || 0;
+        gradeBreakdown.cracked += counts.cracked || 0;
+        gradeBreakdown.spoiled += counts.spoiled || 0;
       }
     });
 
@@ -540,11 +1236,9 @@ export async function getProductionSummary(
     // Generate production trend data
     const trendMap = new Map<string, {
       total: number;
-      gradeA: number;
-      gradeB: number;
-      gradeC: number;
+      normal: number;
       cracked: number;
-      discard: number;
+      spoiled: number;
     }>();
 
     productionRecords.forEach(record => {
@@ -552,19 +1246,20 @@ export async function getProductionSummary(
       if (!trendMap.has(dateKey)) {
         trendMap.set(dateKey, {
           total: 0,
-          gradeA: 0,
-          gradeB: 0,
-          gradeC: 0,
+          normal: 0,
           cracked: 0,
-          discard: 0
+          spoiled: 0
         });
       }
 
       const dayData = trendMap.get(dateKey)!;
-      dayData.total += record.quantity;
+      dayData.total += record.totalCount;
       
-      if (record.grade) {
-        dayData[record.grade]++;
+      const counts = record.gradeCounts as { normal: number; cracked: number; spoiled: number };
+      if (counts) {
+        dayData.normal += counts.normal || 0;
+        dayData.cracked += counts.cracked || 0;
+        dayData.spoiled += counts.spoiled || 0;
       }
     });
 
@@ -576,7 +1271,6 @@ export async function getProductionSummary(
     const summary: EggProductionSummary = {
       totalEggs,
       gradeBreakdown,
-      fertilityBreakdown,
       averageDailyProduction: Math.round(averageDailyProduction * 100) / 100,
       productionTrend
     };
@@ -655,26 +1349,22 @@ export async function getDailyProductionData(
           flockCode: record.flock.batchCode,
           breed: record.flock.breed,
           totalEggs: 0,
-          gradeA: 0,
-          gradeB: 0,
-          gradeC: 0,
+          normal: 0,
           cracked: 0,
-          discard: 0,
-          fertile: 0,
-          infertile: 0
+          spoiled: 0
         });
       }
 
       const flockData = dateData.get(flockKey)!;
-      flockData.totalEggs += record.quantity;
+      flockData.totalEggs += record.totalCount;
 
-      if (record.grade) {
-        flockData[record.grade]++;
+      const counts = record.gradeCounts as { normal: number; cracked: number; spoiled: number };
+      if (counts) {
+        flockData.normal += counts.normal || 0;
+        flockData.cracked += counts.cracked || 0;
+        flockData.spoiled += counts.spoiled || 0;
       }
 
-      if (record.fertility) {
-        flockData[record.fertility]++;
-      }
     });
 
     // Convert to array and calculate quality scores
@@ -684,15 +1374,13 @@ export async function getDailyProductionData(
       dateData.forEach(flockData => {
         // Calculate quality score based on grade distribution
         const total = flockData.totalEggs;
-        const gradeA = flockData.gradeA;
-        const gradeB = flockData.gradeB;
-        const gradeC = flockData.gradeC;
+        const normal = flockData.normal;
         const cracked = flockData.cracked;
-        const discard = flockData.discard;
+        const spoiled = flockData.spoiled;
 
-        // Quality score: A=100, B=80, C=60, cracked=20, discard=0
+        // Quality score: NORMAL=100, CRACKED=60, SPOILED=0
         const qualityScore = total > 0 ? 
-          Math.round(((gradeA * 100 + gradeB * 80 + gradeC * 60 + cracked * 20 + discard * 0) / total) * 100) / 100 : 0;
+          Math.round(((normal * 100 + cracked * 60 + spoiled * 0) / total) * 100) / 100 : 0;
 
         dailyData.push({
           ...flockData,
@@ -737,10 +1425,10 @@ export async function createBulkEggProduction(
 
     // Validate all records
     for (const record of records) {
-      if (record.quantity < 0) {
+      if (record.totalCount < 0) {
         return {
           success: false,
-          message: `Invalid quantity for flock ${record.flockId}: ${record.quantity}`
+          message: `Invalid total count for flock ${record.flockId}: ${record.totalCount}`
         };
       }
 
@@ -781,9 +1469,9 @@ export async function createBulkEggProduction(
           data: {
             flockId: record.flockId,
             date: record.date,
-            quantity: record.quantity,
-            grade: record.grade,
-            fertility: record.fertility
+            totalCount: record.totalCount,
+            gradeCounts: record.gradeCounts,
+            notes: record.notes
           }
         });
 
@@ -794,14 +1482,14 @@ export async function createBulkEggProduction(
     });
 
     // Log the action
-    await logAction({
-      action: 'CREATE_BULK_EGG_PRODUCTION',
-      staffId: currentUser.id,
-      details: {
+    await logAction(
+      'CREATE_BULK_EGG_PRODUCTION',
+      currentUser.id,
+      {
         recordCount: records.length,
         flockIds: records.map(r => r.flockId)
       }
-    });
+    );
 
     return {
       success: true,

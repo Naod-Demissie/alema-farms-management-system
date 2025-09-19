@@ -149,9 +149,9 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
                     <SelectValue placeholder="Select grade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="A">Grade A</SelectItem>
-                    <SelectItem value="B">Grade B</SelectItem>
-                    <SelectItem value="C">Grade C</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="cracked">Cracked</SelectItem>
+                    <SelectItem value="spoiled">Spoiled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -150,14 +150,16 @@ model Flocks {
   notes         String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  eggProduction EggProduction[]
-  expenses      Expenses[]
-  feedUsage     FeedUsage[]
-  mortality     Mortality[]
-  notifications Notifications[]
-  revenue       Revenue[]
-  treatments    Treatments[]
-  vaccinations  Vaccinations[]
+  eggProduction   EggProduction[]
+  broilerSales    BroilerSales[]
+  manureProduction ManureProduction[]
+  expenses        Expenses[]
+  feedUsage       FeedUsage[]
+  mortality       Mortality[]
+  notifications   Notifications[]
+  revenue         Revenue[]
+  treatments      Treatments[]
+  vaccinations    Vaccinations[]
 
   @@map("flocks")
 }
@@ -219,17 +221,48 @@ model Mortality {
 }
 
 model EggProduction {
-  id        String     @id @default(uuid())
-  flockId   String
-  date      DateTime
-  quantity  Int
-  grade     EggGrade?
-  fertility Fertility?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  flock     Flocks     @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  flockId     String
+  date        DateTime
+  totalCount  Int      // Total eggs collected
+  gradeCounts Json     // JSON: {normal: number, cracked: number, spoiled: number}
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  flock       Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("egg_production")
+}
+
+model BroilerSales {
+  id          String   @id @default(uuid())
+  flockId     String
+  date        DateTime
+  quantity    Int      // Number of birds sold
+  unit        String   @default("birds")
+  pricePerUnit Float?  // Price per bird
+  totalAmount Float?   // Total sale amount
+  buyer       String?  // Buyer information
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  flock       Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+
+  @@map("broiler_sales")
+}
+
+model ManureProduction {
+  id          String   @id @default(uuid())
+  flockId     String
+  date        DateTime
+  quantity    Float    // Weight in kg
+  unit        String   @default("kg")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  flock       Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+
+  @@map("manure_production")
 }
 
 model Expenses {
@@ -393,18 +426,7 @@ enum FeedType {
   CUSTOM
 }
 
-enum EggGrade {
-  A
-  B
-  C
-  cracked
-  discard
-}
 
-enum Fertility {
-  fertile
-  infertile
-}
 
 enum ExpenseCategory {
   feed
@@ -437,3 +459,4 @@ enum LeaveStatus {
   REJECTED
   CANCELLED
 }
+
