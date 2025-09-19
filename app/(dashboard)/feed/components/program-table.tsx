@@ -47,7 +47,7 @@ declare module "@tanstack/react-table" {
   }
 }
 
-interface InventoryTableProps {
+interface ProgramTableProps {
   columns: ColumnDef<any>[];
   data: any[];
   toolbar?: React.ReactNode;
@@ -56,7 +56,7 @@ interface InventoryTableProps {
   onDelete?: (record: any) => void;
 }
 
-export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelete }: InventoryTableProps) {
+export function ProgramTable({ columns, data, toolbar, onView, onEdit, onDelete }: ProgramTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -133,11 +133,12 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
               columnId: "feedType",
               title: "Feed Type",
               options: [
-                { label: "Starter", value: "starter" },
-                { label: "Grower", value: "grower" },
-                { label: "Finisher", value: "finisher" },
-                { label: "Layer", value: "layer" },
-                { label: "Custom", value: "custom" },
+                { label: "Layer Starter", value: "LAYER_STARTER" },
+                { label: "Rearing", value: "REARING" },
+                { label: "Pullet Feed", value: "PULLET_FEED" },
+                { label: "Layer", value: "LAYER" },
+                { label: "Layer Phase 1", value: "LAYER_PHASE_1" },
+                { label: "Custom", value: "CUSTOM" },
               ],
             },
           ]}
@@ -147,14 +148,10 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="group/row">
+              <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className={header.column.columnDef.meta?.className ?? ""}
-                    >
+                    <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -162,7 +159,7 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
                             header.getContext()
                           )}
                     </TableHead>
-                  );
+                  )
                 })}
               </TableRow>
             ))}
@@ -173,13 +170,9 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="group/row hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cell.column.columnDef.meta?.className ?? ""}
-                    >
+                    <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -194,7 +187,7 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No inventory items found.
+                  No feed program entries found.
                 </TableCell>
               </TableRow>
             )}

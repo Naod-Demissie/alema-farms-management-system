@@ -11,9 +11,7 @@ import {
   Calendar,
   Package,
   Bird,
-  FileText,
-  CheckCircle,
-  XCircle
+  Scale
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -42,118 +40,87 @@ const feedTypeColors = {
   CUSTOM: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
 };
 
-export const usageColumns = (
+const breedLabels = {
+  broiler: "Broiler",
+  layer: "Layer",
+  dual_purpose: "Dual Purpose"
+};
+
+const breedColors = {
+  broiler: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  layer: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
+  dual_purpose: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+};
+
+export const programColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
   onDelete: (record: any) => void
 ): ColumnDef<any>[] => [
   {
-    accessorKey: "flock",
-    header: "Flock ID",
+    accessorKey: "breed",
+    header: "Breed",
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Bird className="h-4 w-4 text-muted-foreground" />
-          <div className="font-medium">{record.flock?.batchCode || "Unknown"}</div>
+          <Badge variant="outline" className={breedColors[record.breed as keyof typeof breedColors] || "bg-gray-100 text-gray-800"}>
+            {breedLabels[record.breed as keyof typeof breedLabels] || record.breed}
+          </Badge>
         </div>
       );
     },
   },
   {
-    accessorKey: "feed.feedType",
-    id: "feed",
+    accessorKey: "ageInWeeks",
+    header: "Week",
+    cell: ({ row }) => {
+      const record = row.original;
+      return (
+        <div className="text-center">
+          <div className="font-medium">{record.ageInWeeks}</div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "ageInDays",
+    header: "Age Range (Days)",
+    cell: ({ row }) => {
+      const record = row.original;
+      return (
+        <div className="flex items-center space-x-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">{record.ageInDays}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "feedType",
     header: "Feed Type",
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="outline" className={feedTypeColors[record.feed?.feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
-            {feedTypeLabels[record.feed?.feedType as keyof typeof feedTypeLabels] || record.feed?.feedType || "Unknown"}
+          <Badge variant="outline" className={feedTypeColors[record.feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
+            {feedTypeLabels[record.feedType as keyof typeof feedTypeLabels] || record.feedType}
           </Badge>
         </div>
       );
     },
   },
   {
-    accessorKey: "date",
-    header: "Date",
+    accessorKey: "gramPerHen",
+    header: "Grams per Hen",
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="flex items-center space-x-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <div className="text-sm">
-            {new Date(record.date).toLocaleDateString()}
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "amountUsed",
-    header: "Amount Used",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="text-center">
-          <div className="font-medium">{record.amountUsed}</div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "unit",
-    id: "unit",
-    header: "Unit",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="text-center">
-          <Badge variant="outline" className="text-xs">
-            {record.unit}
-          </Badge>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "recordedBy",
-    header: "Recorded By",
-    cell: ({ row }) => {
-      const record = row.original;
-      return record.recordedBy ? (
-        <div className="flex items-center space-x-2">
-          <div className="h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-            <span className="text-xs font-medium text-blue-800 dark:text-blue-300">
-              {record.recordedBy.firstName?.[0]}{record.recordedBy.lastName?.[0]}
-            </span>
-          </div>
-          <div>
-            <div className="text-sm font-medium">
-              {record.recordedBy.firstName} {record.recordedBy.lastName}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {record.recordedBy.role}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <span className="text-muted-foreground text-sm">Unknown</span>
-      );
-    },
-  },
-  {
-    accessorKey: "notes",
-    header: "Notes",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="text-sm">
-          <div className="truncate max-w-48" title={record.notes}>
-            {record.notes || "N/A"}
-          </div>
+          <Scale className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{record.gramPerHen}g</span>
         </div>
       );
     },
@@ -181,14 +148,14 @@ export const usageColumns = (
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(record)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Record
+              Edit Program
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onDelete(record)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Record
+              Delete Program
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

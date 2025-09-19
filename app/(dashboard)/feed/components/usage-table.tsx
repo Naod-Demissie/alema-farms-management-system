@@ -130,23 +130,15 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
           filterPlaceholder="Filter usage records..."
           facetedFilters={[
             {
-              columnId: "feedType",
+              columnId: "feed",
               title: "Feed Type",
               options: [
-                { label: "Starter", value: "starter" },
-                { label: "Grower", value: "grower" },
-                { label: "Finisher", value: "finisher" },
-                { label: "Layer", value: "layer" },
-                { label: "Custom", value: "custom" },
-              ],
-            },
-            {
-              columnId: "unit",
-              title: "Unit",
-              options: [
-                { label: "kg", value: "kg" },
-                { label: "bags", value: "bags" },
-                { label: "tons", value: "tons" },
+                { label: "Layer Starter", value: "LAYER_STARTER" },
+                { label: "Rearing", value: "REARING" },
+                { label: "Pullet Feed", value: "PULLET_FEED" },
+                { label: "Layer", value: "LAYER" },
+                { label: "Layer Phase 1", value: "LAYER_PHASE_1" },
+                { label: "Custom", value: "CUSTOM" },
               ],
             },
           ]}

@@ -27,15 +27,16 @@ import {
 import { getFeedSuppliersAction } from "@/app/actions/feed-suppliers";
 
 const feedTypeLabels = {
-  starter: "Starter",
-  grower: "Grower", 
-  finisher: "Finisher",
-  layer: "Layer",
-  custom: "Custom"
+  LAYER_STARTER: "Layer Starter",
+  REARING: "Rearing",
+  PULLET_FEED: "Pullet Feed",
+  LAYER: "Layer",
+  LAYER_PHASE_1: "Layer Phase 1",
+  CUSTOM: "Custom"
 };
 
 const feedInventorySchema = z.object({
-  feedType: z.enum(["starter", "grower", "finisher", "layer", "custom"]),
+  feedType: z.enum(["LAYER_STARTER", "REARING", "PULLET_FEED", "LAYER", "LAYER_PHASE_1", "CUSTOM"]),
   supplierId: z.string().optional(),
   quantity: z.number().min(0, "Quantity must be positive"),
   unit: z.string().min(1, "Unit is required"),
@@ -68,7 +69,7 @@ export function FeedInventory() {
   const form = useForm<FeedInventoryFormData>({
     resolver: zodResolver(feedInventorySchema),
     defaultValues: {
-      feedType: "starter",
+      feedType: "LAYER_STARTER",
       supplierId: "none",
       quantity: 0,
       unit: "kg",

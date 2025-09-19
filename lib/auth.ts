@@ -150,3 +150,41 @@ export const auth = betterAuth({
 
 });
 
+// Server-side session function for use in server actions
+export async function getServerSession() {
+  try {
+    const { headers } = await import("next/headers");
+    const cookieStore = await headers();
+    const sessionToken = cookieStore.get("better-auth.session_token")?.value;
+    
+    if (!sessionToken) {
+      return null;
+    }
+
+    // Get session from database
+    const session = await prisma.sessions.findUnique({
+      where: { token: sessionToken },
+      include: {
+        staff: true,
+      },
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      return null;
+    }
+
+    return {
+      user: session.staff,
+      session: {
+        id: session.id,
+        userId: session.userId,
+        expiresAt: session.expiresAt,
+        token: session.token,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting server session:", error);
+    return null;
+  }
+}
+

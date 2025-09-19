@@ -18,8 +18,12 @@ import {
   CheckCircle,
   DollarSign,
   Download,
-  FileText
+  FileText,
+  Target,
+  Clock
 } from "lucide-react";
+import { getFeedComplianceAction } from "@/app/actions/feed-program";
+import { feedTypeLabels, feedTypeColors } from "@/lib/feed-program";
 
 interface ReportFilters {
   dateRange: {
@@ -83,6 +87,27 @@ interface FeedData {
     totalCost: number;
     efficiency: number;
   }>;
+  feedCompliance: Array<{
+    flockId: string;
+    flockCode: string;
+    breed: string;
+    compliance: number;
+    recommendedTotal: number;
+    actualTotal: number;
+    variance: number;
+    currentFeedType: string;
+    ageInWeeks: number;
+  }>;
+  programEfficiency: {
+    averageCompliance: number;
+    flocksOnProgram: number;
+    totalFlocks: number;
+    feedTypeDistribution: Array<{
+      feedType: string;
+      flocksCount: number;
+      percentage: number;
+    }>;
+  };
 }
 
 export function FeedReports({ filters }: FeedReportsProps) {
@@ -142,7 +167,22 @@ export function FeedReports({ filters }: FeedReportsProps) {
           { month: "Apr", totalUsed: 12800, totalCost: 19200, efficiency: 77.8 },
           { month: "May", totalUsed: 13500, totalCost: 20250, efficiency: 81.3 },
           { month: "Jun", totalUsed: 13000, totalCost: 19500, efficiency: 79.2 }
-        ]
+        ],
+        feedCompliance: [
+          { flockId: "1", flockCode: "A-001", breed: "layer", compliance: 95, recommendedTotal: 420, actualTotal: 400, variance: -20, currentFeedType: "LAYER_STARTER", ageInWeeks: 2 },
+          { flockId: "2", flockCode: "B-002", breed: "layer", compliance: 88, recommendedTotal: 380, actualTotal: 420, variance: 40, currentFeedType: "REARING", ageInWeeks: 5 },
+          { flockId: "3", flockCode: "C-003", breed: "layer", compliance: 92, recommendedTotal: 350, actualTotal: 320, variance: -30, currentFeedType: "PULLET_FEED", ageInWeeks: 12 }
+        ],
+        programEfficiency: {
+          averageCompliance: 91.7,
+          flocksOnProgram: 3,
+          totalFlocks: 3,
+          feedTypeDistribution: [
+            { feedType: "LAYER_STARTER", flocksCount: 1, percentage: 33.3 },
+            { feedType: "REARING", flocksCount: 1, percentage: 33.3 },
+            { feedType: "PULLET_FEED", flocksCount: 1, percentage: 33.3 }
+          ]
+        }
       };
       
       setData(mockData);
@@ -281,6 +321,7 @@ export function FeedReports({ filters }: FeedReportsProps) {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="consumption">Consumption Analysis</TabsTrigger>
+            <TabsTrigger value="compliance">Program Compliance</TabsTrigger>
             <TabsTrigger value="inventory">Inventory Status</TabsTrigger>
             <TabsTrigger value="suppliers">Supplier Analysis</TabsTrigger>
             <TabsTrigger value="flocks">Flock Usage</TabsTrigger>
@@ -418,6 +459,159 @@ export function FeedReports({ filters }: FeedReportsProps) {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Program Compliance Tab */}
+        <TabsContent value="compliance" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Compliance</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.programEfficiency.averageCompliance}%</div>
+                <p className="text-xs text-muted-foreground">
+                  Overall program adherence
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Flocks on Program</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {data.programEfficiency.flocksOnProgram}/{data.programEfficiency.totalFlocks}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Following feed program
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Feed Types in Use</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.programEfficiency.feedTypeDistribution.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Active feed types
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Program Coverage</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {((data.programEfficiency.flocksOnProgram / data.programEfficiency.totalFlocks) * 100).toFixed(0)}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Flocks following program
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Flock Compliance
+                </CardTitle>
+                <CardDescription>Individual flock compliance with feed program</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {data.feedCompliance.map((flock) => (
+                    <div key={flock.flockId} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="font-semibold">{flock.flockCode}</h3>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {flock.breed} • Week {flock.ageInWeeks}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={feedTypeColors[flock.currentFeedType as keyof typeof feedTypeColors]}>
+                            {feedTypeLabels[flock.currentFeedType as keyof typeof feedTypeLabels]}
+                          </Badge>
+                          <Badge variant={flock.compliance >= 90 ? "default" : flock.compliance >= 80 ? "secondary" : "destructive"}>
+                            {flock.compliance}%
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground">Recommended</div>
+                          <div className="font-medium">{flock.recommendedTotal} kg</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground">Actual</div>
+                          <div className="font-medium">{flock.actualTotal} kg</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground">Variance</div>
+                          <div className={`font-medium ${flock.variance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {flock.variance >= 0 ? '+' : ''}{flock.variance} kg
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span>Compliance</span>
+                          <span>{flock.compliance}%</span>
+                        </div>
+                        <Progress value={flock.compliance} className="h-2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Feed Type Distribution
+                </CardTitle>
+                <CardDescription>Current feed types in use across flocks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {data.programEfficiency.feedTypeDistribution.map((feed) => (
+                    <div key={feed.feedType} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full ${feedTypeColors[feed.feedType as keyof typeof feedTypeColors]}`} />
+                          <span className="font-medium">{feedTypeLabels[feed.feedType as keyof typeof feedTypeLabels]}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold">{feed.flocksCount} flocks</div>
+                          <div className="text-sm text-muted-foreground">
+                            {feed.percentage}%
+                          </div>
+                        </div>
+                      </div>
+                      <Progress value={feed.percentage} className="h-2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Inventory Status Tab */}

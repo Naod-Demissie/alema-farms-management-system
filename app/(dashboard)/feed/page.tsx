@@ -7,6 +7,8 @@ import { FeedInventory } from "./components/feed-inventory";
 import { FeedUsage } from "./components/feed-usage";
 import { FeedSuppliers } from "./components/feed-suppliers";
 import { FeedAnalytics } from "./components/feed-analytics";
+import { FeedProgram } from "./components/feed-program";
+import { FeedPlanning } from "./components/feed-planning";
 
 export default function FeedManagementPage() {
   const [activeTab, setActiveTab] = useState("inventory");
@@ -21,9 +23,11 @@ export default function FeedManagementPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="usage">Usage Tracking</TabsTrigger>
+          <TabsTrigger value="program">Feed Program</TabsTrigger>
+          <TabsTrigger value="planning">Planning</TabsTrigger>
           <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -34,6 +38,14 @@ export default function FeedManagementPage() {
 
         <TabsContent value="usage" className="space-y-4">
           <FeedUsage />
+        </TabsContent>
+
+        <TabsContent value="program" className="space-y-4">
+          <FeedProgram />
+        </TabsContent>
+
+        <TabsContent value="planning" className="space-y-4">
+          <FeedPlanning />
         </TabsContent>
 
         <TabsContent value="suppliers" className="space-y-4">

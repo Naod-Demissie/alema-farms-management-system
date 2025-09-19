@@ -133,7 +133,6 @@ export async function createFeedUsage(data: {
   date: Date;
   amountUsed: number;
   unit: string;
-  cost?: number;
   notes?: string;
   recordedById?: string;
 }) {
@@ -173,7 +172,6 @@ export async function updateFeedUsage(id: string, data: {
   date?: Date;
   amountUsed?: number;
   unit?: string;
-  cost?: number;
   notes?: string;
 }) {
   try {
@@ -304,9 +302,7 @@ export async function getFeedAnalytics(filters?: {
       },
     });
 
-    const totalCost = usage.reduce((sum, record) => sum + (record.cost || 0), 0);
     const totalUsage = usage.reduce((sum, record) => sum + record.amountUsed, 0);
-    const averageCostPerKg = totalUsage > 0 ? totalCost / totalUsage : 0;
 
     // Group by feed type
     const feedTypeBreakdown = await prisma.feedUsage.groupBy({
@@ -314,7 +310,6 @@ export async function getFeedAnalytics(filters?: {
       where,
       _sum: {
         amountUsed: true,
-        cost: true,
       },
       _count: {
         id: true,
@@ -329,7 +324,6 @@ export async function getFeedAnalytics(filters?: {
         });
         return {
           feedType: feed?.feedType,
-          totalCost: group._sum.cost || 0,
           totalUsage: group._sum.amountUsed || 0,
           count: group._count.id,
         };
@@ -342,7 +336,6 @@ export async function getFeedAnalytics(filters?: {
       where,
       _sum: {
         amountUsed: true,
-        cost: true,
       },
       _count: {
         id: true,
@@ -359,7 +352,6 @@ export async function getFeedAnalytics(filters?: {
           flockId: group.flockId,
           batchCode: flock?.batchCode,
           breed: flock?.breed,
-          totalCost: group._sum.cost || 0,
           totalUsage: group._sum.amountUsed || 0,
           count: group._count.id,
         };
@@ -369,9 +361,7 @@ export async function getFeedAnalytics(filters?: {
     return {
       success: true,
       data: {
-        totalCost,
         totalUsage,
-        averageCostPerKg,
         feedTypeBreakdown: feedTypeDetails,
         flockBreakdown: flockDetails,
         totalRecords: usage.length,

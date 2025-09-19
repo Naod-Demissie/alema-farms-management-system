@@ -26,19 +26,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const feedTypeLabels = {
-  starter: "Starter",
-  grower: "Grower", 
-  finisher: "Finisher",
-  layer: "Layer",
-  custom: "Custom"
+  LAYER_STARTER: "Layer Starter",
+  REARING: "Rearing",
+  PULLET_FEED: "Pullet Feed",
+  LAYER: "Layer",
+  LAYER_PHASE_1: "Layer Phase 1",
+  CUSTOM: "Custom"
 };
 
 const feedTypeColors = {
-  starter: "bg-blue-100 text-blue-800",
-  grower: "bg-green-100 text-green-800",
-  finisher: "bg-yellow-100 text-yellow-800",
-  layer: "bg-purple-100 text-purple-800",
-  custom: "bg-gray-100 text-gray-800"
+  LAYER_STARTER: "bg-blue-100 text-blue-800",
+  REARING: "bg-green-100 text-green-800",
+  PULLET_FEED: "bg-yellow-100 text-yellow-800",
+  LAYER: "bg-purple-100 text-purple-800",
+  LAYER_PHASE_1: "bg-pink-100 text-pink-800",
+  CUSTOM: "bg-gray-100 text-gray-800"
 };
 
 export const inventoryColumns = (
@@ -86,7 +88,7 @@ export const inventoryColumns = (
       const record = row.original;
       return (
         <div className="text-center">
-          <div className="font-medium">{record.quantity}</div>
+          <div className="font-medium">{Number(record.quantity).toFixed(2)}</div>
           <div className="text-xs text-muted-foreground">{record.unit}</div>
         </div>
       );
@@ -108,19 +110,27 @@ export const inventoryColumns = (
     },
   },
   {
+    accessorKey: "totalCost",
+    header: "Total Cost",
+    cell: ({ row }) => {
+      const record = row.original;
+      const totalCost = record.totalCost || (record.quantity * (record.costPerUnit || 0));
+      return totalCost > 0 ? (
+        <div className="flex items-center space-x-1">
+          <DollarSign className="h-3 w-3 text-muted-foreground" />
+          <span className="text-sm font-medium">{totalCost.toFixed(2)} ETB</span>
+        </div>
+      ) : (
+        <span className="text-muted-foreground text-sm">N/A</span>
+      );
+    },
+  },
+  {
     accessorKey: "stockStatus",
     header: "Stock Status",
     cell: ({ row }) => {
       const record = row.original;
       return getStockStatus(record.quantity, record.minStock || 0);
-    },
-  },
-  {
-    accessorKey: "isActive",
-    header: "Status",
-    cell: ({ row }) => {
-      const record = row.original;
-      return getStatusBadge(record.isActive);
     },
   },
   {
