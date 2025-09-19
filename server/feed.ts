@@ -25,16 +25,12 @@ export async function getFeedInventory() {
 }
 
 export async function createFeedInventory(data: {
-  name: string;
   feedType: FeedType;
   supplierId?: string;
   quantity: number;
   unit: string;
   costPerUnit?: number;
   minStock?: number;
-  maxStock?: number;
-  expiryDate?: Date;
-  batchNumber?: string;
   notes?: string;
 }) {
   try {
@@ -55,16 +51,12 @@ export async function createFeedInventory(data: {
 }
 
 export async function updateFeedInventory(id: string, data: {
-  name?: string;
   feedType?: FeedType;
   supplierId?: string;
   quantity?: number;
   unit?: string;
   costPerUnit?: number;
   minStock?: number;
-  maxStock?: number;
-  expiryDate?: Date;
-  batchNumber?: string;
   notes?: string;
   isActive?: boolean;
 }) {
@@ -404,12 +396,6 @@ export async function getLowStockAlerts() {
                 AND: [
                   { minStock: { not: null } },
                   { quantity: { lte: prisma.feedInventory.fields.minStock } },
-                ],
-              },
-              {
-                AND: [
-                  { expiryDate: { not: null } },
-                  { expiryDate: { lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } }, // 30 days from now
                 ],
               },
             ],

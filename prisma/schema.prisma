@@ -363,16 +363,12 @@ model Mortality {
 
 model FeedInventory {
   id          String    @id @default(uuid())
-  name        String    // Custom name for the feed
   feedType    FeedType
   supplierId  String?   // Reference to supplier
   quantity    Float     // Current stock quantity
   unit        String    @default("kg") // Unit of measurement (kg, bags, etc.)
   costPerUnit Float?    // Cost per unit
   minStock    Float?    // Minimum stock level for alerts
-  maxStock    Float?    // Maximum stock level
-  expiryDate  DateTime? // Feed expiry date
-  batchNumber String?   // Batch/lot number
   notes       String?   // Additional notes
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())

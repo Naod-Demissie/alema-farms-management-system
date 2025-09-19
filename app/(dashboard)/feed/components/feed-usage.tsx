@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,62 +8,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Edit, Trash2, Calendar, TrendingUp } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
+import { Plus, Calendar, TrendingUp, CheckCircle, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
-// Mock data for demonstration
-const mockFlocks = [
-  { id: "1", batchCode: "FL-2024-001", breed: "broiler", currentCount: 500 },
-  { id: "2", batchCode: "FL-2024-002", breed: "layer", currentCount: 300 },
-  { id: "3", batchCode: "FL-2024-003", breed: "dual_purpose", currentCount: 200 },
-];
-
-const mockFeedInventory = [
-  { id: "1", name: "Starter Feed Premium", feedType: "starter", unit: "kg" },
-  { id: "2", name: "Grower Feed Standard", feedType: "grower", unit: "kg" },
-  { id: "3", name: "Layer Feed High Protein", feedType: "layer", unit: "kg" },
-];
-
-const mockFeedUsage = [
-  {
-    id: "1",
-    flockId: "1",
-    feedId: "1",
-    date: new Date("2024-01-15"),
-    amountUsed: 50,
-    unit: "kg",
-    cost: 125.00,
-    notes: "Morning feeding",
-    recordedBy: "John Doe",
-  },
-  {
-    id: "2",
-    flockId: "2",
-    feedId: "3",
-    date: new Date("2024-01-15"),
-    amountUsed: 30,
-    unit: "kg",
-    cost: 90.00,
-    notes: "Evening feeding",
-    recordedBy: "Jane Smith",
-  },
-  {
-    id: "3",
-    flockId: "1",
-    feedId: "2",
-    date: new Date("2024-01-14"),
-    amountUsed: 45,
-    unit: "kg",
-    cost: 99.00,
-    notes: "Regular feeding",
-    recordedBy: "John Doe",
-  },
-];
+import { UsageTable } from "./usage-table";
+import { usageColumns } from "./usage-columns";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { 
+  getFeedUsageAction, 
+  createFeedUsageAction, 
+  updateFeedUsageAction, 
+  deleteFeedUsageAction 
+} from "@/app/actions/feed-usage";
+import { getFeedInventoryAction } from "@/app/actions/feed-inventory";
+import { getFlocksAction } from "@/app/actions/flocks";
 
 const feedUsageSchema = z.object({
   flockId: z.string().min(1, "Flock is required"),
@@ -78,15 +40,24 @@ const feedUsageSchema = z.object({
 type FeedUsageFormData = z.infer<typeof feedUsageSchema>;
 
 export function FeedUsage() {
-  const [feedUsage, setFeedUsage] = useState(mockFeedUsage);
+  const [feedUsage, setFeedUsage] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<any[]>([]);
+  const [feedInventory, setFeedInventory] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterFlock, setFilterFlock] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({
-    from: null,
-    to: null,
+  const [viewingItem, setViewingItem] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    type: 'delete' | null;
+    item: any | null;
+  }>({
+    open: false,
+    type: null,
+    item: null,
   });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const form = useForm<FeedUsageFormData>({
     resolver: zodResolver(feedUsageSchema),
@@ -97,32 +68,103 @@ export function FeedUsage() {
       amountUsed: 0,
       unit: "kg",
       cost: 0,
+      notes: "",
     },
   });
 
-  const onSubmit = (data: FeedUsageFormData) => {
-    if (editingItem) {
-      // Update existing item
-      setFeedUsage(prev => 
-        prev.map(item => 
-          item.id === editingItem.id 
-            ? { ...item, ...data, id: editingItem.id }
-            : item
-        )
-      );
-    } else {
-      // Add new item
-      const newItem = {
-        ...data,
-        id: Date.now().toString(),
-        recordedBy: "Current User", // This would come from auth context
-      };
-      setFeedUsage(prev => [...prev, newItem]);
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchFeedUsage();
+    fetchFlocks();
+    fetchFeedInventory();
+  }, []);
+
+  const fetchFeedUsage = async () => {
+    try {
+      setLoading(true);
+      const result = await getFeedUsageAction();
+      if (result && result.success) {
+        setFeedUsage(result.data || []);
+      } else {
+        console.error("Failed to fetch feed usage:", result?.error || "Unknown error");
+        setFeedUsage([]);
+      }
+    } catch (error) {
+      console.error("Error fetching feed usage:", error);
+      setFeedUsage([]);
+    } finally {
+      setLoading(false);
     }
-    
-    setIsAddDialogOpen(false);
-    setEditingItem(null);
-    form.reset();
+  };
+
+  const fetchFlocks = async () => {
+    try {
+      const result = await getFlocksAction();
+      if (result && result.success) {
+        setFlocks(result.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching flocks:", error);
+    }
+  };
+
+  const fetchFeedInventory = async () => {
+    try {
+      const result = await getFeedInventoryAction();
+      if (result && result.success) {
+        setFeedInventory(result.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching feed inventory:", error);
+    }
+  };
+
+  const onSubmit = async (data: FeedUsageFormData) => {
+    try {
+      setLoading(true);
+      let result;
+      
+      if (editingItem) {
+        // Update existing item
+        result = await updateFeedUsageAction(editingItem.id, data);
+        if (result.success) {
+          toast.success("Feed usage record updated successfully!");
+        } else {
+          toast.error("Failed to update feed usage record", {
+            description: result.error || "An unexpected error occurred",
+          });
+          return;
+        }
+      } else {
+        // Add new item
+        result = await createFeedUsageAction(data);
+        if (result.success) {
+          toast.success("Feed usage record created successfully!");
+        } else {
+          toast.error("Failed to create feed usage record", {
+            description: result.error || "An unexpected error occurred",
+          });
+          return;
+        }
+      }
+      
+      await fetchFeedUsage();
+      setIsAddDialogOpen(false);
+      setEditingItem(null);
+      form.reset();
+    } catch (error) {
+      console.error("Error saving feed usage record:", error);
+      toast.error("Failed to save feed usage record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleView = (item: any) => {
+    setViewingItem(item);
+    setIsViewDialogOpen(true);
   };
 
   const handleEdit = (item: any) => {
@@ -130,136 +172,68 @@ export function FeedUsage() {
     form.reset({
       flockId: item.flockId,
       feedId: item.feedId,
-      date: item.date,
+      date: new Date(item.date),
       amountUsed: item.amountUsed,
       unit: item.unit,
-      cost: item.cost,
-      notes: item.notes,
+      cost: item.cost || 0,
+      notes: item.notes || "",
     });
     setIsAddDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setFeedUsage(prev => prev.filter(item => item.id !== id));
+  const handleDeleteClick = (item: any) => {
+    setConfirmDialog({
+      open: true,
+      type: 'delete',
+      item: item,
+    });
   };
 
-  const getFlockInfo = (flockId: string) => {
-    return mockFlocks.find(flock => flock.id === flockId);
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.type) return;
+
+    if (confirmDialog.type === 'delete' && confirmDialog.item) {
+      await executeDeleteRecord(confirmDialog.item);
+    }
+
+    setConfirmDialog({
+      open: false,
+      type: null,
+      item: null,
+    });
   };
 
-  const getFeedInfo = (feedId: string) => {
-    return mockFeedInventory.find(feed => feed.id === feedId);
+  const executeDeleteRecord = async (item: any) => {
+    setActionLoading(item.id);
+    try {
+      const result = await deleteFeedUsageAction(item.id);
+      
+      if (result.success) {
+        toast.success("Feed usage record deleted successfully!", {
+          description: `Record for ${item.flock?.batchCode || 'Unknown Flock'} has been removed`,
+        });
+        await fetchFeedUsage();
+      } else {
+        toast.error("Failed to delete feed usage record", {
+          description: result.error || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting feed usage record:", error);
+      toast.error("Failed to delete feed usage record", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const filteredUsage = feedUsage.filter(item => {
-    const flock = getFlockInfo(item.flockId);
-    const feed = getFeedInfo(item.feedId);
-    const matchesSearch = 
-      flock?.batchCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      feed?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.notes?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFlock = filterFlock === "all" || item.flockId === filterFlock;
-    const matchesDateRange = 
-      (!dateRange.from || item.date >= dateRange.from) &&
-      (!dateRange.to || item.date <= dateRange.to);
-    
-    return matchesSearch && matchesFlock && matchesDateRange;
-  });
-
-  const totalUsage = filteredUsage.reduce((sum, item) => sum + item.amountUsed, 0);
-  const totalCost = filteredUsage.reduce((sum, item) => sum + (item.cost || 0), 0);
-  const averageDailyUsage = filteredUsage.length > 0 
-    ? totalUsage / new Set(filteredUsage.map(item => item.date.toDateString())).size 
+  const totalUsage = feedUsage.reduce((sum, item) => sum + item.amountUsed, 0);
+  const totalCost = feedUsage.reduce((sum, item) => sum + (item.cost || 0), 0);
+  const averageDailyUsage = feedUsage.length > 0 
+    ? totalUsage / new Set(feedUsage.map(item => new Date(item.date).toDateString())).size 
     : 0;
 
-  const columns = [
-    {
-      accessorKey: "date",
-      header: "Date",
-      cell: ({ row }: any) => (
-        <span>{new Date(row.getValue("date")).toLocaleDateString()}</span>
-      ),
-    },
-    {
-      accessorKey: "flockId",
-      header: "Flock",
-      cell: ({ row }: any) => {
-        const flock = getFlockInfo(row.getValue("flockId"));
-        return (
-          <div>
-            <div className="font-medium">{flock?.batchCode}</div>
-            <div className="text-sm text-muted-foreground">
-              {flock?.breed} ({flock?.currentCount} birds)
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "feedId",
-      header: "Feed",
-      cell: ({ row }: any) => {
-        const feed = getFeedInfo(row.getValue("feedId"));
-        return (
-          <div>
-            <div className="font-medium">{feed?.name}</div>
-            <Badge variant="secondary" className="text-xs">
-              {feed?.feedType}
-            </Badge>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "amountUsed",
-      header: "Amount Used",
-      cell: ({ row }: any) => (
-        <span>{row.getValue("amountUsed")} {row.original.unit}</span>
-      ),
-    },
-    {
-      accessorKey: "cost",
-      header: "Cost",
-      cell: ({ row }: any) => (
-        <span>${row.getValue("cost")?.toFixed(2) || "N/A"}</span>
-      ),
-    },
-    {
-      accessorKey: "recordedBy",
-      header: "Recorded By",
-    },
-    {
-      accessorKey: "notes",
-      header: "Notes",
-      cell: ({ row }: any) => (
-        <span className="max-w-[200px] truncate">
-          {row.getValue("notes") || "N/A"}
-        </span>
-      ),
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }: any) => (
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleEdit(row.original)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDelete(row.original.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -273,7 +247,7 @@ export function FeedUsage() {
           <CardContent>
             <div className="text-2xl font-bold">{totalUsage.toFixed(1)} kg</div>
             <p className="text-xs text-muted-foreground">
-              {filteredUsage.length} records
+              {feedUsage.length} records
             </p>
           </CardContent>
         </Card>
@@ -299,7 +273,7 @@ export function FeedUsage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Set(filteredUsage.map(item => item.flockId)).size}
+              {new Set(feedUsage.map(item => item.flockId)).size}
             </div>
           </CardContent>
         </Card>
@@ -353,7 +327,7 @@ export function FeedUsage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {mockFlocks.map((flock) => (
+                                {flocks.map((flock) => (
                                   <SelectItem key={flock.id} value={flock.id}>
                                     {flock.batchCode} ({flock.breed} - {flock.currentCount} birds)
                                   </SelectItem>
@@ -377,9 +351,9 @@ export function FeedUsage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {mockFeedInventory.map((feed) => (
+                                {feedInventory.map((feed) => (
                                   <SelectItem key={feed.id} value={feed.id}>
-                                    {feed.name} ({feed.feedType})
+                                    {feed.feedType} ({feed.unit})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -484,8 +458,8 @@ export function FeedUsage() {
                       <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button type="submit">
-                        {editingItem ? "Update" : "Record"} Usage
+                      <Button type="submit" disabled={loading}>
+                        {loading ? "Saving..." : editingItem ? "Update" : "Record"} Usage
                       </Button>
                     </DialogFooter>
                   </form>
@@ -495,50 +469,114 @@ export function FeedUsage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search usage records..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading usage records...</p>
+              </div>
             </div>
-            <Select value={filterFlock} onValueChange={setFilterFlock}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by flock" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Flocks</SelectItem>
-                {mockFlocks.map((flock) => (
-                  <SelectItem key={flock.id} value={flock.id}>
-                    {flock.batchCode}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex space-x-2">
-              <Input
-                type="date"
-                placeholder="From"
-                value={dateRange.from ? dateRange.from.toISOString().split('T')[0] : ''}
-                onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value ? new Date(e.target.value) : null }))}
-                className="w-[140px]"
-              />
-              <Input
-                type="date"
-                placeholder="To"
-                value={dateRange.to ? dateRange.to.toISOString().split('T')[0] : ''}
-                onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value ? new Date(e.target.value) : null }))}
-                className="w-[140px]"
-              />
-            </div>
-          </div>
-          
-          <DataTable columns={columns} data={filteredUsage} />
+          ) : (
+            <UsageTable
+              columns={usageColumns(handleView, handleEdit, handleDeleteClick)}
+              data={feedUsage}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDeleteClick}
+            />
+          )}
         </CardContent>
       </Card>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Feed Usage Record Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the feed usage record
+            </DialogDescription>
+          </DialogHeader>
+          {viewingItem && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Flock</Label>
+                  <p className="text-sm font-medium">{viewingItem.flock?.batchCode || "Unknown"}</p>
+                  <Badge variant="outline" className="mt-1">
+                    {viewingItem.flock?.breed || "Unknown"}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Feed Type</Label>
+                  <p className="text-sm font-medium">{viewingItem.feed?.feedType || "Unknown"}</p>
+                  <Badge variant="outline" className="mt-1">
+                    {viewingItem.feed?.feedType || "Unknown"}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                  <p className="text-sm font-medium">{new Date(viewingItem.date).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Amount Used</Label>
+                  <p className="text-sm font-medium">{viewingItem.amountUsed} {viewingItem.unit}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Cost</Label>
+                  <p className="text-sm font-medium">
+                    {viewingItem.cost ? `${viewingItem.cost.toFixed(2)} ETB` : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Recorded By</Label>
+                  <p className="text-sm font-medium">{viewingItem.recordedBy?.name || "Unknown"}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Notes</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingItem.notes || "N/A"}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setIsViewDialogOpen(false);
+              handleEdit(viewingItem);
+            }}>
+              Edit Record
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={
+          confirmDialog.type === 'delete'
+            ? 'Delete Feed Usage Record'
+            : 'Confirm Action'
+        }
+        desc={
+          confirmDialog.type === 'delete'
+            ? `Are you sure you want to delete the feed usage record for ${confirmDialog.item?.flock?.batchCode || 'Unknown Flock'}? This action cannot be undone and the record will be permanently removed.`
+            : 'Are you sure you want to proceed?'
+        }
+        confirmText={
+          confirmDialog.type === 'delete'
+            ? 'Delete Record'
+            : 'Continue'
+        }
+        cancelBtnText="Cancel"
+        destructive={confirmDialog.type === 'delete'}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.item?.id}
+      />
     </div>
   );
 }
