@@ -409,8 +409,8 @@ export function FeedProgram() {
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Feed Type</Label>
                   <div className="mt-1">
-                    <Badge className={feedTypeColors[viewingItem.feedType]}>
-                      {feedTypeLabels[viewingItem.feedType]}
+                    <Badge className={feedTypeColors[viewingItem.feedType as keyof typeof feedTypeColors]}>
+                      {feedTypeLabels[viewingItem.feedType as keyof typeof feedTypeLabels]}
                     </Badge>
                   </div>
                 </div>

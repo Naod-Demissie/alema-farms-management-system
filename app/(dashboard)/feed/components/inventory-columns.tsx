@@ -59,8 +59,8 @@ export const inventoryColumns = (
       return (
         <div className="flex items-center space-x-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="outline" className={feedTypeColors[type]}>
-            {feedTypeLabels[type]}
+          <Badge variant="outline" className={feedTypeColors[type as keyof typeof feedTypeColors]}>
+            {feedTypeLabels[type as keyof typeof feedTypeLabels]}
           </Badge>
         </div>
       );

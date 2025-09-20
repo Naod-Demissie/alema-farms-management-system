@@ -117,8 +117,8 @@ export function InventoryAnalytics() {
                               </div>
                               <div>
                                 <div className="flex items-center space-x-2">
-                                  <Badge className={`${feedTypeColors[item.feedType]} text-sm font-semibold px-3 py-1`}>
-                                    {feedTypeLabels[item.feedType]}
+                                  <Badge className={`${feedTypeColors[item.feedType as keyof typeof feedTypeColors]} text-sm font-semibold px-3 py-1`}>
+                                    {feedTypeLabels[item.feedType as keyof typeof feedTypeLabels]}
                                   </Badge>
                                   <Badge className={`${projectionStatus.color} text-sm px-3 py-1`}>
                                     {projectionStatus.status === 'critical' && <AlertTriangle className="w-3 h-3 mr-1" />}
@@ -296,8 +296,8 @@ export function InventoryAnalytics() {
                         {analytics.analytics.map((feedType: any) => (
                           <div key={feedType.feedType} className="flex items-center justify-between p-4 border rounded-lg">
                             <div className="flex items-center space-x-3">
-                              <Badge className={`${feedTypeColors[feedType.feedType]} text-sm font-semibold px-3 py-1`}>
-                                {feedTypeLabels[feedType.feedType]}
+                              <Badge className={`${feedTypeColors[feedType.feedType as keyof typeof feedTypeColors]} text-sm font-semibold px-3 py-1`}>
+                                {feedTypeLabels[feedType.feedType as keyof typeof feedTypeLabels]}
                               </Badge>
                               <div>
                                 <div className="font-medium">{feedType.totalUsage.toFixed(1)} kg</div>

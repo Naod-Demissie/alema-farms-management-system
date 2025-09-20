@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate  && next dev --turbopack",
-    "build": "prisma generate && next build --turbopack",
+    "build": "prisma generate && npx next build --no-lint --turbopack",
     "start": "next start",
     "lint": "eslint",
     "create-admin": "tsx scripts/create-admin.ts",

@@ -322,8 +322,8 @@ export function FeedPlanning() {
                                 </div>
                                 <div>
                                   <div className="flex items-center space-x-3 mb-2">
-                                    <Badge className={`${feedTypeColors[requirement.feedType]} text-sm font-semibold px-3 py-1`}>
-                                      {feedTypeLabels[requirement.feedType]}
+                                    <Badge className={`${feedTypeColors[requirement.feedType as keyof typeof feedTypeColors]} text-sm font-semibold px-3 py-1`}>
+                                      {feedTypeLabels[requirement.feedType as keyof typeof feedTypeLabels]}
                                     </Badge>
                                     <Badge variant="outline" className="text-xs">
                                       Week {requirement.ageInWeeks}
@@ -601,8 +601,8 @@ export function FeedPlanning() {
                                 </div>
                                 <div>
                                   <div className="flex items-center space-x-3 mb-2">
-                                    <Badge className={`${feedTypeColors[requirement.feedType]} text-sm font-semibold px-3 py-1`}>
-                                      {feedTypeLabels[requirement.feedType]}
+                                    <Badge className={`${feedTypeColors[requirement.feedType as keyof typeof feedTypeColors]} text-sm font-semibold px-3 py-1`}>
+                                      {feedTypeLabels[requirement.feedType as keyof typeof feedTypeLabels]}
                                     </Badge>
                                     <Badge variant="outline" className="text-xs">
                                       Week {requirement.ageInWeeks}

@@ -1,4 +1,4 @@
-import { ExpenseCategory, RevenueSource } from "@prisma/client";
+import { ExpenseCategory, RevenueSource } from "@/lib/generated/prisma";
 
 export interface FinancialSummary {
   totalExpenses: number;

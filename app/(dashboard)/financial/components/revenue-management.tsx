@@ -8,19 +8,28 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DataTable } from "@/components/ui/data-table";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, DollarSign, TrendingUp } from "lucide-react";
-import { RevenueFormData, REVENUE_SOURCES, FinancialFilters } from "@/features/financial/types";
-import { RevenueSource } from "@prisma/client";
+import { Plus, DollarSign, TrendingUp, Eye } from "lucide-react";
+import { RevenueFormData, REVENUE_SOURCES } from "@/features/financial/types";
+import { RevenueSource } from "@/lib/generated/prisma";
+import { 
+  getRevenue, 
+  createRevenue, 
+  updateRevenue, 
+  deleteRevenue 
+} from "@/server/financial";
+import { getFlocks } from "@/server/flocks";
+import { toast } from "sonner";
+import { RevenueTable } from "./revenue-table";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { format } from "date-fns";
 
 interface Revenue {
   id: string;
   flockId: string;
-  source: RevenueSource;
+  source: string;
   amount: number;
   date: Date;
-  description?: string;
+  description?: string | null;
   createdAt: Date;
   updatedAt: Date;
   flock: {
@@ -35,79 +44,21 @@ interface Flock {
   breed: string;
 }
 
-const revenueColumns = [
-  {
-    accessorKey: "date",
-    header: "Date",
-    cell: ({ row }: { row: any }) => {
-      return new Date(row.getValue("date")).toLocaleDateString();
-    },
-  },
-  {
-    accessorKey: "flock.batchCode",
-    header: "Flock",
-  },
-  {
-    accessorKey: "source",
-    header: "Source",
-    cell: ({ row }: { row: any }) => {
-      const source = row.getValue("source");
-      const sourceConfig = REVENUE_SOURCES.find(s => s.value === source);
-      return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          {sourceConfig?.label || source}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "amount",
-    header: "Amount",
-    cell: ({ row }: { row: any }) => {
-      const amount = parseFloat(row.getValue("amount"));
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-    },
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-  },
-  {
-    id: "actions",
-    cell: ({ row }: { row: any }) => {
-      const revenue = row.original;
-      return (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(revenue.id)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(revenue.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      );
-    },
-  },
-];
 
 export function RevenueManagement() {
   const [revenues, setRevenues] = useState<Revenue[]>([]);
   const [flocks, setFlocks] = useState<Flock[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingRevenue, setEditingRevenue] = useState<Revenue | null>(null);
-  const [filters, setFilters] = useState<FinancialFilters>({});
+  const [viewingRevenue, setViewingRevenue] = useState<Revenue | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    type: null as string | null,
+    record: null as Revenue | null,
+  });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<RevenueFormData>({
     flockId: "",
@@ -120,24 +71,22 @@ export function RevenueManagement() {
   useEffect(() => {
     fetchRevenues();
     fetchFlocks();
-  }, [filters]);
+  }, []);
 
   const fetchRevenues = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams();
-      if (filters.flockId) queryParams.append("flockId", filters.flockId);
-      if (filters.startDate) queryParams.append("startDate", filters.startDate.toISOString());
-      if (filters.endDate) queryParams.append("endDate", filters.endDate.toISOString());
-      if (filters.source) queryParams.append("source", filters.source);
-
-      const response = await fetch(`/api/financial/revenue?${queryParams}`);
-      if (response.ok) {
-        const data = await response.json();
-        setRevenues(data);
+      const result = await getRevenue({});
+      if (result.success) {
+        setRevenues(result.data || []);
+      } else {
+        toast.error(result.message || "Failed to fetch revenues");
+        setRevenues([]);
       }
     } catch (error) {
       console.error("Error fetching revenues:", error);
+      toast.error("Failed to fetch revenues");
+      setRevenues([]);
     } finally {
       setLoading(false);
     }
@@ -145,32 +94,47 @@ export function RevenueManagement() {
 
   const fetchFlocks = async () => {
     try {
-      const response = await fetch("/api/flocks");
-      if (response.ok) {
-        const data = await response.json();
-        setFlocks(data);
+      const result = await getFlocks({}, { page: 1, limit: 100 });
+      if (result.success && result.data) {
+        setFlocks(result.data.map(flock => ({
+          id: flock.id,
+          batchCode: flock.batchCode,
+          breed: flock.breed
+        })));
+      } else {
+        toast.error("Failed to fetch flocks");
+        setFlocks([]);
       }
     } catch (error) {
       console.error("Error fetching flocks:", error);
+      toast.error("Failed to fetch flocks");
+      setFlocks([]);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingRevenue 
-        ? `/api/financial/revenue/${editingRevenue.id}`
-        : "/api/financial/revenue";
-      
-      const method = editingRevenue ? "PUT" : "POST";
-      
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      let result;
+      if (editingRevenue) {
+        result = await updateRevenue(editingRevenue.id, {
+          source: formData.source,
+          amount: formData.amount,
+          date: formData.date,
+          description: formData.description,
+        });
+      } else {
+        result = await createRevenue({
+          flockId: formData.flockId,
+          source: formData.source,
+          amount: formData.amount,
+          date: formData.date,
+          description: formData.description,
+        });
+      }
 
-      if (response.ok) {
+      if (result.success) {
+        toast.success(editingRevenue ? "Revenue updated successfully" : "Revenue created successfully");
         setIsDialogOpen(false);
         setEditingRevenue(null);
         setFormData({
@@ -181,39 +145,58 @@ export function RevenueManagement() {
           description: "",
         });
         fetchRevenues();
+      } else {
+        toast.error(result.message || "Failed to save revenue");
       }
     } catch (error) {
       console.error("Error saving revenue:", error);
+      toast.error("Failed to save revenue");
     }
   };
 
-  const handleEdit = (revenueId: string) => {
-    const revenue = revenues.find(r => r.id === revenueId);
-    if (revenue) {
-      setEditingRevenue(revenue);
-      setFormData({
-        flockId: revenue.flockId,
-        source: revenue.source,
-        amount: revenue.amount,
-        date: new Date(revenue.date),
-        description: revenue.description || "",
-      });
-      setIsDialogOpen(true);
-    }
+  const handleView = (revenue: Revenue) => {
+    setViewingRevenue(revenue);
+    setIsViewDialogOpen(true);
   };
 
-  const handleDelete = async (revenueId: string) => {
-    if (confirm("Are you sure you want to delete this revenue record?")) {
-      try {
-        const response = await fetch(`/api/financial/revenue/${revenueId}`, {
-          method: "DELETE",
-        });
-        if (response.ok) {
-          fetchRevenues();
-        }
-      } catch (error) {
-        console.error("Error deleting revenue:", error);
+  const handleEdit = (revenue: Revenue) => {
+    setEditingRevenue(revenue);
+    setFormData({
+      flockId: revenue.flockId,
+      source: revenue.source as RevenueSource,
+      amount: revenue.amount,
+      date: new Date(revenue.date),
+      description: revenue.description || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (revenue: Revenue) => {
+    setConfirmDialog({
+      open: true,
+      type: "delete",
+      record: revenue,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.record) return;
+
+    setActionLoading(confirmDialog.record.id);
+    try {
+      const result = await deleteRevenue(confirmDialog.record.id);
+      if (result.success) {
+        toast.success("Revenue deleted successfully");
+        fetchRevenues();
+        setConfirmDialog({ open: false, type: null, record: null });
+      } else {
+        toast.error(result.message || "Failed to delete revenue");
       }
+    } catch (error) {
+      console.error("Error deleting revenue:", error);
+      toast.error("Failed to delete revenue");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -240,12 +223,12 @@ export function RevenueManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(totalRevenue)}
-            </div>
+                   <div className="text-2xl font-bold text-green-600">
+                     {new Intl.NumberFormat("en-ET", {
+                       style: "currency",
+                       currency: "ETB",
+                     }).format(totalRevenue)}
+                   </div>
           </CardContent>
         </Card>
 
@@ -265,21 +248,21 @@ export function RevenueManagement() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(
-                revenues
-                  .filter(r => {
-                    const revenueDate = new Date(r.date);
-                    const now = new Date();
-                    return revenueDate.getMonth() === now.getMonth() && 
-                           revenueDate.getFullYear() === now.getFullYear();
-                  })
-                  .reduce((sum, r) => sum + r.amount, 0)
-              )}
-            </div>
+                   <div className="text-2xl font-bold text-green-600">
+                     {new Intl.NumberFormat("en-ET", {
+                       style: "currency",
+                       currency: "ETB",
+                     }).format(
+                       revenues
+                         .filter(r => {
+                           const revenueDate = new Date(r.date);
+                           const now = new Date();
+                           return revenueDate.getMonth() === now.getMonth() &&
+                                  revenueDate.getFullYear() === now.getFullYear();
+                         })
+                         .reduce((sum, r) => sum + r.amount, 0)
+                     )}
+                   </div>
           </CardContent>
         </Card>
 
@@ -289,125 +272,17 @@ export function RevenueManagement() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(revenues.length > 0 ? totalRevenue / revenues.length : 0)}
-            </div>
+                   <div className="text-2xl font-bold text-green-600">
+                     {new Intl.NumberFormat("en-ET", {
+                       style: "currency",
+                       currency: "ETB",
+                     }).format(revenues.length > 0 ? totalRevenue / revenues.length : 0)}
+                   </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="flock-filter">Flock</Label>
-              <Select
-                value={filters.flockId || "all"}
-                onValueChange={(value) => setFilters({ ...filters, flockId: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Flocks" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Flocks</SelectItem>
-                  {flocks.map((flock) => (
-                    <SelectItem key={flock.id} value={flock.id}>
-                      {flock.batchCode} ({flock.breed})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div>
-              <Label htmlFor="source-filter">Source</Label>
-              <Select
-                value={filters.source || "all"}
-                onValueChange={(value) => setFilters({ ...filters, source: value === "all" ? undefined : value as RevenueSource })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Sources" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  {REVENUE_SOURCES.map((source) => (
-                    <SelectItem key={source.value} value={source.value}>
-                      {source.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="start-date">Start Date</Label>
-              <Input
-                id="start-date"
-                type="date"
-                value={filters.startDate?.toISOString().split('T')[0] || ""}
-                onChange={(e) => setFilters({ 
-                  ...filters, 
-                  startDate: e.target.value ? new Date(e.target.value) : undefined 
-                })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="end-date">End Date</Label>
-              <Input
-                id="end-date"
-                type="date"
-                value={filters.endDate?.toISOString().split('T')[0] || ""}
-                onChange={(e) => setFilters({ 
-                  ...filters, 
-                  endDate: e.target.value ? new Date(e.target.value) : undefined 
-                })}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Source Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue Summary by Source</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {sourceSummary.map((summary) => (
-              <div key={summary.source} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {summary.label}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {summary.count} records
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium text-green-600">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(summary.total)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {summary.percentage.toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Revenue Table */}
       <Card>
@@ -526,14 +401,92 @@ export function RevenueManagement() {
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={revenueColumns}
-            data={revenues}
-            loading={loading}
-          />
-        </CardContent>
+               <CardContent>
+                 <RevenueTable
+                   data={revenues}
+                   onView={handleView}
+                   onEdit={handleEdit}
+                   onDelete={handleDeleteClick}
+                   flocks={flocks}
+                   loading={loading}
+                 />
+               </CardContent>
       </Card>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Revenue Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this revenue record
+            </DialogDescription>
+          </DialogHeader>
+          {viewingRevenue && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                  <p className="text-sm font-medium">
+                    {format(new Date(viewingRevenue.date), "PPP")}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Flock</Label>
+                  <p className="text-sm font-medium">
+                    {viewingRevenue.flock.batchCode} ({viewingRevenue.flock.breed})
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Source</Label>
+                  <p className="text-sm font-medium">
+                    {REVENUE_SOURCES.find(s => s.value === viewingRevenue.source)?.label || viewingRevenue.source}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
+                  <p className="text-sm font-medium">
+                    {new Intl.NumberFormat("en-ET", {
+                      style: "currency",
+                      currency: "ETB",
+                    }).format(viewingRevenue.amount)}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">
+                  {viewingRevenue.description || "No description provided"}
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setIsViewDialogOpen(false);
+              handleEdit(viewingRevenue!);
+            }}>
+              Edit Revenue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title="Delete Revenue"
+        desc={`Are you sure you want to delete this revenue record? This action cannot be undone and the record will be permanently removed.`}
+        confirmText="Delete Revenue"
+        cancelBtnText="Cancel"
+        destructive={true}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.record?.id}
+      />
     </div>
   );
 }

@@ -8,11 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DataTable } from "@/components/ui/data-table";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, DollarSign } from "lucide-react";
-import { ExpenseFormData, EXPENSE_CATEGORIES, FinancialFilters } from "@/features/financial/types";
-import { ExpenseCategory } from "@prisma/client";
+import { Plus, DollarSign, Eye } from "lucide-react";
+import { ExpenseFormData, EXPENSE_CATEGORIES } from "@/features/financial/types";
+import { ExpenseCategory } from "@/lib/generated/prisma";
+import {
+  getExpenses,
+  createExpense,
+  updateExpense,
+  deleteExpense
+} from "@/server/financial";
+import { getFlocks } from "@/server/flocks";
+import { toast } from "sonner";
+import { ExpenseTable } from "./expense-table";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { format } from "date-fns";
 
 interface Expense {
   id: string;
@@ -20,7 +29,7 @@ interface Expense {
   category: ExpenseCategory;
   amount: number;
   date: Date;
-  description?: string;
+  description?: string | null;
   createdAt: Date;
   updatedAt: Date;
   flock: {
@@ -35,79 +44,21 @@ interface Flock {
   breed: string;
 }
 
-const expenseColumns = [
-  {
-    accessorKey: "date",
-    header: "Date",
-    cell: ({ row }: { row: any }) => {
-      return new Date(row.getValue("date")).toLocaleDateString();
-    },
-  },
-  {
-    accessorKey: "flock.batchCode",
-    header: "Flock",
-  },
-  {
-    accessorKey: "category",
-    header: "Category",
-    cell: ({ row }: { row: any }) => {
-      const category = row.getValue("category");
-      const categoryConfig = EXPENSE_CATEGORIES.find(c => c.value === category);
-      return (
-        <Badge variant="outline">
-          {categoryConfig?.label || category}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "amount",
-    header: "Amount",
-    cell: ({ row }: { row: any }) => {
-      const amount = parseFloat(row.getValue("amount"));
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-    },
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-  },
-  {
-    id: "actions",
-    cell: ({ row }: { row: any }) => {
-      const expense = row.original;
-      return (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(expense.id)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(expense.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      );
-    },
-  },
-];
 
 export function ExpenseTracking() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [flocks, setFlocks] = useState<Flock[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [filters, setFilters] = useState<FinancialFilters>({});
+  const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    type: null as string | null,
+    record: null as Expense | null,
+  });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<ExpenseFormData>({
     flockId: "",
@@ -120,24 +71,22 @@ export function ExpenseTracking() {
   useEffect(() => {
     fetchExpenses();
     fetchFlocks();
-  }, [filters]);
+  }, []);
 
   const fetchExpenses = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams();
-      if (filters.flockId) queryParams.append("flockId", filters.flockId);
-      if (filters.startDate) queryParams.append("startDate", filters.startDate.toISOString());
-      if (filters.endDate) queryParams.append("endDate", filters.endDate.toISOString());
-      if (filters.category) queryParams.append("category", filters.category);
-
-      const response = await fetch(`/api/financial/expenses?${queryParams}`);
-      if (response.ok) {
-        const data = await response.json();
-        setExpenses(data);
+      const result = await getExpenses({});
+      if (result.success) {
+        setExpenses(result.data || []);
+      } else {
+        toast.error(result.message || "Failed to fetch expenses");
+        setExpenses([]);
       }
     } catch (error) {
       console.error("Error fetching expenses:", error);
+      toast.error("Failed to fetch expenses");
+      setExpenses([]);
     } finally {
       setLoading(false);
     }
@@ -145,32 +94,47 @@ export function ExpenseTracking() {
 
   const fetchFlocks = async () => {
     try {
-      const response = await fetch("/api/flocks");
-      if (response.ok) {
-        const data = await response.json();
-        setFlocks(data);
+      const result = await getFlocks({}, { page: 1, limit: 100 });
+      if (result.success && result.data) {
+        setFlocks(result.data.map(flock => ({
+          id: flock.id,
+          batchCode: flock.batchCode,
+          breed: flock.breed
+        })));
+      } else {
+        toast.error("Failed to fetch flocks");
+        setFlocks([]);
       }
     } catch (error) {
       console.error("Error fetching flocks:", error);
+      toast.error("Failed to fetch flocks");
+      setFlocks([]);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingExpense 
-        ? `/api/financial/expenses/${editingExpense.id}`
-        : "/api/financial/expenses";
-      
-      const method = editingExpense ? "PUT" : "POST";
-      
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      let result;
+      if (editingExpense) {
+        result = await updateExpense(editingExpense.id, {
+          category: formData.category,
+          amount: formData.amount,
+          date: formData.date,
+          description: formData.description,
+        });
+      } else {
+        result = await createExpense({
+          flockId: formData.flockId,
+          category: formData.category,
+          amount: formData.amount,
+          date: formData.date,
+          description: formData.description,
+        });
+      }
 
-      if (response.ok) {
+      if (result.success) {
+        toast.success(editingExpense ? "Expense updated successfully" : "Expense created successfully");
         setIsDialogOpen(false);
         setEditingExpense(null);
         setFormData({
@@ -181,39 +145,58 @@ export function ExpenseTracking() {
           description: "",
         });
         fetchExpenses();
+      } else {
+        toast.error(result.message || "Failed to save expense");
       }
     } catch (error) {
       console.error("Error saving expense:", error);
+      toast.error("Failed to save expense");
     }
   };
 
-  const handleEdit = (expenseId: string) => {
-    const expense = expenses.find(e => e.id === expenseId);
-    if (expense) {
-      setEditingExpense(expense);
-      setFormData({
-        flockId: expense.flockId,
-        category: expense.category,
-        amount: expense.amount,
-        date: new Date(expense.date),
-        description: expense.description || "",
-      });
-      setIsDialogOpen(true);
-    }
+  const handleView = (expense: Expense) => {
+    setViewingExpense(expense);
+    setIsViewDialogOpen(true);
   };
 
-  const handleDelete = async (expenseId: string) => {
-    if (confirm("Are you sure you want to delete this expense?")) {
-      try {
-        const response = await fetch(`/api/financial/expenses/${expenseId}`, {
-          method: "DELETE",
-        });
-        if (response.ok) {
-          fetchExpenses();
-        }
-      } catch (error) {
-        console.error("Error deleting expense:", error);
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense);
+    setFormData({
+      flockId: expense.flockId,
+      category: expense.category,
+      amount: expense.amount,
+      date: new Date(expense.date),
+      description: expense.description || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (expense: Expense) => {
+    setConfirmDialog({
+      open: true,
+      type: "delete",
+      record: expense,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.record) return;
+
+    setActionLoading(confirmDialog.record.id);
+    try {
+      const result = await deleteExpense(confirmDialog.record.id);
+      if (result.success) {
+        toast.success("Expense deleted successfully");
+        fetchExpenses();
+        setConfirmDialog({ open: false, type: null, record: null });
+      } else {
+        toast.error(result.message || "Failed to delete expense");
       }
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      toast.error("Failed to delete expense");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -240,12 +223,12 @@ export function ExpenseTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(totalExpenses)}
-            </div>
+                   <div className="text-2xl font-bold">
+                     {new Intl.NumberFormat("en-ET", {
+                       style: "currency",
+                       currency: "ETB",
+                     }).format(totalExpenses)}
+                   </div>
           </CardContent>
         </Card>
 
@@ -265,21 +248,21 @@ export function ExpenseTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(
-                expenses
-                  .filter(e => {
-                    const expenseDate = new Date(e.date);
-                    const now = new Date();
-                    return expenseDate.getMonth() === now.getMonth() && 
-                           expenseDate.getFullYear() === now.getFullYear();
-                  })
-                  .reduce((sum, e) => sum + e.amount, 0)
-              )}
-            </div>
+                   <div className="text-2xl font-bold">
+                     {new Intl.NumberFormat("en-ET", {
+                       style: "currency",
+                       currency: "ETB",
+                     }).format(
+                       expenses
+                         .filter(e => {
+                           const expenseDate = new Date(e.date);
+                           const now = new Date();
+                           return expenseDate.getMonth() === now.getMonth() &&
+                                  expenseDate.getFullYear() === now.getFullYear();
+                         })
+                         .reduce((sum, e) => sum + e.amount, 0)
+                     )}
+                   </div>
           </CardContent>
         </Card>
 
@@ -289,123 +272,17 @@ export function ExpenseTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(expenses.length > 0 ? totalExpenses / expenses.length : 0)}
-            </div>
+                   <div className="text-2xl font-bold">
+                     {new Intl.NumberFormat("en-ET", {
+                       style: "currency",
+                       currency: "ETB",
+                     }).format(expenses.length > 0 ? totalExpenses / expenses.length : 0)}
+                   </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="flock-filter">Flock</Label>
-              <Select
-                value={filters.flockId || "all"}
-                onValueChange={(value) => setFilters({ ...filters, flockId: value === "all" ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Flocks" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Flocks</SelectItem>
-                  {flocks.map((flock) => (
-                    <SelectItem key={flock.id} value={flock.id}>
-                      {flock.batchCode} ({flock.breed})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div>
-              <Label htmlFor="category-filter">Category</Label>
-              <Select
-                value={filters.category || "all"}
-                onValueChange={(value) => setFilters({ ...filters, category: value === "all" ? undefined : value as ExpenseCategory })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {EXPENSE_CATEGORIES.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="start-date">Start Date</Label>
-              <Input
-                id="start-date"
-                type="date"
-                value={filters.startDate?.toISOString().split('T')[0] || ""}
-                onChange={(e) => setFilters({ 
-                  ...filters, 
-                  startDate: e.target.value ? new Date(e.target.value) : undefined 
-                })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="end-date">End Date</Label>
-              <Input
-                id="end-date"
-                type="date"
-                value={filters.endDate?.toISOString().split('T')[0] || ""}
-                onChange={(e) => setFilters({ 
-                  ...filters, 
-                  endDate: e.target.value ? new Date(e.target.value) : undefined 
-                })}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Category Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Expense Summary by Category</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {categorySummary.map((summary) => (
-              <div key={summary.category} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{summary.label}</Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {summary.count} records
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(summary.total)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {summary.percentage.toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Expenses Table */}
       <Card>
@@ -524,14 +401,92 @@ export function ExpenseTracking() {
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={expenseColumns}
-            data={expenses}
-            loading={loading}
-          />
-        </CardContent>
+               <CardContent>
+                 <ExpenseTable
+                   data={expenses}
+                   onView={handleView}
+                   onEdit={handleEdit}
+                   onDelete={handleDeleteClick}
+                   flocks={flocks}
+                   loading={loading}
+                 />
+               </CardContent>
       </Card>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Expense Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this expense record
+            </DialogDescription>
+          </DialogHeader>
+          {viewingExpense && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                  <p className="text-sm font-medium">
+                    {format(new Date(viewingExpense.date), "PPP")}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Flock</Label>
+                  <p className="text-sm font-medium">
+                    {viewingExpense.flock.batchCode} ({viewingExpense.flock.breed})
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                  <p className="text-sm font-medium">
+                    {EXPENSE_CATEGORIES.find(c => c.value === viewingExpense.category)?.label || viewingExpense.category}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
+                  <p className="text-sm font-medium">
+                    {new Intl.NumberFormat("en-ET", {
+                      style: "currency",
+                      currency: "ETB",
+                    }).format(viewingExpense.amount)}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">
+                  {viewingExpense.description || "No description provided"}
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setIsViewDialogOpen(false);
+              handleEdit(viewingExpense!);
+            }}>
+              Edit Expense
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title="Delete Expense"
+        desc={`Are you sure you want to delete this expense record? This action cannot be undone and the record will be permanently removed.`}
+        confirmText="Delete Expense"
+        cancelBtnText="Cancel"
+        destructive={true}
+        handleConfirm={handleConfirmAction}
+        isLoading={actionLoading === confirmDialog.record?.id}
+      />
     </div>
   );
 }

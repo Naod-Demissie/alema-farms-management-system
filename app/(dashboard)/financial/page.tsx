@@ -8,7 +8,6 @@ import { Plus } from "lucide-react";
 import { ExpenseTracking } from "./components/expense-tracking";
 import { RevenueManagement } from "./components/revenue-management";
 import { FinancialReporting } from "./components/financial-reporting";
-import { FinancialAnalytics } from "./components/financial-analytics";
 
 export default function FinancialManagementPage() {
   const [activeTab, setActiveTab] = useState("expenses");
@@ -25,11 +24,9 @@ export default function FinancialManagementPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="expenses">Expense Tracking</TabsTrigger>
           <TabsTrigger value="revenue">Revenue Management</TabsTrigger>
-          <TabsTrigger value="reporting">Financial Reporting</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="expenses" className="space-y-4">
@@ -38,14 +35,6 @@ export default function FinancialManagementPage() {
 
         <TabsContent value="revenue" className="space-y-4">
           <RevenueManagement />
-        </TabsContent>
-
-        <TabsContent value="reporting" className="space-y-4">
-          <FinancialReporting />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <FinancialAnalytics />
         </TabsContent>
       </Tabs>
     </div>

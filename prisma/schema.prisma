@@ -266,27 +266,29 @@ model ManureProduction {
 }
 
 model Expenses {
-  id        String          @id @default(uuid())
-  flockId   String
-  category  ExpenseCategory
-  amount    Float
-  date      DateTime
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  flock     Flocks          @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  id          String          @id @default(uuid())
+  flockId     String
+  category    ExpenseCategory
+  amount      Float
+  date        DateTime
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  flock       Flocks          @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("expenses")
 }
 
 model Revenue {
-  id        String        @id @default(uuid())
-  flockId   String
-  source    RevenueSource
-  amount    Float
-  date      DateTime
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  flock     Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  id          String        @id @default(uuid())
+  flockId     String
+  source      RevenueSource
+  amount      Float
+  date        DateTime
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  flock       Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("revenue")
 }
