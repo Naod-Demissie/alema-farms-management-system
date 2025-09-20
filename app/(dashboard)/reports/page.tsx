@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
   Download, 
   FileText,
@@ -164,7 +163,6 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 mb-4">
             <DollarSign className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Financial Reports</h2>
-            <Badge variant="outline">Revenue, expenses, and profitability reports</Badge>
           </div>
           <FinancialReports filters={filters} />
         </TabsContent>
@@ -174,7 +172,6 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 mb-4">
             <Bird className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Flock Management Reports</h2>
-            <Badge variant="outline">Flock performance and population analytics</Badge>
           </div>
           <FlockReports filters={filters} />
         </TabsContent>
@@ -184,7 +181,6 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 mb-4">
             <Egg className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Production Reports</h2>
-            <Badge variant="outline">Egg production and quality reports</Badge>
           </div>
           <ProductionReports filters={filters} />
         </TabsContent>
@@ -194,7 +190,6 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 mb-4">
             <Heart className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Health & Mortality Reports</h2>
-            <Badge variant="outline">Health and mortality reports</Badge>
           </div>
           <HealthReports filters={filters} />
         </TabsContent>
@@ -204,7 +199,6 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 mb-4">
             <Activity className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Staff Management Reports</h2>
-            <Badge variant="outline">Attendance, payroll, and productivity reports</Badge>
           </div>
           <StaffReports filters={filters} />
         </TabsContent>
@@ -214,7 +208,6 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 mb-4">
             <Utensils className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Feed Management Reports</h2>
-            <Badge variant="outline">Feed usage and inventory reports</Badge>
           </div>
           <FeedReports filters={filters} />
         </TabsContent>
