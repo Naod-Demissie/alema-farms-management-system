@@ -1,9 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { logAction } from "./audit";
+import { getAuthenticatedUser, AuthenticatedUser } from "./auth-middleware";
 import { ApiResponse, PaginatedResponse, FilterParams, PaginationParams, SortParams } from "./types";
 
 // ===================
@@ -56,17 +54,15 @@ export interface FlockPopulationUpdate {
 // Create a new flock
 export async function createFlock(data: CreateFlockData): Promise<ApiResponse> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
+    const user = authResult.user!;
 
     // Check if batch code already exists
     const existingFlock = await prisma.flocks.findUnique({
@@ -108,14 +104,6 @@ export async function createFlock(data: CreateFlockData): Promise<ApiResponse> {
       }
     });
 
-    // Log the action
-    await logAction('flock:create', session.user.id, {
-      flockId: flock.id,
-      batchCode: flock.batchCode,
-      breed: flock.breed,
-      source: flock.source,
-      initialCount: flock.initialCount
-    });
 
     return {
       success: true,
@@ -139,15 +127,12 @@ export async function getFlocks(
   sort: SortParams = { field: 'createdAt', direction: 'desc' }
 ): Promise<PaginatedResponse<any>> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -232,15 +217,12 @@ export async function getFlocks(
 // Get a single flock by ID
 export async function getFlockById(flockId: string): Promise<ApiResponse> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -316,17 +298,15 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
 // Update a flock
 export async function updateFlock(flockId: string, data: UpdateFlockData): Promise<ApiResponse> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
+    const user = authResult.user!;
 
     // Check if flock exists
     const existingFlock = await prisma.flocks.findUnique({
@@ -380,12 +360,6 @@ export async function updateFlock(flockId: string, data: UpdateFlockData): Promi
       }
     });
 
-    // Log the action
-    await logAction('flock:update', session.user.id, {
-      flockId,
-      changes: data,
-      previousData: existingFlock
-    });
 
     return {
       success: true,
@@ -405,17 +379,15 @@ export async function updateFlock(flockId: string, data: UpdateFlockData): Promi
 // Delete a flock
 export async function deleteFlock(flockId: string): Promise<ApiResponse> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
+    const user = authResult.user!;
 
     // Check if flock exists
     const existingFlock = await prisma.flocks.findUnique({
@@ -460,12 +432,6 @@ export async function deleteFlock(flockId: string): Promise<ApiResponse> {
       where: { id: flockId }
     });
 
-    // Log the action
-    await logAction('flock:delete', session.user.id, {
-      flockId,
-      batchCode: existingFlock.batchCode,
-      breed: existingFlock.breed
-    });
 
     return {
       success: true,
@@ -488,17 +454,15 @@ export async function deleteFlock(flockId: string): Promise<ApiResponse> {
 // Update flock population
 export async function updateFlockPopulation(data: FlockPopulationUpdate): Promise<ApiResponse> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
+    const user = authResult.user!;
 
     const flock = await prisma.flocks.findUnique({
       where: { id: data.flockId }
@@ -533,14 +497,6 @@ export async function updateFlockPopulation(data: FlockPopulationUpdate): Promis
       }
     });
 
-    // Log the population change
-    await logAction('flock:population_update', session.user.id, {
-      flockId: data.flockId,
-      previousCount: flock.currentCount,
-      newCount: data.newCount,
-      reason: data.reason,
-      notes: data.notes
-    });
 
     return {
       success: true,
@@ -564,15 +520,12 @@ export async function updateFlockPopulation(data: FlockPopulationUpdate): Promis
 // Get flock statistics
 export async function getFlockStatistics(): Promise<ApiResponse> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -662,15 +615,12 @@ export async function getFlockStatistics(): Promise<ApiResponse> {
 // Generate unique batch code
 export async function generateBatchCode(breed: 'broiler' | 'layer' | 'dual_purpose'): Promise<ApiResponse> {
   try {
-    // Get current user
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 

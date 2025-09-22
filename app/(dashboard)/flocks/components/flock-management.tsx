@@ -61,6 +61,7 @@ import { format } from "date-fns";
 import { FlockTable } from "./flock-table";
 import { flockColumns } from "./flock-table-columns";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { toast } from "sonner";
 
 const flockSchema = z.object({
   batchCode: z.string().min(1, "Batch code is required"),
@@ -141,11 +142,19 @@ export function FlockManagementMerged({
         onFlockCreated(result.data);
         form.reset();
         setIsCreateDialogOpen(false);
+        toast.success("Flock created successfully!", {
+          description: `Batch ${data.batchCode} has been added to your flocks.`
+        });
       } else {
-        console.error('Error creating flock:', result.message);
+        toast.error("Failed to create flock", {
+          description: result.message || "An unexpected error occurred."
+        });
       }
     } catch (error) {
       console.error('Error creating flock:', error);
+      toast.error("Failed to create flock", {
+        description: "An unexpected error occurred. Please try again."
+      });
     } finally {
       setLoading(false);
     }
@@ -163,11 +172,19 @@ export function FlockManagementMerged({
         form.reset();
         setIsEditDialogOpen(false);
         setEditingFlock(null);
+        toast.success("Flock updated successfully!", {
+          description: `Batch ${data.batchCode} has been updated.`
+        });
       } else {
-        console.error('Error updating flock:', result.message);
+        toast.error("Failed to update flock", {
+          description: result.message || "An unexpected error occurred."
+        });
       }
     } catch (error) {
       console.error('Error updating flock:', error);
+      toast.error("Failed to update flock", {
+        description: "An unexpected error occurred. Please try again."
+      });
     } finally {
       setLoading(false);
     }
@@ -188,11 +205,19 @@ export function FlockManagementMerged({
         populationForm.reset();
         setIsUpdatePopulationDialogOpen(false);
         setSelectedFlock(null);
+        toast.success("Population updated successfully!", {
+          description: `Flock population updated to ${data.newCount} birds.`
+        });
       } else {
-        console.error('Error updating population:', result.message);
+        toast.error("Failed to update population", {
+          description: result.message || "An unexpected error occurred."
+        });
       }
     } catch (error) {
       console.error('Error updating population:', error);
+      toast.error("Failed to update population", {
+        description: "An unexpected error occurred. Please try again."
+      });
     } finally {
       setLoading(false);
     }
@@ -218,11 +243,19 @@ export function FlockManagementMerged({
       if (result.success) {
         onFlockDeleted(confirmDialog.flock.id);
         setConfirmDialog({ open: false, flock: null });
+        toast.success("Flock deleted successfully!", {
+          description: `Batch ${confirmDialog.flock.batchCode} has been removed from your flocks.`
+        });
       } else {
-        console.error('Error deleting flock:', result.message);
+        toast.error("Failed to delete flock", {
+          description: result.message || "An unexpected error occurred."
+        });
       }
     } catch (error) {
       console.error('Error deleting flock:', error);
+      toast.error("Failed to delete flock", {
+        description: "An unexpected error occurred. Please try again."
+      });
     } finally {
       setDeletingId(null);
     }

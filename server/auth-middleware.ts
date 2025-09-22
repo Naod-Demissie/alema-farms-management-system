@@ -144,3 +144,4 @@ export const withResourceAccess = async <T>(
 
   return handler(authResult.user!);
 };
+
