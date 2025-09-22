@@ -3,19 +3,31 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { 
-  Palette, 
-  Globe, 
-  Clock, 
-  Bell, 
+import {
+  Palette,
+  Globe,
+  Clock,
+  Bell,
   Save,
   Monitor,
   Moon,
-  Sun
+  Sun,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
@@ -43,7 +55,7 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
     animationSpeed: 1,
     compactMode: false,
     sidebarCollapsed: false,
-    dashboardLayout: "grid"
+    dashboardLayout: "grid",
   });
 
   // Track changes
@@ -51,17 +63,20 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
     onChanges(hasChanges);
   }, [hasChanges, onChanges]);
 
-  const handleInputChange = (field: string, value: string | boolean | number) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    field: string,
+    value: string | boolean | number
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     setHasChanges(true);
   };
 
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme);
-    handleInputChange('theme', newTheme);
+    handleInputChange("theme", newTheme);
   };
 
   const handleSave = async () => {
@@ -76,7 +91,7 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
         toast.error(result.message || "Failed to update preferences");
       }
     } catch (error) {
-      console.error('Error updating preferences:', error);
+      console.error("Error updating preferences:", error);
       toast.error("Failed to update preferences");
     } finally {
       setIsLoading(false);
@@ -137,7 +152,9 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
               <Switch
                 id="compactMode"
                 checked={formData.compactMode}
-                onCheckedChange={(checked) => handleInputChange('compactMode', checked)}
+                onCheckedChange={(checked) =>
+                  handleInputChange("compactMode", checked)
+                }
               />
             </div>
 
@@ -151,7 +168,9 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
               <Switch
                 id="sidebarCollapsed"
                 checked={formData.sidebarCollapsed}
-                onCheckedChange={(checked) => handleInputChange('sidebarCollapsed', checked)}
+                onCheckedChange={(checked) =>
+                  handleInputChange("sidebarCollapsed", checked)
+                }
               />
             </div>
           </div>
@@ -175,7 +194,7 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
               <Label>Language</Label>
               <Select
                 value={formData.language}
-                onValueChange={(value) => handleInputChange('language', value)}
+                onValueChange={(value) => handleInputChange("language", value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -195,7 +214,7 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
               <Label>Timezone</Label>
               <Select
                 value={formData.timezone}
-                onValueChange={(value) => handleInputChange('timezone', value)}
+                onValueChange={(value) => handleInputChange("timezone", value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -205,7 +224,9 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
                   <SelectItem value="America/New_York">Eastern Time</SelectItem>
                   <SelectItem value="America/Chicago">Central Time</SelectItem>
                   <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                  <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                  <SelectItem value="America/Los_Angeles">
+                    Pacific Time
+                  </SelectItem>
                   <SelectItem value="Europe/London">London</SelectItem>
                   <SelectItem value="Europe/Paris">Paris</SelectItem>
                   <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
@@ -219,7 +240,9 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
               <Label>Date Format</Label>
               <Select
                 value={formData.dateFormat}
-                onValueChange={(value) => handleInputChange('dateFormat', value)}
+                onValueChange={(value) =>
+                  handleInputChange("dateFormat", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -237,7 +260,9 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
               <Label>Time Format</Label>
               <Select
                 value={formData.timeFormat}
-                onValueChange={(value) => handleInputChange('timeFormat', value)}
+                onValueChange={(value) =>
+                  handleInputChange("timeFormat", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -252,103 +277,10 @@ export function PreferencesSettings({ onChanges }: PreferencesSettingsProps) {
         </CardContent>
       </Card>
 
-      {/* Behavior Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Behavior
-          </CardTitle>
-          <CardDescription>
-            Configure how the application behaves and responds to your actions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="autoSave">Auto Save</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically save changes as you work
-                </p>
-              </div>
-              <Switch
-                id="autoSave"
-                checked={formData.autoSave}
-                onCheckedChange={(checked) => handleInputChange('autoSave', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="notifications">Desktop Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show desktop notifications for important updates
-                </p>
-              </div>
-              <Switch
-                id="notifications"
-                checked={formData.notifications}
-                onCheckedChange={(checked) => handleInputChange('notifications', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="soundEnabled">Sound Effects</Label>
-                <p className="text-sm text-muted-foreground">
-                  Play sounds for actions and notifications
-                </p>
-              </div>
-              <Switch
-                id="soundEnabled"
-                checked={formData.soundEnabled}
-                onCheckedChange={(checked) => handleInputChange('soundEnabled', checked)}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label>Animation Speed</Label>
-              <div className="px-3">
-                <Slider
-                  value={[formData.animationSpeed]}
-                  onValueChange={(value) => handleInputChange('animationSpeed', value[0])}
-                  max={3}
-                  min={0.5}
-                  step={0.5}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                  <span>Slow</span>
-                  <span>Fast</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Dashboard Layout</Label>
-              <Select
-                value={formData.dashboardLayout}
-                onValueChange={(value) => handleInputChange('dashboardLayout', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="grid">Grid Layout</SelectItem>
-                  <SelectItem value="list">List Layout</SelectItem>
-                  <SelectItem value="compact">Compact Layout</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           disabled={!hasChanges || isLoading}
           className="min-w-[120px]"
         >

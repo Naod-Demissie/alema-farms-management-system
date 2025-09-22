@@ -4,23 +4,33 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Settings, 
-  Mail, 
-  Shield, 
+import {
+  Settings,
+  Mail,
+  Shield,
   Trash2,
   AlertTriangle,
   CheckCircle,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { updatePassword, updateNotificationSettings, deleteAccount } from "@/server/settings";
+import {
+  updatePassword,
+  updateNotificationSettings,
+  deleteAccount,
+} from "@/server/settings";
 
 interface AccountSettingsProps {
   onChanges: (hasChanges: boolean) => void;
@@ -43,13 +53,13 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
     smsNotifications: false,
     marketingEmails: false,
     twoFactorEnabled: false,
-    accountStatus: "active"
+    accountStatus: "active",
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     setHasChanges(true);
   };
@@ -69,23 +79,23 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
     try {
       const result = await updatePassword({
         currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword
+        newPassword: formData.newPassword,
       });
 
       if (result.success) {
         toast.success("Password updated successfully");
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           currentPassword: "",
           newPassword: "",
-          confirmPassword: ""
+          confirmPassword: "",
         }));
         setHasChanges(false);
       } else {
         toast.error(result.message || "Failed to update password");
       }
     } catch (error) {
-      console.error('Error updating password:', error);
+      console.error("Error updating password:", error);
       toast.error("Failed to update password");
     } finally {
       setIsLoading(false);
@@ -98,7 +108,7 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
       const result = await updateNotificationSettings({
         emailNotifications: formData.emailNotifications,
         smsNotifications: formData.smsNotifications,
-        marketingEmails: formData.marketingEmails
+        marketingEmails: formData.marketingEmails,
       });
 
       if (result.success) {
@@ -108,7 +118,7 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
         toast.error(result.message || "Failed to update notification settings");
       }
     } catch (error) {
-      console.error('Error updating notifications:', error);
+      console.error("Error updating notifications:", error);
       toast.error("Failed to update notification settings");
     } finally {
       setIsLoading(false);
@@ -116,7 +126,11 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
   };
 
   const handleAccountDeletion = async () => {
-    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete your account? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -127,12 +141,12 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
       if (result.success) {
         toast.success("Account deleted successfully");
         // Redirect to login or home page
-        window.location.href = '/';
+        window.location.href = "/";
       } else {
         toast.error(result.message || "Failed to delete account");
       }
     } catch (error) {
-      console.error('Error deleting account:', error);
+      console.error("Error deleting account:", error);
       toast.error("Failed to delete account");
     } finally {
       setIsLoading(false);
@@ -161,7 +175,9 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
                   id="currentPassword"
                   type={showCurrentPassword ? "text" : "password"}
                   value={formData.currentPassword}
-                  onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("currentPassword", e.target.value)
+                  }
                   placeholder="Enter current password"
                 />
                 <Button
@@ -187,7 +203,9 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
                   id="newPassword"
                   type={showNewPassword ? "text" : "password"}
                   value={formData.newPassword}
-                  onChange={(e) => handleInputChange('newPassword', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("newPassword", e.target.value)
+                  }
                   placeholder="Enter new password"
                 />
                 <Button
@@ -213,7 +231,9 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("confirmPassword", e.target.value)
+                  }
                   placeholder="Confirm new password"
                 />
                 <Button
@@ -232,9 +252,14 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
               </div>
             </div>
 
-            <Button 
+            <Button
               onClick={handlePasswordChange}
-              disabled={!formData.currentPassword || !formData.newPassword || !formData.confirmPassword || isLoading}
+              disabled={
+                !formData.currentPassword ||
+                !formData.newPassword ||
+                !formData.confirmPassword ||
+                isLoading
+              }
             >
               {isLoading ? (
                 <>
@@ -247,126 +272,6 @@ export function AccountSettings({ onChanges }: AccountSettingsProps) {
                   Update Password
                 </>
               )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notification Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Notification Preferences
-          </CardTitle>
-          <CardDescription>
-            Choose how you want to be notified about updates and activities.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="emailNotifications">Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive important updates via email
-                </p>
-              </div>
-              <Switch
-                id="emailNotifications"
-                checked={formData.emailNotifications}
-                onCheckedChange={(checked) => handleInputChange('emailNotifications', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="smsNotifications">SMS Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive urgent updates via SMS
-                </p>
-              </div>
-              <Switch
-                id="smsNotifications"
-                checked={formData.smsNotifications}
-                onCheckedChange={(checked) => handleInputChange('smsNotifications', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="marketingEmails">Marketing Emails</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive promotional content and updates
-                </p>
-              </div>
-              <Switch
-                id="marketingEmails"
-                checked={formData.marketingEmails}
-                onCheckedChange={(checked) => handleInputChange('marketingEmails', checked)}
-              />
-            </div>
-
-            <Button 
-              onClick={handleNotificationSettings}
-              disabled={!hasChanges || isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Preferences
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Account Status
-          </CardTitle>
-          <CardDescription>
-            Manage your account status and information.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-1">
-              <p className="font-medium">Account Status</p>
-              <p className="text-sm text-muted-foreground">
-                Your account is currently active
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-sm font-medium text-green-600">Active</span>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-destructive">Danger Zone</p>
-            <p className="text-sm text-muted-foreground">
-              Once you delete your account, there is no going back. Please be certain.
-            </p>
-            <Button 
-              variant="destructive" 
-              onClick={handleAccountDeletion}
-              disabled={isLoading}
-              className="mt-2"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Account
             </Button>
           </div>
         </CardContent>

@@ -330,272 +330,6 @@ export function FlockManagementMerged({
             Manage your poultry flocks and track their performance
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Flock
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add New Flock</DialogTitle>
-                <DialogDescription>
-                  Create a new flock with unique batch code and tracking information
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleCreateFlock)} className="space-y-6">
-                  {/* Row 1: Batch Code Generation */}
-                  <div className="flex gap-4">
-                    <FormField
-                      control={form.control}
-                      name="batchCode"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Batch Code <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <FormControl>
-                              <Input placeholder="e.g., BR2401001" {...field} className="h-10" />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => handleGenerateBatchCode(form.getValues('breed'))}
-                              className="whitespace-nowrap h-10 px-4"
-                            >
-                              Generate
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 2: Breed Type and Source */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <FormField
-                      control={form.control}
-                      name="breed"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Breed Type <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-16 min-h-[4rem] w-full overflow-hidden">
-                                <SelectValue placeholder="Select breed" className="truncate" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {BREED_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value} className="py-3">
-                                  <div className="text-left">
-                                    <div className="font-medium">{option.label}</div>
-                                    <div className="text-sm text-muted-foreground">{option.description}</div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="source"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Source <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-16 min-h-[4rem] w-full overflow-hidden">
-                                <SelectValue placeholder="Select source" className="truncate" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {SOURCE_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value} className="py-3">
-                                  <div className="text-left">
-                                    <div className="font-medium">{option.label}</div>
-                                    <div className="text-sm text-muted-foreground">{option.description}</div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 3: Arrival Date and Age in Days */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <FormField
-                      control={form.control}
-                      name="arrivalDate"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Arrival Date <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal h-10",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) =>
-                                  date > new Date() || date < new Date("1900-01-01")
-                                }
-                                captionLayout="dropdown"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="ageInDays"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Age at Arrival (Days) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              placeholder="e.g., 1, 7, 14"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 4: Initial Count and Current Count */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <FormField
-                      control={form.control}
-                      name="initialCount"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Initial Count <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="1"
-                              placeholder="e.g., 1000"
-                              value={field.value || ""}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                field.onChange(value === "" ? 0 : parseInt(value) || 0);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="currentCount"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Current Count <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              placeholder="e.g., 950"
-                              value={field.value || ""}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                field.onChange(value === "" ? 0 : parseInt(value) || 0);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 5: Notes */}
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Additional notes about the flock..."
-                            className="min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={loading}>
-                      {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Create Flock
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -664,12 +398,280 @@ export function FlockManagementMerged({
       {/* Flocks Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Flock Management ({flocks.length})</CardTitle>
-          <CardDescription>
-            Manage and track your poultry flocks with population monitoring
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Flock Management ({flocks.length})</CardTitle>
+              <CardDescription>
+                Manage and track your poultry flocks with population monitoring
+              </CardDescription>
+            </div>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Flock
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add New Flock</DialogTitle>
+                  <DialogDescription>
+                    Create a new flock with unique batch code and tracking information
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleCreateFlock)} className="space-y-6">
+                    {/* Row 1: Batch Code Generation */}
+                    <div className="flex gap-4">
+                      <FormField
+                        control={form.control}
+                        name="batchCode"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Batch Code <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <FormControl>
+                                <Input placeholder="e.g., BR2401001" {...field} className="h-10" />
+                              </FormControl>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleGenerateBatchCode(form.getValues('breed'))}
+                                className="whitespace-nowrap h-10 px-4"
+                              >
+                                Generate
+                              </Button>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Row 2: Breed Type and Source */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <FormField
+                        control={form.control}
+                        name="breed"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Breed Type <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-16 min-h-[4rem] w-full overflow-hidden">
+                                  <SelectValue placeholder="Select breed" className="truncate" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {BREED_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value} className="py-3">
+                                    <div className="text-left">
+                                      <div className="font-medium">{option.label}</div>
+                                      <div className="text-sm text-muted-foreground">{option.description}</div>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="source"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Source <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-16 min-h-[4rem] w-full overflow-hidden">
+                                  <SelectValue placeholder="Select source" className="truncate" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {SOURCE_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value} className="py-3">
+                                    <div className="text-left">
+                                      <div className="font-medium">{option.label}</div>
+                                      <div className="text-sm text-muted-foreground">{option.description}</div>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Row 3: Arrival Date and Age in Days */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <FormField
+                        control={form.control}
+                        name="arrivalDate"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Arrival Date <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal h-10",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                  }
+                                  captionLayout="dropdown"
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="ageInDays"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Age at Arrival (Days) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="0"
+                                placeholder="e.g., 1, 7, 14"
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Row 4: Initial Count and Current Count */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <FormField
+                        control={form.control}
+                        name="initialCount"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Initial Count <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1"
+                                placeholder="e.g., 1000"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="currentCount"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Current Count <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="0"
+                                placeholder="e.g., 950"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Row 5: Notes */}
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Notes (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Additional notes about the flock..."
+                              className="min-h-[80px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCreateDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={loading}>
+                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Create Flock
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <FlockTable
             columns={flockColumns}
             data={flocks}

@@ -1,156 +1,98 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Egg, 
-  TrendingUp, 
-  TrendingDown, 
-  BarChart3, 
-  PieChart, 
-  Calendar,
-  Target,
-  CheckCircle,
-  AlertCircle,
-  Download,
-  FileText
-} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BarChart3, TrendingUp } from "lucide-react";                                   
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import { PieChart, Pie, Cell, Label } from "recharts";
+import { ProductionFilters } from "../../production/components/production-types";
+import {
+  getProductionSummary,
+  getDailyProductionData,
+} from "@/server/production";
+import { toast } from "sonner";
 
-interface ReportFilters {
-  dateRange: {
-    startDate: Date;
-    endDate: Date;
-  };
-  flockId: string;
-  reportType: string;
+interface ProductionAnalyticsProps {
+  filters: ProductionFilters;
 }
 
-interface ProductionReportsProps {
-  filters: ReportFilters;
-}
+export function ProductionReports({
+  filters,
+}: ProductionAnalyticsProps) {
+  interface ProductionSummary {
+    totalEggs: number;
+    averageDailyProduction: number;
+    gradeBreakdown: {
+      normal: number;
+      cracked: number;
+      spoiled: number;
+      [key: string]: number;
+    };
+    productionTrend: Array<{
+      date: string;
+      total: number;
+      normal: number;
+      cracked: number;
+      spoiled: number;
+    }>;
+  }
 
-interface ProductionData {
-  totalEggs: number;
-  averageDailyProduction: number;
-  qualityScore: number;
-  gradeBreakdown: {
-    normal: number;
-    cracked: number;
-    spoiled: number;
-  };
-  dailyProduction: Array<{
+  interface DailyProductionData {
     date: string;
-    total: number;
-    normal: number;
-    cracked: number;
-    spoiled: number;
-  }>;
-  flockProduction: Array<{
     flockId: string;
     flockCode: string;
     breed: string;
     totalEggs: number;
     qualityScore: number;
-    dailyAverage: number;
-  }>;
-  monthlyTrends: Array<{
-    month: string;
-    totalEggs: number;
-    qualityScore: number;
-    dailyAverage: number;
-  }>;
-  productionEfficiency: {
-    eggsPerBird: number;
-    productionRate: number;
-    qualityRate: number;
-  };
-}
+  }
 
-export function ProductionReports({ filters }: ProductionReportsProps) {
-  const [data, setData] = useState<ProductionData | null>(null);
+  const [summary, setSummary] = useState<ProductionSummary | null>(null);
+  const [dailyData, setDailyData] = useState<DailyProductionData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [trendTimeFilter, setTrendTimeFilter] = useState<string>("90d");
+  const [qualityTimeFilter, setQualityTimeFilter] = useState<string>("90d");
 
-  useEffect(() => {
-    fetchProductionData();
-  }, [filters]);
-
-  const fetchProductionData = async () => {
+  const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with actual API call
-      const mockData: ProductionData = {
-        totalEggs: 45600,
-        averageDailyProduction: 1520,
-        qualityScore: 87.5,
-        gradeBreakdown: {
-          normal: 25000,
-          cracked: 15000,
-          spoiled: 4000
-        },
-        dailyProduction: [
-          { date: "2024-01-01", total: 1500, normal: 1350, cracked: 100, spoiled: 50 },
-          { date: "2024-01-02", total: 1520, normal: 1380, cracked: 90, spoiled: 50 },
-          { date: "2024-01-03", total: 1480, normal: 1340, cracked: 95, spoiled: 45 },
-          { date: "2024-01-04", total: 1560, normal: 1430, cracked: 85, spoiled: 45 },
-          { date: "2024-01-05", total: 1540, normal: 1390, cracked: 100, spoiled: 50 },
-          { date: "2024-01-06", total: 1510, normal: 1350, cracked: 110, spoiled: 50 },
-          { date: "2024-01-07", total: 1530, normal: 1390, cracked: 95, spoiled: 45 }
-        ],
-        flockProduction: [
-          { flockId: "1", flockCode: "A-001", breed: "layer", totalEggs: 18000, qualityScore: 92, dailyAverage: 600 },
-          { flockId: "2", flockCode: "B-002", breed: "layer", totalEggs: 15600, qualityScore: 85, dailyAverage: 520 },
-          { flockId: "3", flockCode: "C-003", breed: "dual_purpose", totalEggs: 12000, qualityScore: 78, dailyAverage: 400 }
-        ],
-        monthlyTrends: [
-          { month: "Jan", totalEggs: 45600, qualityScore: 87.5, dailyAverage: 1520 },
-          { month: "Feb", totalEggs: 42000, qualityScore: 85.2, dailyAverage: 1400 },
-          { month: "Mar", totalEggs: 48000, qualityScore: 89.1, dailyAverage: 1600 },
-          { month: "Apr", totalEggs: 46500, qualityScore: 88.3, dailyAverage: 1550 },
-          { month: "May", totalEggs: 49200, qualityScore: 90.5, dailyAverage: 1640 },
-          { month: "Jun", totalEggs: 46800, qualityScore: 87.8, dailyAverage: 1560 }
-        ],
-        productionEfficiency: {
-          eggsPerBird: 19.0,
-          productionRate: 85.2,
-          qualityRate: 87.5
-        }
-      };
-      
-      setData(mockData);
+      const [summaryResult, dailyResult] = await Promise.all([
+        getProductionSummary(filters.flockId, filters.dateRange),
+        getDailyProductionData(filters.dateRange),
+      ]);
+
+      setSummary(summaryResult && summaryResult.success && summaryResult.data ? (summaryResult.data as unknown as ProductionSummary) : null);
+      setDailyData(dailyResult && dailyResult.success && dailyResult.data ? dailyResult.data : []);
     } catch (error) {
-      console.error("Error fetching production data:", error);
+      console.error("Error fetching analytics:", error);
+      toast.error("Failed to load production analytics");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExport = (format: 'csv' | 'pdf') => {
-    console.log(`Exporting production report as ${format}`);
-    // Implement export logic
-  };
-
-  const getGradeColor = (grade: string) => {
-    switch (grade) {
-      case 'normal': return 'bg-green-500';
-      case 'cracked': return 'bg-orange-500';
-      case 'spoiled': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getGradeLabel = (grade: string) => {
-    switch (grade) {
-      case 'normal': return 'Normal';
-      case 'cracked': return 'Cracked';
-      case 'spoiled': return 'Spoiled';
-      default: return grade;
-    }
-  };
+  useEffect(() => {
+    fetchAnalytics();
+  }, [filters]);
 
   if (loading) {
     return (
@@ -169,322 +111,325 @@ export function ProductionReports({ filters }: ProductionReportsProps) {
     );
   }
 
-  if (!data) {
-    return (
-      <div className="text-center py-8">
-        <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">No production data available</p>
-      </div>
-    );
+  // (helpers removed as not needed in simplified UI)
+
+  // (removed unused flock performance helpers)
+
+  interface TrendData {
+    week: any[];
+    month: any[];
+    quarter: any[];
   }
+
+  // Process egg production data for charts
+  const processEggData = () => {
+    if (!summary)
+      return {
+        trendData: { week: [], month: [], quarter: [] },
+        qualityData: [],
+      };
+
+    // Use production trend data for charts
+    const productionTrend = summary.productionTrend || [];
+
+    // Generate trend data for different time periods
+    const trendData: TrendData = {
+      week: productionTrend.slice(-7),
+      month: productionTrend.slice(-30),
+      quarter: productionTrend.slice(-90),
+    };
+
+    // Prepare quality breakdown data
+    const qualityData = [
+      { name: "Good", value: summary.gradeBreakdown.normal, color: "#10b981" },
+      {
+        name: "Cracked",
+        value: summary.gradeBreakdown.cracked,
+        color: "#f59e0b",
+      },
+      {
+        name: "Spoiled",
+        value: summary.gradeBreakdown.spoiled,
+        color: "#ef4444",
+      },
+    ];
+
+    return { trendData, qualityData };
+  };
+
+  const { trendData, qualityData } = processEggData();
+  const hasData = summary && summary.totalEggs > 0;
+
+  // Build per-flock series from dailyData
+  const uniqueFlocks = (() => {
+    const map = new Map<string, { id: string; label: string }>();
+    dailyData.forEach((d) => {
+      if (!map.has(d.flockId)) {
+        map.set(d.flockId, { id: d.flockId, label: d.flockCode });
+      }
+    });
+    return Array.from(map.values());
+  })();
+
+  const perFlockSeries = (() => {
+    const byDate: Record<string, any> = {};
+    dailyData.forEach((d) => {
+      if (!byDate[d.date]) byDate[d.date] = { date: d.date };
+      const flockIndex = uniqueFlocks.findIndex((f) => f.id === d.flockId);
+      if (flockIndex >= 0) {
+        const key = `flock_${flockIndex}`;
+        byDate[d.date][key] = (byDate[d.date][key] || 0) + (d.totalEggs || 0);
+      }
+    });
+    const arr = Object.values(byDate).sort((a: any, b: any) => a.date.localeCompare(b.date));
+    // Filter by trendTimeFilter
+    const referenceDate = new Date();
+    let days = 90;
+    if (trendTimeFilter === "30d") days = 30;
+    if (trendTimeFilter === "7d") days = 7;
+    const startDate = new Date(referenceDate);
+    startDate.setDate(startDate.getDate() - days);
+    return arr.filter((item: any) => new Date(item.date) >= startDate);
+  })();
+
+  // Filter quality data by selected range using summary.productionTrend
+  const filteredQualityData = (() => {
+    if (!summary) return [] as { name: string; value: number }[];
+    const referenceDate = new Date();
+    let days = 90;
+    if (qualityTimeFilter === "30d") days = 30;
+    if (qualityTimeFilter === "7d") days = 7;
+    const startDate = new Date(referenceDate);
+    startDate.setDate(startDate.getDate() - days);
+    const filtered = (summary.productionTrend || []).filter((d) => new Date(d.date) >= startDate);
+    const totals = filtered.reduce(
+      (acc, cur) => {
+        acc.normal += cur.normal || 0;
+        acc.cracked += cur.cracked || 0;
+        acc.spoiled += cur.spoiled || 0;
+        return acc;
+      },
+      { normal: 0, cracked: 0, spoiled: 0 }
+    );
+    return [
+      { name: "Good", value: totals.normal },
+      { name: "Cracked", value: totals.cracked },
+      { name: "Spoiled", value: totals.spoiled },
+    ];
+  })();
+
+  // Orange color palette
+  const orangeColors = [
+    "#fed7aa",
+    "#fdba74",
+    "#fb923c",
+    "#f97316",
+    "#ea580c",
+    "#c2410c",
+    "#9a3412",
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* First row: two graphs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Egg Production Trend Area Chart */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Production</CardTitle>
-            <Egg className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data.totalEggs.toLocaleString()}
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <div className="grid flex-1 gap-1">
+              <CardTitle>Egg Production Trend</CardTitle>
+              <CardDescription>7, 30, and 90 day trends</CardDescription>
             </div>
-            <p className="text-xs text-muted-foreground">
-              eggs collected
-            </p>
+            <Select value={trendTimeFilter} onValueChange={setTrendTimeFilter}>
+              <SelectTrigger
+                className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                aria-label="Select a time range"
+              >
+                <SelectValue placeholder="Last 3 months" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
+                <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
+                <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            {perFlockSeries.length > 0 ? (
+              <div className="space-y-4">
+                <ChartContainer
+                  config={(() => {
+                    const cfg: any = {};
+                    uniqueFlocks.forEach((f, idx) => {
+                      const color = orangeColors[idx % orangeColors.length];
+                      cfg[`flock_${idx}`] = { label: f.label, color };
+                    });
+                    return cfg;
+                  })()}
+                  className="aspect-auto h-[250px] w-full"
+                >
+                  <AreaChart data={perFlockSeries}>
+                    <defs>
+                      {uniqueFlocks.map((f, idx) => {
+                        const color = orangeColors[idx % orangeColors.length];
+                        return (
+                          <linearGradient key={`fillFlock_${idx}`} id={`fillFlock_${idx}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={color} stopOpacity={0.8} />
+                            <stop offset="95%" stopColor={color} stopOpacity={0.1} />
+                          </linearGradient>
+                        );
+                      })}
+                    </defs>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      minTickGap={32}
+                      tickFormatter={(value) =>
+                        new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                      }
+                    />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                    {uniqueFlocks.map((f, idx) => {
+                      const color = orangeColors[idx % orangeColors.length];
+                      return (
+                        <Area
+                          key={`flock_${idx}`}
+                          dataKey={`flock_${idx}`}
+                          type="linear"
+                          fill={`url(#fillFlock_${idx})`}
+                          stroke={color}
+                        />
+                      );
+                    })}
+                  </AreaChart>
+                </ChartContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  No production trend data available
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Egg Quality Pie Chart */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data.averageDailyProduction.toLocaleString()}
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <div className="grid flex-1 gap-1">
+              <CardTitle>Egg Quality Breakdown</CardTitle>
+              <CardDescription>Good vs cracked vs spoiled</CardDescription>
             </div>
-            <p className="text-xs text-muted-foreground">
-              eggs per day
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quality Score</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <Select value={qualityTimeFilter} onValueChange={setQualityTimeFilter}>
+              <SelectTrigger
+                className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                aria-label="Select a time range"
+              >
+                <SelectValue placeholder="Last 3 months" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
+                <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
+                <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
+              </SelectContent>
+            </Select>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.qualityScore}%</div>
-            <p className="text-xs text-muted-foreground">
-              Normal quality eggs
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Production Rate</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.productionEfficiency.productionRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              Overall efficiency
-            </p>
+            {filteredQualityData.length > 0 ? (
+              <div className="h-[300px]">
+                <ChartContainer
+                  config={{
+                    value: { label: "Eggs" },
+                    ...filteredQualityData.reduce((acc: any, item, index) => {
+                      acc[item.name] = { label: item.name, color: orangeColors[index % orangeColors.length] };
+                      return acc;
+                    }, {} as any),
+                  }}
+                  className="mx-auto aspect-square max-h-[250px]"
+                >
+                  <PieChart>
+                    <Pie
+                      data={filteredQualityData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {filteredQualityData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={orangeColors[index % orangeColors.length]} />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            const total = summary?.totalEggs || 0;
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground text-3xl font-bold"
+                                >
+                                  {total.toLocaleString()}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 24}
+                                  className="fill-muted-foreground"
+                                >
+                                  eggs
+                                </tspan>
+                              </text>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  </PieChart>
+                </ChartContainer>
+                <div className="flex-col gap-2 text-sm px-2 pt-4">
+                  {(() => {
+                    const sorted = [...filteredQualityData].sort((a, b) => b.value - a.value);
+                    const leader = sorted[0];
+                    const total = filteredQualityData.reduce((acc, it) => acc + it.value, 0);
+                    const percentage = total > 0 && leader?.value ? (leader.value / total) * 100 : 0;
+                    return (
+                      <div className="flex items-center gap-2 leading-none font-medium">
+                        <TrendingUp className="h-4 w-4" />
+                        {leader?.name} leading with {percentage.toFixed(1)}%
+                      </div>
+                    );
+                  })()}
+                  <div className="text-muted-foreground leading-none">
+                    Showing distribution across {filteredQualityData.length} categories
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  No quality data available
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Detailed Reports */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="quality">Quality Analysis</TabsTrigger>
-            <TabsTrigger value="daily">Daily Production</TabsTrigger>
-            <TabsTrigger value="flocks">Flock Performance</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-          </TabsList>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExport('csv')}>
-              <Download className="mr-2 h-4 w-4" />
-              CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
-              <FileText className="mr-2 h-4 w-4" />
-              PDF
-            </Button>
-          </div>
-        </div>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5" />
-                  Grade Distribution
-                </CardTitle>
-                <CardDescription>Distribution of eggs by quality grade</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(data.gradeBreakdown).map(([grade, count]) => {
-                    const percentage = (count / data.totalEggs) * 100;
-                    return (
-                      <div key={grade} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-3 h-3 rounded-full ${getGradeColor(grade)}`} />
-                            <span className="font-medium">{getGradeLabel(grade)}</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold">{count.toLocaleString()}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {percentage.toFixed(1)}%
-                            </div>
-                          </div>
-                        </div>
-                        <Progress value={percentage} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-          </div>
-        </TabsContent>
-
-        {/* Quality Analysis Tab */}
-        <TabsContent value="quality" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quality Analysis</CardTitle>
-              <CardDescription>Detailed quality metrics and breakdowns</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{data.qualityScore}%</div>
-                    <div className="text-sm text-muted-foreground">Overall Quality Score</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{data.productionEfficiency.qualityRate}%</div>
-                    <div className="text-sm text-muted-foreground">Quality Rate</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{data.productionEfficiency.eggsPerBird}</div>
-                    <div className="text-sm text-muted-foreground">Eggs per Bird</div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {Object.entries(data.gradeBreakdown).map(([grade, count]) => {
-                    const percentage = (count / data.totalEggs) * 100;
-                    return (
-                      <div key={grade} className="p-4 border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-3 h-3 rounded-full ${getGradeColor(grade)}`} />
-                            <span className="font-semibold">{getGradeLabel(grade)}</span>
-                          </div>
-                          <Badge variant="outline">
-                            {count.toLocaleString()} eggs
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                          <span>Percentage of total production</span>
-                          <span>{percentage.toFixed(1)}%</span>
-                        </div>
-                        <Progress value={percentage} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Daily Production Tab */}
-        <TabsContent value="daily" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Production (Last 7 Days)</CardTitle>
-              <CardDescription>Daily production volume and quality breakdown</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.dailyProduction.map((day) => (
-                  <div key={day.date} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold">
-                        {new Date(day.date).toLocaleDateString()}
-                      </h3>
-                      <Badge variant="outline">
-                        {day.total.toLocaleString()} eggs
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="text-center">
-                        <div className="font-medium text-green-600">{day.normal}</div>
-                        <div className="text-muted-foreground">Normal</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-medium text-orange-600">{day.cracked}</div>
-                        <div className="text-muted-foreground">Cracked</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-medium text-red-600">{day.spoiled}</div>
-                        <div className="text-muted-foreground">Spoiled</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Flock Performance Tab */}
-        <TabsContent value="flocks" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Flock Production Performance</CardTitle>
-              <CardDescription>Production metrics by flock</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.flockProduction.map((flock) => (
-                  <div key={flock.flockId} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold">{flock.flockCode}</h3>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {flock.breed.replace('_', ' ')} • {flock.totalEggs.toLocaleString()} total eggs
-                        </p>
-                      </div>
-                      <Badge variant={flock.qualityScore >= 90 ? "default" : "secondary"}>
-                        {flock.qualityScore}% quality
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Daily Average</div>
-                        <div className="font-medium">{flock.dailyAverage} eggs</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Quality Score</div>
-                        <div className="font-medium">{flock.qualityScore}%</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Total Production</div>
-                        <div className="font-medium">{flock.totalEggs.toLocaleString()}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span>Quality Score</span>
-                        <span>{flock.qualityScore}%</span>
-                      </div>
-                      <Progress value={flock.qualityScore} className="h-2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Trends Tab */}
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Production Trends</CardTitle>
-              <CardDescription>Monthly production trends and patterns</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.monthlyTrends.map((month) => (
-                  <div key={month.month} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold">{month.month}</h3>
-                      <Badge variant="outline">
-                        {month.totalEggs.toLocaleString()} eggs
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Total Eggs</div>
-                        <div className="font-medium">{month.totalEggs.toLocaleString()}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Quality Score</div>
-                        <div className="font-medium">{month.qualityScore}%</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">Daily Average</div>
-                        <div className="font-medium">{month.dailyAverage}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
