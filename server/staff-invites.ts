@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedUser } from "./auth-middleware";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { randomBytes } from "crypto";
@@ -11,17 +12,16 @@ import { createStaffSchema } from "@/features/staff/data/schema";
 // Create non-system staff member directly (for workers)
 export const createNonSystemStaff = async (data: any): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
+    
     // Check if user has permission to create staff
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     if (currentUser.role !== "ADMIN") {
       return {
         success: false,
@@ -87,17 +87,16 @@ export const createNonSystemStaff = async (data: any): Promise<ApiResponse> => {
 // Create staff invitation (for system users)
 export const createInvite = async (data: CreateInviteData): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
+    
     // Check if user has permission to create invites
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     if (currentUser.role !== "ADMIN") {
       return {
         success: false,
@@ -327,16 +326,15 @@ export const acceptInvite = async (data: InviteVerificationData): Promise<ApiRes
 // Get invitations (for admin)
 export const getInvites = async (createdById?: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    
+    const currentUser = authResult.user as any;
     if (currentUser.role !== "ADMIN") {
       return {
         success: false,
@@ -376,16 +374,15 @@ export const getInvites = async (createdById?: string): Promise<ApiResponse> => 
 // Get all invites for the invite sent table
 export const getAllInvites = async (): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    
+    const currentUser = authResult.user as any;
     if (currentUser.role !== "ADMIN") {
       return {
         success: false,
@@ -424,16 +421,15 @@ export const getAllInvites = async (): Promise<ApiResponse> => {
 // Cancel invitation
 export const cancelInvite = async (inviteId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    
+    const currentUser = authResult.user as any;
     if (currentUser.role !== "ADMIN") {
       return {
         success: false,
@@ -479,16 +475,15 @@ export const cancelInvite = async (inviteId: string): Promise<ApiResponse> => {
 // Resend invitation
 export const resendInvite = async (inviteId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    
+    const currentUser = authResult.user as any;
     if (currentUser.role !== "ADMIN") {
       return {
         success: false,
@@ -547,16 +542,15 @@ export const resendInvite = async (inviteId: string): Promise<ApiResponse> => {
 // Get all staff members
 export const getAllStaff = async (): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    
+    const currentUser = authResult.user as any;
     if (currentUser.role !== "ADMIN") {
       return {
         success: false,
@@ -582,4 +576,3 @@ export const getAllStaff = async (): Promise<ApiResponse> => {
     };
   }
 };
-

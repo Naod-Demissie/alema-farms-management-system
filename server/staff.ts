@@ -1,10 +1,10 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma"; 
+import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
-import { withAuth, withAdminAuth, withResourceAccess, AuthenticatedUser } from "./auth-middleware";
-import { sendMagicLinkEmail } from "./email"; 
+import { getAuthenticatedUser } from "./auth-middleware";
+import { ApiResponse } from "./types";
 
 // ===================
 // Authentication Actions
@@ -88,17 +88,16 @@ export const getCurrentSession = async () => {
 // ===================
 
 export const getStaff = async () => {
-    try {
-        const session = await auth.api.getSession({ headers: await headers() });
+  try {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
 
-        if (!session?.user) {
-            return {
-                success: false,
-                message: "Authentication required"
-            };
-        }
-
-        const staff = await prisma.staff.findMany({
+    const staff = await prisma.staff.findMany({
             orderBy: {
                 createdAt: "desc",
             },
@@ -133,12 +132,21 @@ export const getStaff = async () => {
 
 export const getStaffById = async (id: string) => {
     try {
-        const session = await auth.api.getSession({ headers: await headers() });
-
-        if (!session?.user) {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success) {
             return {
                 success: false,
-                message: "Authentication required"
+                message: authResult.message || "Authentication required"
+            };
+        }
+
+        const currentUser = authResult.user as any;
+        
+        // Check permissions - admin can view anyone, staff can view themselves
+        if (currentUser.id !== id && currentUser.role !== "ADMIN") {
+            return {
+                success: false,
+                message: "Insufficient permissions"
             };
         }
 
@@ -206,17 +214,15 @@ export const updateStaff = async (
     }
 ) => {
     try {
-        const session = await auth.api.getSession({ headers: await headers() });
-
-
-        if (!session?.user) {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success) {
             return {
                 success: false,
-                message: "Authentication required"
+                message: authResult.message || "Authentication required"
             };
         }
 
-        const currentUser = session.user as any;
+        const currentUser = authResult.user as any;
 
         // Check permissions - admin can update anyone, staff can update themselves
         if (currentUser.role !== "ADMIN" && currentUser.id !== id) {
@@ -283,18 +289,18 @@ export const inviteStaff = async (email: string, role: string) => {
     const { createInvite } = await import('./staff-invites');
     
     // Get current user for createdById
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success || !authResult.user) {
         return {
             success: false,
-            message: "Authentication required"
+            message: authResult.message || "Authentication required"
         };
     }
 
     return createInvite({
         email,
         role: role as any,
-        createdById: (session.user as any).id
+        createdById: authResult.user.id
     });
 };
 
@@ -512,16 +518,15 @@ export const completeStaffRegistration = async (
 // Delete staff member
 export const deleteStaff = async (id: string): Promise<ApiResponse> => {
     try {
-        const session = await auth.api.getSession({ headers: await headers() });
-
-        if (!session?.user) {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success || !authResult.user) {
             return {
                 success: false,
-                message: "Authentication required"
+                message: authResult.message || "Authentication required"
             };
         }
 
-        const currentUser = session.user as any;
+        const currentUser = authResult.user as any;
 
         // Check permissions - only admin can delete staff
         if (currentUser.role !== "ADMIN") {

@@ -1,23 +1,21 @@
-"use server";
+                                                      "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getAuthenticatedUser } from "./auth-middleware";
 import { AnalyticsFilters, ReportFilters, ApiResponse, DateRange } from "./types";
 
 // Get staff overview analytics
 export const getStaffOverview = async (dateRange?: DateRange): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success || !authResult.user) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -78,12 +76,14 @@ export const getStaffOverview = async (dateRange?: DateRange): Promise<ApiRespon
     const leaveStats = await prisma.leaveRequest.groupBy({
       by: ['status'],
       where: {
-        createdAt: {
+        startDate: {
           gte: startDate,
           lte: endDate
         }
       },
-      _count: { status: true }
+      _count: {
+        _all: true
+      }
     });
 
     const overview = {
@@ -105,10 +105,12 @@ export const getStaffOverview = async (dateRange?: DateRange): Promise<ApiRespon
         }, {} as Record<string, number>)
       },
       leave: {
-        byStatus: leaveStats.reduce((acc, item) => {
-          acc[item.status] = item._count.status;
-          return acc;
-        }, {} as Record<string, number>)
+      byStatus: leaveStats.reduce((acc, item) => {
+        if (item.status && item._count) {
+          acc[item.status] = item._count._all || 0;
+        }
+        return acc;
+      }, {} as Record<string, number>)
       }
     };
 
@@ -128,16 +130,15 @@ export const getStaffOverview = async (dateRange?: DateRange): Promise<ApiRespon
 // Get attendance analytics
 export const getAttendanceAnalytics = async (filters: AnalyticsFilters = {}): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success || !authResult.user) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -146,7 +147,8 @@ export const getAttendanceAnalytics = async (filters: AnalyticsFilters = {}): Pr
       };
     }
 
-    const { groupBy = 'month', staffId, dateRange } = filters;
+    const { groupBy = 'month', dateRange } = filters;
+    const staffId = (filters as any).staffId; // Temporary cast until AnalyticsFilters is updated
     const startDate = dateRange?.start || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     const endDate = dateRange?.end || new Date();
 
@@ -185,9 +187,9 @@ export const getAttendanceAnalytics = async (filters: AnalyticsFilters = {}): Pr
 
     // Calculate statistics
     const totalDays = attendance.length;
-    const presentDays = attendance.filter(a => a.status === "Present" || a.status === "Checked Out").length;
-    const absentDays = attendance.filter(a => a.status === "Absent").length;
-    const leaveDays = attendance.filter(a => a.status === "On Leave").length;
+    const presentDays = attendance.filter((a: any) => a.status === "Present" || a.status === "Checked Out").length;
+    const absentDays = attendance.filter((a: any) => a.status === "Absent").length;
+    const leaveDays = attendance.filter((a: any) => a.status === "On Leave").length;
 
     const analytics = {
       summary: {
@@ -218,16 +220,15 @@ export const getAttendanceAnalytics = async (filters: AnalyticsFilters = {}): Pr
 // Get productivity metrics
 export const getProductivityMetrics = async (staffId: string, period: string = 'month'): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success || !authResult.user) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user;
     
     // Check permissions
     if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
@@ -311,7 +312,6 @@ export const getProductivityMetrics = async (staffId: string, period: string = '
       }
     });
 
-
     const mortalityRecords = await prisma.mortality.count({
       where: {
         recordedById: staffId,
@@ -324,7 +324,7 @@ export const getProductivityMetrics = async (staffId: string, period: string = '
 
     // Calculate metrics
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const presentDays = attendance.filter(a => a.status === "Present" || a.status === "Checked Out").length;
+    const presentDays = attendance.filter((a: any) => a.status === "Present" || a.status === "Checked Out").length;
     const attendanceRate = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;
 
     const productivity = {
@@ -349,8 +349,8 @@ export const getProductivityMetrics = async (staffId: string, period: string = '
       },
       leave: {
         totalRequests: leaveRequests.length,
-        approvedRequests: leaveRequests.filter(r => r.status === 'APPROVED').length,
-        pendingRequests: leaveRequests.filter(r => r.status === 'PENDING').length
+        approvedRequests: leaveRequests.filter((r: any) => r.status === 'APPROVED').length,
+        pendingRequests: leaveRequests.filter((r: any) => r.status === 'PENDING').length
       }
     };
 
@@ -370,16 +370,15 @@ export const getProductivityMetrics = async (staffId: string, period: string = '
 // Get leave analytics
 export const getLeaveAnalytics = async (filters: AnalyticsFilters = {}): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success || !authResult.user) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -388,7 +387,8 @@ export const getLeaveAnalytics = async (filters: AnalyticsFilters = {}): Promise
       };
     }
 
-    const { groupBy = 'month', staffId, dateRange } = filters;
+    const { groupBy = 'month', dateRange } = filters;
+    const staffId = (filters as any).staffId; // Temporary cast until AnalyticsFilters is updated
     const startDate = dateRange?.start || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     const endDate = dateRange?.end || new Date();
 
@@ -427,9 +427,9 @@ export const getLeaveAnalytics = async (filters: AnalyticsFilters = {}): Promise
 
     // Calculate statistics
     const totalRequests = leaveRequests.length;
-    const approvedRequests = leaveRequests.filter(r => r.status === 'APPROVED').length;
-    const pendingRequests = leaveRequests.filter(r => r.status === 'PENDING').length;
-    const rejectedRequests = leaveRequests.filter(r => r.status === 'REJECTED').length;
+    const approvedRequests = leaveRequests.filter((r: any) => r.status === 'APPROVED').length;
+    const pendingRequests = leaveRequests.filter((r: any) => r.status === 'PENDING').length;
+    const rejectedRequests = leaveRequests.filter((r: any) => r.status === 'REJECTED').length;
 
     const analytics = {
       summary: {
@@ -461,16 +461,15 @@ export const getLeaveAnalytics = async (filters: AnalyticsFilters = {}): Promise
 // Get payroll analytics
 export const getPayrollAnalytics = async (filters: AnalyticsFilters = {}): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success || !authResult.user) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -479,7 +478,8 @@ export const getPayrollAnalytics = async (filters: AnalyticsFilters = {}): Promi
       };
     }
 
-    const { groupBy = 'month', staffId, dateRange } = filters;
+    const { groupBy = 'month', dateRange } = filters;
+    const staffId = (filters as any).staffId; // Temporary cast until AnalyticsFilters is updated
     const startDate = dateRange?.start || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     const endDate = dateRange?.end || new Date();
 
@@ -517,9 +517,9 @@ export const getPayrollAnalytics = async (filters: AnalyticsFilters = {}): Promi
     const groupedData = groupPayrollByPeriod(payroll, groupBy);
 
     // Calculate statistics
-    const totalSalary = payroll.reduce((sum, record) => sum + record.salary, 0);
-    const totalBonus = payroll.reduce((sum, record) => sum + (record.bonus || 0), 0);
-    const totalDeductions = payroll.reduce((sum, record) => sum + (record.deductions || 0), 0);
+    const totalSalary = payroll.reduce((sum: number, record: any) => sum + record.salary, 0);
+    const totalBonus = payroll.reduce((sum: number, record: any) => sum + (record.bonus || 0), 0);
+    const totalDeductions = payroll.reduce((sum: number, record: any) => sum + (record.deductions || 0), 0);
     const totalNetSalary = totalSalary + totalBonus - totalDeductions;
 
     const analytics = {
@@ -552,16 +552,15 @@ export const getPayrollAnalytics = async (filters: AnalyticsFilters = {}): Promi
 // Export staff report
 export const exportStaffReport = async (filters: ReportFilters = {}, format: 'pdf' | 'excel' = 'excel'): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success || !authResult.user) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -628,15 +627,15 @@ export const exportStaffReport = async (filters: ReportFilters = {}, format: 'pd
     });
 
     // Generate report data
-    const reportData = staff.map(member => {
-      const presentDays = member.attendance.filter(a => a.status === "Present" || a.status === "Checked Out").length;
+    const reportData = staff.map((member: any) => {
+      const presentDays = member.attendance.filter((a: any) => a.status === "Present" || a.status === "Checked Out").length;
       const totalAttendance = member.attendance.length;
       const attendanceRate = totalAttendance > 0 ? Math.round((presentDays / totalAttendance) * 100 * 100) / 100 : 0;
 
-      const approvedLeaves = member.leaveRequests.filter(r => r.status === 'APPROVED').length;
-      const totalSalary = member.payrolls.reduce((sum, p) => sum + p.salary, 0);
-      const totalBonus = member.payrolls.reduce((sum, p) => sum + (p.bonus || 0), 0);
-      const totalDeductions = member.payrolls.reduce((sum, p) => sum + (p.deductions || 0), 0);
+      const approvedLeaves = member.leaveRequests.filter((r: any) => r.status === 'APPROVED').length;
+      const totalSalary = member.payrolls.reduce((sum: number, p: any) => sum + p.salary, 0);
+      const totalBonus = member.payrolls.reduce((sum: number, p: any) => sum + (p.bonus || 0), 0);
+      const totalDeductions = member.payrolls.reduce((sum: number, p: any) => sum + (p.deductions || 0), 0);
 
       return {
         id: member.id,
@@ -681,7 +680,7 @@ export const exportStaffReport = async (filters: ReportFilters = {}, format: 'pd
 function groupAttendanceByPeriod(attendance: any[], groupBy: string) {
   const groups: Record<string, any> = {};
   
-  attendance.forEach(record => {
+  attendance.forEach((record: any) => {
     const date = new Date(record.date);
     let key: string;
     
@@ -724,7 +723,7 @@ function groupAttendanceByPeriod(attendance: any[], groupBy: string) {
 function groupLeaveByPeriod(leaveRequests: any[], groupBy: string) {
   const groups: Record<string, any> = {};
   
-  leaveRequests.forEach(record => {
+  leaveRequests.forEach((record: any) => {
     const date = new Date(record.createdAt);
     let key: string;
     
@@ -761,7 +760,7 @@ function groupLeaveByPeriod(leaveRequests: any[], groupBy: string) {
 function groupPayrollByPeriod(payroll: any[], groupBy: string) {
   const groups: Record<string, any> = {};
   
-  payroll.forEach(record => {
+  payroll.forEach((record: any) => {
     const date = new Date(record.paidOn);
     let key: string;
     
@@ -800,7 +799,7 @@ function groupPayrollByPeriod(payroll: any[], groupBy: string) {
 function calculateAttendanceByRole(attendance: any[]) {
   const byRole: Record<string, any> = {};
   
-  attendance.forEach(record => {
+  attendance.forEach((record: any) => {
     const role = record.staff.role;
     if (!byRole[role]) {
       byRole[role] = { present: 0, absent: 0, leave: 0, total: 0 };
@@ -822,7 +821,7 @@ function calculateAttendanceByRole(attendance: any[]) {
 function calculateAttendanceByStaff(attendance: any[]) {
   const byStaff: Record<string, any> = {};
   
-  attendance.forEach(record => {
+  attendance.forEach((record: any) => {
     const staffId = record.staffId;
     if (!byStaff[staffId]) {
       byStaff[staffId] = {
@@ -850,7 +849,7 @@ function calculateAttendanceByStaff(attendance: any[]) {
 function calculateLeaveByType(leaveRequests: any[]) {
   const byType: Record<string, number> = {};
   
-  leaveRequests.forEach(record => {
+  leaveRequests.forEach((record: any) => {
     byType[record.leaveType] = (byType[record.leaveType] || 0) + 1;
   });
   
@@ -860,7 +859,7 @@ function calculateLeaveByType(leaveRequests: any[]) {
 function calculateLeaveByRole(leaveRequests: any[]) {
   const byRole: Record<string, any> = {};
   
-  leaveRequests.forEach(record => {
+  leaveRequests.forEach((record: any) => {
     const role = record.staff.role;
     if (!byRole[role]) {
       byRole[role] = { approved: 0, pending: 0, rejected: 0, total: 0 };
@@ -876,7 +875,7 @@ function calculateLeaveByRole(leaveRequests: any[]) {
 function calculateLeaveByStaff(leaveRequests: any[]) {
   const byStaff: Record<string, any> = {};
   
-  leaveRequests.forEach(record => {
+  leaveRequests.forEach((record: any) => {
     const staffId = record.staffId;
     if (!byStaff[staffId]) {
       byStaff[staffId] = {
@@ -898,7 +897,7 @@ function calculateLeaveByStaff(leaveRequests: any[]) {
 function calculatePayrollByRole(payroll: any[]) {
   const byRole: Record<string, any> = {};
   
-  payroll.forEach(record => {
+  payroll.forEach((record: any) => {
     const role = record.staff.role;
     if (!byRole[role]) {
       byRole[role] = { totalSalary: 0, totalBonus: 0, totalDeductions: 0, count: 0 };
@@ -916,7 +915,7 @@ function calculatePayrollByRole(payroll: any[]) {
 function calculatePayrollByStaff(payroll: any[]) {
   const byStaff: Record<string, any> = {};
   
-  payroll.forEach(record => {
+  payroll.forEach((record: any) => {
     const staffId = record.staffId;
     if (!byStaff[staffId]) {
       byStaff[staffId] = {

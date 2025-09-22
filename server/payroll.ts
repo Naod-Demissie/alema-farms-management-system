@@ -1,23 +1,20 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getAuthenticatedUser } from "./auth-middleware";
 import { PayrollFilters, CreatePayrollData, UpdatePayrollData, ApiResponse, PaginatedResponse } from "./types";
 
 // Create payroll record
 export const createPayroll = async (data: CreatePayrollData): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -98,18 +95,17 @@ export const createPayroll = async (data: CreatePayrollData): Promise<ApiRespons
 };
 
 // Get payroll records with filters
-export const getPayroll = async (filters: PayrollFilters = {}): Promise<PaginatedResponse<any>> => {
+export const getPayroll = async (filters: PayrollFilters & { page?: number; limit?: number } = {}): Promise<PaginatedResponse<any>> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     const { page = 1, limit = 10, staffId, paidOn, search } = filters;
     const offset = (page - 1) * limit;
 
@@ -192,16 +188,15 @@ export const getPayroll = async (filters: PayrollFilters = {}): Promise<Paginate
 // Get staff payroll history
 export const getStaffPayroll = async (staffId: string, dateRange?: { start: Date; end: Date }): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     // Check permissions
     if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
@@ -260,16 +255,15 @@ export const getStaffPayroll = async (staffId: string, dateRange?: { start: Date
 // Update payroll record
 export const updatePayroll = async (payrollId: string, data: UpdatePayrollData): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -327,16 +321,15 @@ export const updatePayroll = async (payrollId: string, data: UpdatePayrollData):
 // Delete payroll record
 export const deletePayroll = async (payrollId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -376,16 +369,15 @@ export const deletePayroll = async (payrollId: string): Promise<ApiResponse> => 
 // Calculate salary for a staff member
 export const calculateSalary = async (staffId: string, period: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     // Check permissions
     if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
@@ -477,16 +469,15 @@ export const calculateSalary = async (staffId: string, period: string): Promise<
 // Generate payroll report
 export const generatePayrollReport = async (filters: PayrollFilters = {}): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
