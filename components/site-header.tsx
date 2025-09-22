@@ -2,7 +2,6 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ModeToggle } from "./theme-dropdown";
 import { ProfileDropdown } from "./profile-dropdown";
-import { NotificationSystem } from "./notification-system";
 
 export function SiteHeader() {
   return (
@@ -14,9 +13,6 @@ export function SiteHeader() {
           className="mx-1 sm:mx-2 data-[orientation=vertical]:h-4"
         />
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <div className="hidden sm:block">
-            <NotificationSystem />
-          </div>
           <ModeToggle />
           <ProfileDropdown />
         </div>
