@@ -1,23 +1,20 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getAuthenticatedUser } from "./auth-middleware";
 import { LeaveFilters, CreateLeaveRequestData, LeaveBalanceData, ApiResponse, PaginatedResponse } from "./types";
 
 // Create leave request
 export const createLeaveRequest = async (data: CreateLeaveRequestData): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     // Check if user can create leave request (must be the staff member themselves or admin)
     if (currentUser.id !== data.staffId && currentUser.role !== "ADMIN") {
@@ -140,17 +137,17 @@ export const createLeaveRequest = async (data: CreateLeaveRequestData): Promise<
 // Get leave requests with filters
 export const getLeaveRequests = async (filters: LeaveFilters = {}): Promise<PaginatedResponse<any>> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
-    const { page = 1, limit = 10, staffId, leaveType, status, approverId, search } = filters;
+    const currentUser = authResult.user as any;
+    const page = (filters as any).page || 1;
+    const limit = (filters as any).limit || 10;
+    const { staffId, leaveType, status, approverId, search } = filters;
     const offset = (page - 1) * limit;
 
     // Build where clause
@@ -246,16 +243,14 @@ export const getLeaveRequests = async (filters: LeaveFilters = {}): Promise<Pagi
 // Get staff leave requests
 export const getStaffLeaveRequests = async (staffId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     // Check permissions
     if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
@@ -314,16 +309,14 @@ export const getStaffLeaveRequests = async (staffId: string): Promise<ApiRespons
 // Approve leave request
 export const approveLeaveRequest = async (leaveId: string, approverId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -422,16 +415,14 @@ export const approveLeaveRequest = async (leaveId: string, approverId: string): 
 // Reject leave request
 export const rejectLeaveRequest = async (leaveId: string, approverId: string, reason?: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -505,16 +496,14 @@ export const rejectLeaveRequest = async (leaveId: string, approverId: string, re
 // Update leave request
 export const updateLeaveRequest = async (leaveId: string, data: Partial<CreateLeaveRequestData>): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     const leaveRequest = await prisma.leaveRequest.findUnique({
       where: { id: leaveId },
@@ -618,16 +607,14 @@ export const updateLeaveRequest = async (leaveId: string, data: Partial<CreateLe
 // Delete leave request
 export const deleteLeaveRequest = async (leaveId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     const leaveRequest = await prisma.leaveRequest.findUnique({
       where: { id: leaveId },
@@ -687,16 +674,14 @@ export const deleteLeaveRequest = async (leaveId: string): Promise<ApiResponse> 
 // Cancel leave request
 export const cancelLeaveRequest = async (leaveId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     const leaveRequest = await prisma.leaveRequest.findUnique({
       where: { id: leaveId }
@@ -749,16 +734,14 @@ export const cancelLeaveRequest = async (leaveId: string): Promise<ApiResponse> 
 // Get leave balance
 export const getLeaveBalance = async (staffId: string, year?: number): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     // Check permissions
     if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
@@ -797,16 +780,14 @@ export const getLeaveBalance = async (staffId: string, year?: number): Promise<A
 // Update leave balance
 export const updateLeaveBalance = async (staffId: string, data: LeaveBalanceData): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -850,16 +831,14 @@ export const updateLeaveBalance = async (staffId: string, data: LeaveBalanceData
 // Get all leave balances
 export const getAllLeaveBalances = async (year?: number): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -908,16 +887,14 @@ export const getAllLeaveBalances = async (year?: number): Promise<ApiResponse> =
 // Create leave balance for a staff member
 export const createLeaveBalance = async (data: LeaveBalanceData & { staffId: string }): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -978,16 +955,14 @@ export const createLeaveBalance = async (data: LeaveBalanceData & { staffId: str
 // Delete leave balance
 export const deleteLeaveBalance = async (balanceId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {
@@ -1015,12 +990,11 @@ export const deleteLeaveBalance = async (balanceId: string): Promise<ApiResponse
 
 export const getLeaveCalendar = async (year: number, month: number): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -1068,16 +1042,15 @@ export const getLeaveCalendar = async (year: number, month: number): Promise<Api
 // Get leave reports
 export const getLeaveReports = async (filters: LeaveFilters = {}): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
-    const currentUser = session.user as any;
+    const currentUser = authResult.user as any;
     
     if (currentUser.role !== "ADMIN") {
       return {

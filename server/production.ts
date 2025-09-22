@@ -1,9 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { logAction } from "./audit";
+import { getAuthenticatedUser, AuthenticatedUser } from "./auth-middleware";
 import { ApiResponse, PaginatedResponse, FilterParams, PaginationParams, SortParams } from "./types";
 
 // ===================
@@ -135,16 +133,15 @@ export interface DailyProductionData {
 
 export async function createEggProduction(data: CreateEggProductionData): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Validate flock exists
     const flock = await prisma.flocks.findUnique({
@@ -220,17 +217,6 @@ export async function createEggProduction(data: CreateEggProductionData): Promis
       }
     });
 
-    // Log the action
-    await logAction(
-      'CREATE_EGG_PRODUCTION',
-      currentUser.id,
-      {
-        flockId: data.flockId,
-        totalCount: data.totalCount,
-        gradeCounts: data.gradeCounts
-      }
-    );
-
     return {
       success: true,
       data: eggProduction,
@@ -253,12 +239,12 @@ export async function getEggProduction(
   sort: SortParams = { field: 'date', direction: 'desc' }
 ): Promise<PaginatedResponse<any>> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -271,8 +257,6 @@ export async function getEggProduction(
     if (filters.flockId) {
       where.flockId = filters.flockId;
     }
-
-
 
     if (filters.dateRange) {
       where.date = {
@@ -340,12 +324,12 @@ export async function getEggProduction(
 
 export async function getEggProductionById(productionId: string): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -391,16 +375,15 @@ export async function updateEggProduction(
   data: UpdateEggProductionData
 ): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Check if production record exists
     const existingRecord = await prisma.eggProduction.findUnique({
@@ -459,15 +442,6 @@ export async function updateEggProduction(
       }
     });
 
-    // Log the action
-    await logAction(
-      'UPDATE_EGG_PRODUCTION',
-      currentUser.id,
-      {
-        productionId,
-        changes: data
-      }
-    );
 
     return {
       success: true,
@@ -487,16 +461,15 @@ export async function updateEggProduction(
 
 export async function deleteEggProduction(productionId: string): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Check if production record exists
     const existingRecord = await prisma.eggProduction.findUnique({
@@ -515,17 +488,6 @@ export async function deleteEggProduction(productionId: string): Promise<ApiResp
       where: { id: productionId }
     });
 
-    // Log the action
-    await logAction(
-      'DELETE_EGG_PRODUCTION',
-      currentUser.id,
-      {
-        productionId,
-        flockId: existingRecord.flockId,
-        totalCount: existingRecord.totalCount,
-        gradeCounts: existingRecord.gradeCounts
-      }
-    );
 
     return {
       success: true,
@@ -548,16 +510,15 @@ export async function deleteEggProduction(productionId: string): Promise<ApiResp
 
 export async function createBroilerSales(data: CreateBroilerSalesData): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Validate flock exists
     const flock = await prisma.flocks.findUnique({
@@ -601,17 +562,6 @@ export async function createBroilerSales(data: CreateBroilerSalesData): Promise<
       }
     });
 
-    // Log the action
-    await logAction(
-      'CREATE_BROILER_SALES',
-      currentUser.id,
-      {
-        flockId: data.flockId,
-        quantity: data.quantity,
-        pricePerUnit: data.pricePerUnit,
-        totalAmount: data.totalAmount
-      }
-    );
 
     return {
       success: true,
@@ -635,12 +585,12 @@ export async function getBroilerSales(
   sort: SortParams = { field: 'date', direction: 'desc' }
 ): Promise<PaginatedResponse<any>> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -725,16 +675,15 @@ export async function updateBroilerSales(
   data: UpdateBroilerSalesData
 ): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Check if production record exists
     const existingRecord = await prisma.broilerSales.findUnique({
@@ -773,15 +722,6 @@ export async function updateBroilerSales(
       }
     });
 
-    // Log the action
-    await logAction(
-      'UPDATE_MEAT_PRODUCTION',
-      currentUser.id,
-      {
-        productionId,
-        changes: data
-      }
-    );
 
     return {
       success: true,
@@ -801,16 +741,15 @@ export async function updateBroilerSales(
 
 export async function deleteBroilerSales(productionId: string): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Check if production record exists
     const existingRecord = await prisma.broilerSales.findUnique({
@@ -829,16 +768,6 @@ export async function deleteBroilerSales(productionId: string): Promise<ApiRespo
       where: { id: productionId }
     });
 
-    // Log the action
-    await logAction(
-      'DELETE_MEAT_PRODUCTION',
-      currentUser.id,
-      {
-        productionId,
-        flockId: existingRecord.flockId,
-        quantity: existingRecord.quantity
-      }
-    );
 
     return {
       success: true,
@@ -861,16 +790,15 @@ export async function deleteBroilerSales(productionId: string): Promise<ApiRespo
 
 export async function createManureProduction(data: CreateManureProductionData): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Validate flock exists
     const flock = await prisma.flocks.findUnique({
@@ -911,15 +839,6 @@ export async function createManureProduction(data: CreateManureProductionData): 
       }
     });
 
-    // Log the action
-    await logAction(
-      'CREATE_MANURE_PRODUCTION',
-      currentUser.id,
-      {
-        flockId: data.flockId,
-        quantity: data.quantity
-      }
-    );
 
     return {
       success: true,
@@ -943,12 +862,12 @@ export async function getManureProduction(
   sort: SortParams = { field: 'date', direction: 'desc' }
 ): Promise<PaginatedResponse<any>> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -1033,16 +952,15 @@ export async function updateManureProduction(
   data: UpdateManureProductionData
 ): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Check if production record exists
     const existingRecord = await prisma.manureProduction.findUnique({
@@ -1081,15 +999,6 @@ export async function updateManureProduction(
       }
     });
 
-    // Log the action
-    await logAction(
-      'UPDATE_MANURE_PRODUCTION',
-      currentUser.id,
-      {
-        productionId,
-        changes: data
-      }
-    );
 
     return {
       success: true,
@@ -1109,16 +1018,15 @@ export async function updateManureProduction(
 
 export async function deleteManureProduction(productionId: string): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Check if production record exists
     const existingRecord = await prisma.manureProduction.findUnique({
@@ -1137,16 +1045,6 @@ export async function deleteManureProduction(productionId: string): Promise<ApiR
       where: { id: productionId }
     });
 
-    // Log the action
-    await logAction(
-      'DELETE_MANURE_PRODUCTION',
-      currentUser.id,
-      {
-        productionId,
-        flockId: existingRecord.flockId,
-        quantity: existingRecord.quantity
-      }
-    );
 
     return {
       success: true,
@@ -1172,12 +1070,12 @@ export async function getProductionSummary(
   dateRange?: { start: Date; end: Date }
 ): Promise<ApiResponse<EggProductionSummary>> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -1294,12 +1192,12 @@ export async function getDailyProductionData(
   dateRange?: { start: Date; end: Date }
 ): Promise<ApiResponse<DailyProductionData[]>> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
 
@@ -1412,16 +1310,15 @@ export async function createBulkEggProduction(
   records: CreateEggProductionData[]
 ): Promise<ApiResponse> {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-
-    if (!session?.user) {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
       return {
         success: false,
-        message: "Authentication required"
+        message: authResult.message || "Authentication required"
       };
     }
-
-    const currentUser = session.user as any;
+    const user = authResult.user!;
 
     // Validate all records
     for (const record of records) {
@@ -1481,15 +1378,6 @@ export async function createBulkEggProduction(
       return createdRecords;
     });
 
-    // Log the action
-    await logAction(
-      'CREATE_BULK_EGG_PRODUCTION',
-      currentUser.id,
-      {
-        recordCount: records.length,
-        flockIds: records.map(r => r.flockId)
-      }
-    );
 
     return {
       success: true,

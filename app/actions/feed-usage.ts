@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getAuthenticatedUser } from "@/server/auth-middleware";
 
 export async function getFeedUsageAction() {
   try {
@@ -34,9 +33,12 @@ export async function createFeedUsageAction(data: {
   notes?: string;
 }) {
   try {
-    // Get current user from session using better-auth API
-    const session = await auth.api.getSession({ headers: await headers() });
-    const currentUserId = session?.user?.id;
+    // Get current user from auth middleware
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return { success: false, error: authResult.message || "Authentication required" };
+    }
+    const currentUserId = authResult.user?.id;
 
     // Check if there's enough inventory
     const feed = await prisma.feedInventory.findUnique({

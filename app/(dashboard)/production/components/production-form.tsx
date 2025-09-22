@@ -109,7 +109,12 @@ export function ProductionForm({
         spoiledCount: (initialData as any)?.gradeCounts?.spoiled || 0
       } : {
         quantity: (initialData as any)?.quantity || 0,
-        unit: 'kg'
+        unit: 'kg',
+        ...(productionType === 'broiler' ? {
+          pricePerUnit: (initialData as any)?.pricePerUnit || 0,
+          totalAmount: (initialData as any)?.totalAmount || 0,
+          buyer: (initialData as any)?.buyer || ""
+        } : {})
       }),
       notes: initialData?.notes || ""
     }
@@ -458,7 +463,7 @@ export function ProductionForm({
                       step="0.01"
                       placeholder="0.00"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -478,7 +483,7 @@ export function ProductionForm({
                       step="0.01"
                       placeholder="0.00"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                     />
                   </FormControl>
                   <FormMessage />

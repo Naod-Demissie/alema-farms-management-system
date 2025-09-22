@@ -106,23 +106,6 @@ export interface LeaveBalanceData {
   usedLeaveDays?: number;
 }
 
-// Notification Types
-export interface NotificationFilters extends FilterParams {
-  isRead?: boolean;
-  type?: string;
-}
-
-export interface CreateNotificationData {
-  staffId: string;
-  flockId?: string;
-  message: string;
-  type?: string;
-  priority?: 'low' | 'medium' | 'high';
-}
-
-export interface SendNotificationData extends CreateNotificationData {
-  sendEmail?: boolean;
-}
 
 // Analytics Types
 export interface AnalyticsFilters extends FilterParams {
@@ -151,12 +134,6 @@ export interface CreateTaskData {
   order: number;
 }
 
-// Audit Types
-export interface AuditFilters extends FilterParams {
-  action?: string;
-  staffId?: string;
-  dateRange?: DateRange;
-}
 
 // File Upload Types
 export interface FileUploadData {
