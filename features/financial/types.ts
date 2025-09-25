@@ -44,6 +44,8 @@ export interface MonthlyFinancialData {
 export interface ExpenseFormData {
   flockId: string;
   category: ExpenseCategory;
+  quantity: number;
+  costPerQuantity: number;
   amount: number;
   date: Date;
   description?: string;

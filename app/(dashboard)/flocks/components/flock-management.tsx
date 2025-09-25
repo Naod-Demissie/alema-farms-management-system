@@ -254,11 +254,13 @@ export function FlockManagementMerged({
     try {
       const result = await generateBatchCode(breed as any);
       if (result.success) {
-        form.setValue('batchCode', result.data.batchCode);
+        // The form value will be set by the FlockForm component
+        return result.data.batchCode;
       }
     } catch (error) {
       console.error('Error generating batch code:', error);
     }
+    return null;
   };
 
   // Calculate statistics

@@ -266,15 +266,17 @@ model ManureProduction {
 }
 
 model Expenses {
-  id          String          @id @default(uuid())
-  flockId     String
-  category    ExpenseCategory
-  amount      Float
-  date        DateTime
-  description String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  flock       Flocks          @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  id              String          @id @default(uuid())
+  flockId         String
+  category        ExpenseCategory
+  quantity        Float           // Quantity of items purchased/used
+  costPerQuantity Float           // Cost per unit/quantity
+  amount          Float           // Total amount (calculated)
+  date            DateTime
+  description     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  flock           Flocks          @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("expenses")
 }
@@ -462,5 +464,37 @@ enum LeaveStatus {
   APPROVED
   REJECTED
   CANCELLED
+}
+
+enum InventoryType {
+  MEDICINE
+  FEED
+  MANURE
+  BROILER
+  EGG
+  OTHER
+}
+
+model Inventory {
+  id              String        @id @default(uuid())
+  type            InventoryType
+  name            String        // Name of the inventory item
+  quantity        Float         // Current stock quantity
+  unit            String        @default("kg") // Unit of measurement
+  threshold       Float?        // Minimum stock level for alerts
+  feedDetails     Json?         // JSON field for feed types: {LAYER_STARTER: 100, REARING: 50, ...}
+  eggCount        Int?          // For egg inventory
+  broilerCount    Int?          // For broiler inventory
+  manureWeight    Float?        // For manure inventory (in kg)
+  medicineDetails Json?         // JSON field for medicine details: {name: "Antibiotic", dosage: "5ml", ...}
+  otherDetails    Json?         // JSON field for other items
+  costPerUnit     Float?        // Cost per unit
+  totalValue      Float?        // Total value (quantity * costPerUnit)
+  notes           String?       // Additional notes
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("inventory")
 }
 

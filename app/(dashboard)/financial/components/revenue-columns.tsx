@@ -45,11 +45,6 @@ export const getRevenueColumns = (
     },
   },
   {
-    accessorKey: "flock.batchCode",
-    header: "Flock",
-    id: "flock",
-  },
-  {
     accessorKey: "source",
     header: "Source",
     cell: ({ row }) => {

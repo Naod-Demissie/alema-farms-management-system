@@ -3,24 +3,20 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, DollarSign, TrendingUp, Eye } from "lucide-react";
 import { RevenueFormData, REVENUE_SOURCES } from "@/features/financial/types";
-import { RevenueSource } from "@/lib/generated/prisma";
 import { 
   getRevenue, 
   createRevenue, 
   updateRevenue, 
   deleteRevenue 
 } from "@/server/financial";
-import { getFlocks } from "@/server/flocks";
 import { toast } from "sonner";
 import { RevenueTable } from "./revenue-table";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { RevenueDialog } from "./revenue-dialog";
 import { format } from "date-fns";
 
 interface Revenue {
@@ -40,16 +36,10 @@ interface Revenue {
   };
 }
 
-interface Flock {
-  id: string;
-  batchCode: string;
-  breed: string;
-}
 
 
 export function RevenueManagement() {
   const [revenues, setRevenues] = useState<Revenue[]>([]);
-  const [flocks, setFlocks] = useState<Flock[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -61,20 +51,9 @@ export function RevenueManagement() {
     record: null as Revenue | null,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState<RevenueFormData>({
-    flockId: "",
-    source: "egg_sales",
-    quantity: 0,
-    costPerQuantity: 0,
-    amount: 0,
-    date: new Date(),
-    description: "",
-  });
 
   useEffect(() => {
     fetchRevenues();
-    fetchFlocks();
   }, []);
 
   const fetchRevenues = async () => {
@@ -96,58 +75,28 @@ export function RevenueManagement() {
     }
   };
 
-  const fetchFlocks = async () => {
-    try {
-      const result = await getFlocks({}, { page: 1, limit: 100 });
-      if (result.success && result.data) {
-        setFlocks(result.data.map(flock => ({
-          id: flock.id,
-          batchCode: flock.batchCode,
-          breed: flock.breed
-        })));
-      } else {
-        toast.error("Failed to fetch flocks");
-        setFlocks([]);
-      }
-    } catch (error) {
-      console.error("Error fetching flocks:", error);
-      toast.error("Failed to fetch flocks");
-      setFlocks([]);
-    }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.flockId || !formData.source || !formData.quantity || !formData.costPerQuantity) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    // Calculate total amount
-    const calculatedAmount = formData.quantity * formData.costPerQuantity;
-    
+  const handleRevenueSubmit = async (data: RevenueFormData) => {
     try {
       let result;
       if (editingRevenue) {
         result = await updateRevenue(editingRevenue.id, {
-          source: formData.source,
-          quantity: formData.quantity,
-          costPerQuantity: formData.costPerQuantity,
-          amount: calculatedAmount,
-          date: formData.date,
-          description: formData.description,
+          source: data.source,
+          quantity: data.quantity,
+          costPerQuantity: data.costPerQuantity,
+          amount: data.amount,
+          date: data.date,
+          description: data.description,
         });
       } else {
         result = await createRevenue({
-          flockId: formData.flockId,
-          source: formData.source,
-          quantity: formData.quantity,
-          costPerQuantity: formData.costPerQuantity,
-          amount: calculatedAmount,
-          date: formData.date,
-          description: formData.description,
+          flockId: "", // No flock association for revenue
+          source: data.source,
+          quantity: data.quantity,
+          costPerQuantity: data.costPerQuantity,
+          amount: data.amount,
+          date: data.date,
+          description: data.description,
         });
       }
 
@@ -155,15 +104,6 @@ export function RevenueManagement() {
         toast.success(editingRevenue ? "Revenue updated successfully" : "Revenue created successfully");
         setIsDialogOpen(false);
         setEditingRevenue(null);
-        setFormData({
-          flockId: "",
-          source: "egg_sales",
-          quantity: 0,
-          costPerQuantity: 0,
-          amount: 0,
-          date: new Date(),
-          description: "",
-        });
         fetchRevenues();
       } else {
         toast.error(result.message || "Failed to save revenue");
@@ -181,15 +121,6 @@ export function RevenueManagement() {
 
   const handleEdit = (revenue: Revenue) => {
     setEditingRevenue(revenue);
-    setFormData({
-      flockId: revenue.flockId,
-      source: revenue.source as RevenueSource,
-      quantity: revenue.quantity || 0,
-      costPerQuantity: revenue.costPerQuantity || 0,
-      amount: revenue.amount,
-      date: new Date(revenue.date),
-      description: revenue.description || "",
-    });
     setIsDialogOpen(true);
   };
 
@@ -313,158 +244,13 @@ export function RevenueManagement() {
             <CardTitle>Revenue</CardTitle>
             <CardDescription>Track and manage all farm revenue</CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingRevenue(null);
-                setFormData({
-                  flockId: "",
-                  source: "egg_sales",
-                  quantity: 0,
-                  costPerQuantity: 0,
-                  amount: 0,
-                  date: new Date(),
-                  description: "",
-                });
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Revenue
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingRevenue ? "Edit Revenue" : "Add New Revenue"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingRevenue ? "Update revenue details" : "Record a new revenue for your farm"}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="flock">Flock</Label>
-                    <Select
-                      value={formData.flockId}
-                      onValueChange={(value) => setFormData({ ...formData, flockId: value })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select flock" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {flocks.map((flock) => (
-                          <SelectItem key={flock.id} value={flock.id}>
-                            {flock.batchCode} ({flock.breed})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="source">Source</Label>
-                    <Select
-                      value={formData.source}
-                      onValueChange={(value) => setFormData({ ...formData, source: value as RevenueSource })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select source" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {REVENUE_SOURCES.map((source) => (
-                          <SelectItem key={source.value} value={source.value}>
-                            {source.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="quantity" className="flex items-center gap-1">
-                        Quantity <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="quantity"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.quantity || ""}
-                        onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
-                        placeholder="e.g., 100"
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="costPerQuantity" className="flex items-center gap-1">
-                        Cost per Quantity <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="costPerQuantity"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.costPerQuantity || ""}
-                        onChange={(e) => setFormData({ ...formData, costPerQuantity: parseFloat(e.target.value) || 0 })}
-                        placeholder="e.g., 2.50"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="amount">Total Amount</Label>
-                    <div className="bg-muted/50 p-3 rounded-lg text-center">
-                      <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
-                      <div className="text-xl font-semibold">
-                        {formData.quantity && formData.costPerQuantity 
-                          ? new Intl.NumberFormat("en-ET", {
-                              style: "currency",
-                              currency: "ETB",
-                            }).format(formData.quantity * formData.costPerQuantity)
-                          : "0.00 ETB"
-                        }
-                      </div>
-                      {formData.quantity && formData.costPerQuantity && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {formData.quantity} × {formData.costPerQuantity}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date.toISOString().split('T')[0]}
-                      onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Additional details about this revenue..."
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">
-                    {editingRevenue ? "Update Revenue" : "Add Revenue"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => {
+            setEditingRevenue(null);
+            setIsDialogOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Revenue
+          </Button>
         </CardHeader>
                <CardContent>
                  <RevenueTable
@@ -472,7 +258,6 @@ export function RevenueManagement() {
                    onView={handleView}
                    onEdit={handleEdit}
                    onDelete={handleDeleteClick}
-                   flocks={flocks}
                    loading={loading}
                  />
                </CardContent>
@@ -561,6 +346,28 @@ export function RevenueManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reusable Revenue Dialog */}
+      <RevenueDialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setEditingRevenue(null);
+        }}
+        onSubmit={handleRevenueSubmit}
+        initialData={editingRevenue ? {
+          flockId: editingRevenue.flockId,
+          source: editingRevenue.source as any,
+          quantity: editingRevenue.quantity || 0,
+          costPerQuantity: editingRevenue.costPerQuantity || 0,
+          amount: editingRevenue.amount,
+          date: new Date(editingRevenue.date),
+          description: editingRevenue.description || "",
+        } : undefined}
+        title={editingRevenue ? "Edit Revenue" : "Add New Revenue"}
+        description={editingRevenue ? "Update revenue details" : "Record a new revenue for your farm"}
+        submitButtonText={editingRevenue ? "Update Revenue" : "Add Revenue"}
+      />
 
       {/* Confirmation Dialog */}
       <ConfirmDialog

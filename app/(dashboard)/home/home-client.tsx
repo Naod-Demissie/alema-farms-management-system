@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useState as useStateReact } from "react";
 import { toast } from "sonner";
+import { InventoryCounts } from "@/server/inventory-alerts";
 
 type DashboardSummary = {
   eggsToday: number;
@@ -48,7 +49,7 @@ type DashboardSummary = {
   feedLeft: number;
 };
 
-export default function HomeClient({ summary }: { summary: DashboardSummary }) {
+export default function HomeClient({ summary, inventoryCounts }: { summary: DashboardSummary; inventoryCounts: InventoryCounts }) {
   const router = useRouter();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
@@ -127,7 +128,50 @@ export default function HomeClient({ summary }: { summary: DashboardSummary }) {
     return colorMap[priority] || "text-gray-600 bg-gray-50 border-gray-200";
   };
 
-  const alerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [];
+  // Generate inventory alerts
+  const inventoryAlerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [];
+  
+  if (inventoryCounts.eggs > 0) {
+    inventoryAlerts.push({
+      id: 1,
+      message: `${inventoryCounts.eggs.toLocaleString()} eggs available in inventory`,
+      priority: "medium"
+    });
+  }
+  
+  if (inventoryCounts.feed > 0) {
+    inventoryAlerts.push({
+      id: 2,
+      message: `${inventoryCounts.feed.toLocaleString()} kg of feed available in inventory`,
+      priority: "medium"
+    });
+  }
+  
+  if (inventoryCounts.medicine > 0) {
+    inventoryAlerts.push({
+      id: 3,
+      message: `${inventoryCounts.medicine.toLocaleString()} units of medicine available in inventory`,
+      priority: "medium"
+    });
+  }
+  
+  if (inventoryCounts.broilers > 0) {
+    inventoryAlerts.push({
+      id: 4,
+      message: `${inventoryCounts.broilers.toLocaleString()} broilers available in inventory`,
+      priority: "medium"
+    });
+  }
+  
+  if (inventoryCounts.manure > 0) {
+    inventoryAlerts.push({
+      id: 5,
+      message: `${inventoryCounts.manure.toLocaleString()} kg of manure available in inventory`,
+      priority: "low"
+    });
+  }
+
+  const alerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [...inventoryAlerts];
   const notifications: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [];
 
   return (
@@ -158,6 +202,7 @@ export default function HomeClient({ summary }: { summary: DashboardSummary }) {
               { id: "add-flock", title: "Add New Flock", icon: Bird, color: "bg-blue-500" },
               { id: "record-production", title: "Record Egg Production", icon: Egg, color: "bg-green-500" },
               { id: "add-expense", title: "Add Expense", icon: Minus, color: "bg-purple-500" },
+              { id: "add-revenue", title: "Add Revenue", icon: DollarSign, color: "bg-green-600" },
               { id: "add-staff", title: "Add Staff Member", icon: UserPlus, color: "bg-indigo-500" },
               { id: "record-vaccination", title: "Record Vaccination", icon: Heart, color: "bg-red-500", href: "/health" },
               { id: "record-feed-usage", title: "Record Feed Usage", icon: Calculator, color: "bg-yellow-600", href: "/feed?tab=usage" },

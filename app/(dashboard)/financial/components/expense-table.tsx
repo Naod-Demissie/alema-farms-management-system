@@ -10,6 +10,8 @@ interface Expense {
   id: string;
   flockId: string;
   category: string;
+  quantity: number | null;
+  costPerQuantity: number | null;
   amount: number;
   date: Date;
   description?: string | null;
@@ -26,11 +28,10 @@ interface ExpenseTableProps {
   onView: (record: Expense) => void;
   onEdit: (record: Expense) => void;
   onDelete: (record: Expense) => void;
-  flocks: Array<{ id: string; batchCode: string; breed: string }>;
   loading?: boolean;
 }
 
-export function ExpenseTable({ data, onView, onEdit, onDelete, flocks, loading = false }: ExpenseTableProps) {
+export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }: ExpenseTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -51,12 +52,6 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, flocks, loading =
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Prepare flock options for filter
-  const flockOptions = flocks.map(flock => ({
-    label: `${flock.batchCode} (${flock.breed})`,
-    value: flock.id,
-  }));
-
   // Prepare category options for filter
   const categoryOptions = [
     { label: "Feed", value: "feed" },
@@ -71,8 +66,8 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, flocks, loading =
     <div className="space-y-4">
       <DataTableToolbar
         table={table}
-        filterColumnId="flock"
-        filterPlaceholder="Filter by flock..."
+        filterColumnId="category"
+        filterPlaceholder="Filter by category..."
         facetedFilters={[
           {
             columnId: "category",

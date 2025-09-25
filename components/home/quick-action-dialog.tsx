@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,11 @@ import {
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ExpenseDialog } from "@/app/(dashboard)/financial/components/expense-dialog";
+import { RevenueDialog } from "@/app/(dashboard)/financial/components/revenue-dialog";
+import { ExpenseFormData, RevenueFormData } from "@/features/financial/types";
+import { createExpense, createRevenue } from "@/server/financial";
+import { toast } from "sonner";
 
 interface QuickActionDialogProps {
   isOpen: boolean;
@@ -34,6 +39,22 @@ interface QuickActionDialogProps {
 export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false);
+
+  // Open expense dialog directly when actionType is "add-expense"
+  React.useEffect(() => {
+    if (isOpen && actionType === "add-expense") {
+      setIsExpenseDialogOpen(true);
+    }
+  }, [isOpen, actionType]);
+
+  // Open revenue dialog directly when actionType is "add-revenue"
+  React.useEffect(() => {
+    if (isOpen && actionType === "add-revenue") {
+      setIsRevenueDialogOpen(true);
+    }
+  }, [isOpen, actionType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +65,56 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
     
     setIsLoading(false);
     onClose();
+  };
+
+  const handleExpenseSubmit = async (data: ExpenseFormData) => {
+    try {
+      const result = await createExpense({
+        flockId: "",
+        category: data.category,
+        quantity: data.quantity,
+        costPerQuantity: data.costPerQuantity,
+        amount: data.amount,
+        date: data.date,
+        description: data.description,
+      });
+
+      if (result.success) {
+        toast.success("Expense created successfully");
+        setIsExpenseDialogOpen(false);
+        onClose();
+      } else {
+        toast.error(result.message || "Failed to create expense");
+      }
+    } catch (error) {
+      console.error("Error creating expense:", error);
+      toast.error("Failed to create expense");
+    }
+  };
+
+  const handleRevenueSubmit = async (data: RevenueFormData) => {
+    try {
+      const result = await createRevenue({
+        flockId: "",
+        source: data.source,
+        quantity: data.quantity,
+        costPerQuantity: data.costPerQuantity,
+        amount: data.amount,
+        date: data.date,
+        description: data.description,
+      });
+
+      if (result.success) {
+        toast.success("Revenue created successfully");
+        setIsRevenueDialogOpen(false);
+        onClose();
+      } else {
+        toast.error(result.message || "Failed to create revenue");
+      }
+    } catch (error) {
+      console.error("Error creating revenue:", error);
+      toast.error("Failed to create revenue");
+    }
   };
 
   const renderForm = () => {
@@ -186,57 +257,16 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
 
       case "add-expense":
         return (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="amount">Amount</Label>
-              <Input id="amount" type="number" placeholder="0.00" step="0.01" required />
-            </div>
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="feed">Feed</SelectItem>
-                  <SelectItem value="medicine">Medicine</SelectItem>
-                  <SelectItem value="labor">Labor</SelectItem>
-                  <SelectItem value="utilities">Utilities</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" placeholder="Expense description..." />
-            </div>
-            <div>
-              <Label htmlFor="expenseDate">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </form>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Opening expense form...</p>
+          </div>
+        );
+
+      case "add-revenue":
+        return (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Opening revenue form...</p>
+          </div>
         );
 
       case "add-staff":
@@ -293,15 +323,17 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
             {actionType === "add-flock" && "Add New Flock"}
             {actionType === "record-production" && "Record Egg Production"}
             {actionType === "add-expense" && "Add Expense"}
+            {actionType === "add-revenue" && "Add Revenue"}
             {actionType === "add-staff" && "Add Staff Member"}
-            {!["add-flock", "record-production", "add-expense", "add-staff"].includes(actionType || "") && "Quick Action"}
+            {!["add-flock", "record-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Quick Action"}
           </DialogTitle>
           <DialogDescription>
             {actionType === "add-flock" && "Register a new flock batch in your system."}
             {actionType === "record-production" && "Log daily egg production data."}
             {actionType === "add-expense" && "Record a new farm expense."}
+            {actionType === "add-revenue" && "Record a new farm revenue."}
             {actionType === "add-staff" && "Add a new staff member to your team."}
-            {!["add-flock", "record-production", "add-expense", "add-staff"].includes(actionType || "") && "Complete this action quickly."}
+            {!["add-flock", "record-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Complete this action quickly."}
           </DialogDescription>
         </DialogHeader>
         
@@ -318,11 +350,38 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
             {actionType === "add-flock" && "Add Flock"}
             {actionType === "record-production" && "Record Production"}
             {actionType === "add-expense" && "Add Expense"}
+            {actionType === "add-revenue" && "Add Revenue"}
             {actionType === "add-staff" && "Add Staff"}
-            {!["add-flock", "record-production", "add-expense", "add-staff"].includes(actionType || "") && "Submit"}
+            {!["add-flock", "record-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Submit"}
           </Button>
         </div>
       </DialogContent>
+
+      {/* Reusable Expense Dialog */}
+      <ExpenseDialog
+        isOpen={isExpenseDialogOpen}
+        onClose={() => {
+          setIsExpenseDialogOpen(false);
+          onClose();
+        }}
+        onSubmit={handleExpenseSubmit}
+        title="Add New Expense"
+        description="Record a new expense for your farm"
+        submitButtonText="Add Expense"
+      />
+
+      {/* Reusable Revenue Dialog */}
+      <RevenueDialog
+        isOpen={isRevenueDialogOpen}
+        onClose={() => {
+          setIsRevenueDialogOpen(false);
+          onClose();
+        }}
+        onSubmit={handleRevenueSubmit}
+        title="Add New Revenue"
+        description="Record a new revenue for your farm"
+        submitButtonText="Add Revenue"
+      />
     </Dialog>
   );
 }

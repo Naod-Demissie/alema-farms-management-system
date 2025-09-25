@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, AuthenticatedUser } from "./auth-middleware";
 import { ApiResponse, PaginatedResponse, FilterParams, PaginationParams, SortParams } from "./types";
+import { addToInventory, deductFromInventory } from "./inventory-service";
+import { InventoryType } from "@/lib/generated/prisma";
 
 // ===================
 // Production Management Types
@@ -217,6 +219,13 @@ export async function createEggProduction(data: CreateEggProductionData): Promis
       }
     });
 
+    // Add eggs to inventory when produced
+    const inventoryResult = await addToInventory(InventoryType.EGG, data.totalCount);
+    if (!inventoryResult.success) {
+      console.warn("Failed to update egg inventory:", inventoryResult.error);
+      // Don't fail the production creation if inventory update fails
+    }
+
     return {
       success: true,
       data: eggProduction,
@@ -425,6 +434,11 @@ export async function updateEggProduction(
       }
     }
 
+    // Calculate inventory difference
+    const oldTotalCount = existingRecord.totalCount;
+    const newTotalCount = data.totalCount !== undefined ? data.totalCount : oldTotalCount;
+    const inventoryDifference = newTotalCount - oldTotalCount;
+
     // Update egg production record
     const updatedProduction = await prisma.eggProduction.update({
       where: { id: productionId },
@@ -442,6 +456,22 @@ export async function updateEggProduction(
       }
     });
 
+    // Update inventory based on the difference
+    if (inventoryDifference !== 0) {
+      if (inventoryDifference > 0) {
+        // Add the difference to inventory
+        const inventoryResult = await addToInventory(InventoryType.EGG, inventoryDifference);
+        if (!inventoryResult.success) {
+          console.warn("Failed to update egg inventory:", inventoryResult.error);
+        }
+      } else {
+        // Deduct the difference from inventory
+        const inventoryResult = await deductFromInventory(InventoryType.EGG, Math.abs(inventoryDifference));
+        if (!inventoryResult.success) {
+          console.warn("Failed to update egg inventory:", inventoryResult.error);
+        }
+      }
+    }
 
     return {
       success: true,
@@ -483,11 +513,17 @@ export async function deleteEggProduction(productionId: string): Promise<ApiResp
       };
     }
 
+    // Deduct eggs from inventory when deleting production record
+    const inventoryResult = await deductFromInventory(InventoryType.EGG, existingRecord.totalCount);
+    if (!inventoryResult.success) {
+      console.warn("Failed to update egg inventory:", inventoryResult.error);
+      // Don't fail the deletion if inventory update fails
+    }
+
     // Delete egg production record
     await prisma.eggProduction.delete({
       where: { id: productionId }
     });
-
 
     return {
       success: true,
@@ -562,6 +598,12 @@ export async function createBroilerSales(data: CreateBroilerSalesData): Promise<
       }
     });
 
+    // Add broilers to inventory when sold (this represents available broilers for sale)
+    const inventoryResult = await addToInventory(InventoryType.BROILER, data.quantity);
+    if (!inventoryResult.success) {
+      console.warn("Failed to update broiler inventory:", inventoryResult.error);
+      // Don't fail the sales creation if inventory update fails
+    }
 
     return {
       success: true,
@@ -705,6 +747,11 @@ export async function updateBroilerSales(
       };
     }
 
+    // Calculate inventory difference
+    const oldQuantity = existingRecord.quantity;
+    const newQuantity = data.quantity !== undefined ? data.quantity : oldQuantity;
+    const inventoryDifference = newQuantity - oldQuantity;
+
     // Update meat production record
     const updatedProduction = await prisma.broilerSales.update({
       where: { id: productionId },
@@ -722,6 +769,22 @@ export async function updateBroilerSales(
       }
     });
 
+    // Update inventory based on the difference
+    if (inventoryDifference !== 0) {
+      if (inventoryDifference > 0) {
+        // Add the difference to inventory
+        const inventoryResult = await addToInventory(InventoryType.BROILER, inventoryDifference);
+        if (!inventoryResult.success) {
+          console.warn("Failed to update broiler inventory:", inventoryResult.error);
+        }
+      } else {
+        // Deduct the difference from inventory
+        const inventoryResult = await deductFromInventory(InventoryType.BROILER, Math.abs(inventoryDifference));
+        if (!inventoryResult.success) {
+          console.warn("Failed to update broiler inventory:", inventoryResult.error);
+        }
+      }
+    }
 
     return {
       success: true,
@@ -763,11 +826,17 @@ export async function deleteBroilerSales(productionId: string): Promise<ApiRespo
       };
     }
 
+    // Deduct broilers from inventory when deleting production record
+    const inventoryResult = await deductFromInventory(InventoryType.BROILER, existingRecord.quantity);
+    if (!inventoryResult.success) {
+      console.warn("Failed to update broiler inventory:", inventoryResult.error);
+      // Don't fail the deletion if inventory update fails
+    }
+
     // Delete meat production record
     await prisma.broilerSales.delete({
       where: { id: productionId }
     });
-
 
     return {
       success: true,
@@ -839,6 +908,12 @@ export async function createManureProduction(data: CreateManureProductionData): 
       }
     });
 
+    // Add manure to inventory when produced
+    const inventoryResult = await addToInventory(InventoryType.MANURE, data.quantity);
+    if (!inventoryResult.success) {
+      console.warn("Failed to update manure inventory:", inventoryResult.error);
+      // Don't fail the production creation if inventory update fails
+    }
 
     return {
       success: true,
@@ -982,6 +1057,11 @@ export async function updateManureProduction(
       };
     }
 
+    // Calculate inventory difference
+    const oldQuantity = existingRecord.quantity;
+    const newQuantity = data.quantity !== undefined ? data.quantity : oldQuantity;
+    const inventoryDifference = newQuantity - oldQuantity;
+
     // Update manure production record
     const updatedProduction = await prisma.manureProduction.update({
       where: { id: productionId },
@@ -999,6 +1079,22 @@ export async function updateManureProduction(
       }
     });
 
+    // Update inventory based on the difference
+    if (inventoryDifference !== 0) {
+      if (inventoryDifference > 0) {
+        // Add the difference to inventory
+        const inventoryResult = await addToInventory(InventoryType.MANURE, inventoryDifference);
+        if (!inventoryResult.success) {
+          console.warn("Failed to update manure inventory:", inventoryResult.error);
+        }
+      } else {
+        // Deduct the difference from inventory
+        const inventoryResult = await deductFromInventory(InventoryType.MANURE, Math.abs(inventoryDifference));
+        if (!inventoryResult.success) {
+          console.warn("Failed to update manure inventory:", inventoryResult.error);
+        }
+      }
+    }
 
     return {
       success: true,
@@ -1040,11 +1136,17 @@ export async function deleteManureProduction(productionId: string): Promise<ApiR
       };
     }
 
+    // Deduct manure from inventory when deleting production record
+    const inventoryResult = await deductFromInventory(InventoryType.MANURE, existingRecord.quantity);
+    if (!inventoryResult.success) {
+      console.warn("Failed to update manure inventory:", inventoryResult.error);
+      // Don't fail the deletion if inventory update fails
+    }
+
     // Delete manure production record
     await prisma.manureProduction.delete({
       where: { id: productionId }
     });
-
 
     return {
       success: true,

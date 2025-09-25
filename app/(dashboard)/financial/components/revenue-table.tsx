@@ -28,11 +28,10 @@ interface RevenueTableProps {
   onView: (record: Revenue) => void;
   onEdit: (record: Revenue) => void;
   onDelete: (record: Revenue) => void;
-  flocks: Array<{ id: string; batchCode: string; breed: string }>;
   loading?: boolean;
 }
 
-export function RevenueTable({ data, onView, onEdit, onDelete, flocks, loading = false }: RevenueTableProps) {
+export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }: RevenueTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -53,12 +52,6 @@ export function RevenueTable({ data, onView, onEdit, onDelete, flocks, loading =
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Prepare flock options for filter
-  const flockOptions = flocks.map(flock => ({
-    label: `${flock.batchCode} (${flock.breed})`,
-    value: flock.id,
-  }));
-
   // Prepare source options for filter
   const sourceOptions = [
     { label: "Egg Sales", value: "egg_sales" },
@@ -71,8 +64,8 @@ export function RevenueTable({ data, onView, onEdit, onDelete, flocks, loading =
     <div className="space-y-4">
       <DataTableToolbar
         table={table}
-        filterColumnId="flock"
-        filterPlaceholder="Filter by flock..."
+        filterColumnId="source"
+        filterPlaceholder="Filter by source..."
         facetedFilters={[
           {
             columnId: "source",

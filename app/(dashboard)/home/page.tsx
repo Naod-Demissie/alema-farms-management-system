@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import HomeClient from "./home-client";
+import { getInventoryCounts } from "@/server/inventory-alerts";
 
 export default async function HomePage() {
   const todayStart = new Date();
@@ -32,5 +33,8 @@ export default async function HomePage() {
   const feedAgg = await prisma.feedInventory.aggregate({ _sum: { quantity: true } });
   const feedLeft = feedAgg._sum.quantity || 0;
 
-  return <HomeClient summary={{ eggsToday, expensesToday, salesToday, feedLeft }} />;
+  // Get inventory counts
+  const inventoryCounts = await getInventoryCounts();
+
+  return <HomeClient summary={{ eggsToday, expensesToday, salesToday, feedLeft }} inventoryCounts={inventoryCounts} />;
 }

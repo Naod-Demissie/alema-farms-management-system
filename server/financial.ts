@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { ExpenseCategory, RevenueSource } from "@/lib/generated/prisma";
+import { ExpenseCategory, RevenueSource, InventoryType } from "@/lib/generated/prisma";
 import { 
   FinancialSummary, 
   ExpenseSummary, 
@@ -10,12 +10,15 @@ import {
   MonthlyFinancialData,
   FinancialFilters 
 } from "@/features/financial/types";
+import { deductFromInventory, addToInventory } from "./inventory-service";
 import { revalidatePath } from "next/cache";
 
 // Expense Management Server Actions
 export async function createExpense(data: {
   flockId: string;
   category: ExpenseCategory;
+  quantity: number;
+  costPerQuantity: number;
   amount: number;
   date: Date;
   description?: string;
@@ -25,6 +28,8 @@ export async function createExpense(data: {
       data: {
         flockId: data.flockId,
         category: data.category,
+        quantity: data.quantity,
+        costPerQuantity: data.costPerQuantity,
         amount: data.amount,
         date: data.date,
         description: data.description,
@@ -38,7 +43,18 @@ export async function createExpense(data: {
         },
       },
     });
-    
+
+    // Deduct from inventory when expense is recorded (for usage)
+    if (data.category === "feed" || data.category === "medicine") {
+      const inventoryType = data.category === "feed" ? InventoryType.FEED : InventoryType.MEDICINE;
+      const inventoryResult = await deductFromInventory(inventoryType, data.quantity);
+      
+      if (!inventoryResult.success) {
+        console.warn("Failed to update inventory:", inventoryResult.error);
+        // Don't fail the expense creation if inventory update fails
+      }
+    }
+
     revalidatePath("/financial");
     return { success: true, data: expense };
   } catch (error) {
@@ -49,11 +65,22 @@ export async function createExpense(data: {
 
 export async function updateExpense(id: string, data: {
   category?: ExpenseCategory;
+  quantity?: number;
+  costPerQuantity?: number;
   amount?: number;
   date?: Date;
   description?: string;
 }) {
   try {
+    // Get the existing expense record to calculate inventory differences
+    const existingExpense = await prisma.expenses.findUnique({
+      where: { id }
+    });
+
+    if (!existingExpense) {
+      return { success: false, message: "Expense record not found" };
+    }
+
     const expense = await prisma.expenses.update({
       where: { id },
       data,
@@ -66,6 +93,32 @@ export async function updateExpense(id: string, data: {
         },
       },
     });
+
+    // Handle inventory updates for feed/medicine expenses
+    if ((existingExpense.category === "feed" || existingExpense.category === "medicine") && 
+        (data.category === "feed" || data.category === "medicine")) {
+      
+      const inventoryType = existingExpense.category === "feed" ? InventoryType.FEED : InventoryType.MEDICINE;
+      
+      // If quantity changed, adjust inventory
+      if (data.quantity !== undefined && data.quantity !== existingExpense.quantity) {
+        const quantityDifference = data.quantity - existingExpense.quantity;
+        
+        if (quantityDifference > 0) {
+          // Add back the difference (expense increased)
+          const inventoryResult = await addToInventory(inventoryType, quantityDifference);
+          if (!inventoryResult.success) {
+            console.warn("Failed to update inventory:", inventoryResult.error);
+          }
+        } else {
+          // Deduct the difference (expense decreased)
+          const inventoryResult = await deductFromInventory(inventoryType, Math.abs(quantityDifference));
+          if (!inventoryResult.success) {
+            console.warn("Failed to update inventory:", inventoryResult.error);
+          }
+        }
+      }
+    }
     
     revalidatePath("/financial");
     return { success: true, data: expense };
@@ -77,6 +130,26 @@ export async function updateExpense(id: string, data: {
 
 export async function deleteExpense(id: string) {
   try {
+    // Get the existing expense record to restore inventory
+    const existingExpense = await prisma.expenses.findUnique({
+      where: { id }
+    });
+
+    if (!existingExpense) {
+      return { success: false, message: "Expense record not found" };
+    }
+
+    // Restore inventory for feed/medicine expenses
+    if (existingExpense.category === "feed" || existingExpense.category === "medicine") {
+      const inventoryType = existingExpense.category === "feed" ? InventoryType.FEED : InventoryType.MEDICINE;
+      const inventoryResult = await addToInventory(inventoryType, existingExpense.quantity);
+      
+      if (!inventoryResult.success) {
+        console.warn("Failed to restore inventory:", inventoryResult.error);
+        // Don't fail the deletion if inventory update fails
+      }
+    }
+
     await prisma.expenses.delete({
       where: { id },
     });
@@ -163,7 +236,28 @@ export async function createRevenue(data: {
         },
       },
     });
-    
+
+    // Handle inventory updates based on revenue source
+    if (data.source === "egg_sales") {
+      // Deduct eggs from inventory when sold
+      const inventoryResult = await deductFromInventory(InventoryType.EGG, data.quantity);
+      if (!inventoryResult.success) {
+        console.warn("Failed to update egg inventory:", inventoryResult.error);
+      }
+    } else if (data.source === "bird_sales") {
+      // Deduct broilers from inventory when sold
+      const inventoryResult = await deductFromInventory(InventoryType.BROILER, data.quantity);
+      if (!inventoryResult.success) {
+        console.warn("Failed to update broiler inventory:", inventoryResult.error);
+      }
+    } else if (data.source === "manure") {
+      // Deduct manure from inventory when sold
+      const inventoryResult = await deductFromInventory(InventoryType.MANURE, data.quantity);
+      if (!inventoryResult.success) {
+        console.warn("Failed to update manure inventory:", inventoryResult.error);
+      }
+    }
+
     revalidatePath("/financial");
     return { success: true, data: revenue };
   } catch (error) {
@@ -181,6 +275,15 @@ export async function updateRevenue(id: string, data: {
   description?: string;
 }) {
   try {
+    // Get the existing revenue record to calculate inventory differences
+    const existingRevenue = await prisma.revenue.findUnique({
+      where: { id }
+    });
+
+    if (!existingRevenue) {
+      return { success: false, message: "Revenue record not found" };
+    }
+
     const revenue = await prisma.revenue.update({
       where: { id },
       data,
@@ -193,6 +296,35 @@ export async function updateRevenue(id: string, data: {
         },
       },
     });
+
+    // Handle inventory updates for sales revenue
+    if ((existingRevenue.source === "egg_sales" || existingRevenue.source === "bird_sales" || existingRevenue.source === "manure") && 
+        (data.source === "egg_sales" || data.source === "bird_sales" || data.source === "manure")) {
+      
+      let inventoryType: InventoryType;
+      if (existingRevenue.source === "egg_sales") inventoryType = InventoryType.EGG;
+      else if (existingRevenue.source === "bird_sales") inventoryType = InventoryType.BROILER;
+      else inventoryType = InventoryType.MANURE;
+      
+      // If quantity changed, adjust inventory
+      if (data.quantity !== undefined && data.quantity !== existingRevenue.quantity) {
+        const quantityDifference = data.quantity - existingRevenue.quantity;
+        
+        if (quantityDifference > 0) {
+          // Add back the difference (sales decreased)
+          const inventoryResult = await addToInventory(inventoryType, quantityDifference);
+          if (!inventoryResult.success) {
+            console.warn("Failed to update inventory:", inventoryResult.error);
+          }
+        } else {
+          // Deduct the difference (sales increased)
+          const inventoryResult = await deductFromInventory(inventoryType, Math.abs(quantityDifference));
+          if (!inventoryResult.success) {
+            console.warn("Failed to update inventory:", inventoryResult.error);
+          }
+        }
+      }
+    }
     
     revalidatePath("/financial");
     return { success: true, data: revenue };
@@ -204,6 +336,33 @@ export async function updateRevenue(id: string, data: {
 
 export async function deleteRevenue(id: string) {
   try {
+    // Get the existing revenue record to restore inventory
+    const existingRevenue = await prisma.revenue.findUnique({
+      where: { id }
+    });
+
+    if (!existingRevenue) {
+      return { success: false, message: "Revenue record not found" };
+    }
+
+    // Restore inventory for sales revenue
+    if (existingRevenue.source === "egg_sales") {
+      const inventoryResult = await addToInventory(InventoryType.EGG, existingRevenue.quantity);
+      if (!inventoryResult.success) {
+        console.warn("Failed to restore egg inventory:", inventoryResult.error);
+      }
+    } else if (existingRevenue.source === "bird_sales") {
+      const inventoryResult = await addToInventory(InventoryType.BROILER, existingRevenue.quantity);
+      if (!inventoryResult.success) {
+        console.warn("Failed to restore broiler inventory:", inventoryResult.error);
+      }
+    } else if (existingRevenue.source === "manure") {
+      const inventoryResult = await addToInventory(InventoryType.MANURE, existingRevenue.quantity);
+      if (!inventoryResult.success) {
+        console.warn("Failed to restore manure inventory:", inventoryResult.error);
+      }
+    }
+
     await prisma.revenue.delete({
       where: { id },
     });

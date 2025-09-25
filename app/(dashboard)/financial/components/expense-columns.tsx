@@ -19,6 +19,8 @@ interface Expense {
   id: string;
   flockId: string;
   category: ExpenseCategory;
+  quantity: number | null;
+  costPerQuantity: number | null;
   amount: number;
   date: Date;
   description?: string | null;
@@ -43,11 +45,6 @@ export const getExpenseColumns = (
     },
   },
   {
-    accessorKey: "flock.batchCode",
-    header: "Flock",
-    id: "flock",
-  },
-  {
     accessorKey: "category",
     header: "Category",
     cell: ({ row }) => {
@@ -61,14 +58,45 @@ export const getExpenseColumns = (
     },
   },
   {
-    accessorKey: "amount",
-    header: "Amount",
+    accessorKey: "quantity",
+    header: "Quantity",
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"));
-      return new Intl.NumberFormat("en-ET", {
+      const quantity = row.getValue("quantity") as number | null;
+      return quantity ? quantity.toLocaleString() : "-";
+    },
+  },
+  {
+    accessorKey: "costPerQuantity",
+    header: "Cost/Unit",
+    cell: ({ row }) => {
+      const costPerQuantity = row.getValue("costPerQuantity") as number | null;
+      return costPerQuantity ? new Intl.NumberFormat("en-ET", {
         style: "currency",
         currency: "ETB",
-      }).format(amount);
+      }).format(costPerQuantity) : "-";
+    },
+  },
+  {
+    accessorKey: "amount",
+    header: "Total Amount",
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue("amount"));
+      const expense = row.original;
+      return (
+        <div className="text-right">
+          <div className="font-semibold text-red-600">
+            {new Intl.NumberFormat("en-ET", {
+              style: "currency",
+              currency: "ETB",
+            }).format(amount)}
+          </div>
+          {expense.quantity && expense.costPerQuantity && (
+            <div className="text-xs text-muted-foreground">
+              {expense.quantity} × {expense.costPerQuantity}
+            </div>
+          )}
+        </div>
+      );
     },
   },
   {

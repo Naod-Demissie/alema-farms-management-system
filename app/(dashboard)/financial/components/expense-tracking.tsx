@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, DollarSign, Eye } from "lucide-react";
 import { ExpenseFormData, EXPENSE_CATEGORIES } from "@/features/financial/types";
@@ -17,16 +14,18 @@ import {
   updateExpense,
   deleteExpense
 } from "@/server/financial";
-import { getFlocks } from "@/server/flocks";
 import { toast } from "sonner";
 import { ExpenseTable } from "./expense-table";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ExpenseDialog } from "./expense-dialog";
 import { format } from "date-fns";
 
 interface Expense {
   id: string;
   flockId: string;
-  category: ExpenseCategory;
+  category: string;
+  quantity: number | null;
+  costPerQuantity: number | null;
   amount: number;
   date: Date;
   description?: string | null;
@@ -38,16 +37,10 @@ interface Expense {
   };
 }
 
-interface Flock {
-  id: string;
-  batchCode: string;
-  breed: string;
-}
 
 
 export function ExpenseTracking() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [flocks, setFlocks] = useState<Flock[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -59,18 +52,9 @@ export function ExpenseTracking() {
     record: null as Expense | null,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState<ExpenseFormData>({
-    flockId: "",
-    category: "feed",
-    amount: 0,
-    date: new Date(),
-    description: "",
-  });
 
   useEffect(() => {
     fetchExpenses();
-    fetchFlocks();
   }, []);
 
   const fetchExpenses = async () => {
@@ -78,7 +62,7 @@ export function ExpenseTracking() {
       setLoading(true);
       const result = await getExpenses({});
       if (result.success) {
-        setExpenses(result.data || []);
+        setExpenses((result.data || []) as Expense[]);
       } else {
         toast.error(result.message || "Failed to fetch expenses");
         setExpenses([]);
@@ -92,44 +76,28 @@ export function ExpenseTracking() {
     }
   };
 
-  const fetchFlocks = async () => {
-    try {
-      const result = await getFlocks({}, { page: 1, limit: 100 });
-      if (result.success && result.data) {
-        setFlocks(result.data.map(flock => ({
-          id: flock.id,
-          batchCode: flock.batchCode,
-          breed: flock.breed
-        })));
-      } else {
-        toast.error("Failed to fetch flocks");
-        setFlocks([]);
-      }
-    } catch (error) {
-      console.error("Error fetching flocks:", error);
-      toast.error("Failed to fetch flocks");
-      setFlocks([]);
-    }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleExpenseSubmit = async (data: ExpenseFormData) => {
     try {
       let result;
       if (editingExpense) {
         result = await updateExpense(editingExpense.id, {
-          category: formData.category,
-          amount: formData.amount,
-          date: formData.date,
-          description: formData.description,
+          category: data.category,
+          quantity: data.quantity,
+          costPerQuantity: data.costPerQuantity,
+          amount: data.amount,
+          date: data.date,
+          description: data.description,
         });
       } else {
         result = await createExpense({
-          flockId: formData.flockId,
-          category: formData.category,
-          amount: formData.amount,
-          date: formData.date,
-          description: formData.description,
+          flockId: "", // No flock association for expenses
+          category: data.category,
+          quantity: data.quantity,
+          costPerQuantity: data.costPerQuantity,
+          amount: data.amount,
+          date: data.date,
+          description: data.description,
         });
       }
 
@@ -137,13 +105,6 @@ export function ExpenseTracking() {
         toast.success(editingExpense ? "Expense updated successfully" : "Expense created successfully");
         setIsDialogOpen(false);
         setEditingExpense(null);
-        setFormData({
-          flockId: "",
-          category: "feed",
-          amount: 0,
-          date: new Date(),
-          description: "",
-        });
         fetchExpenses();
       } else {
         toast.error(result.message || "Failed to save expense");
@@ -161,13 +122,6 @@ export function ExpenseTracking() {
 
   const handleEdit = (expense: Expense) => {
     setEditingExpense(expense);
-    setFormData({
-      flockId: expense.flockId,
-      category: expense.category,
-      amount: expense.amount,
-      date: new Date(expense.date),
-      description: expense.description || "",
-    });
     setIsDialogOpen(true);
   };
 
@@ -291,115 +245,13 @@ export function ExpenseTracking() {
             <CardTitle>Expenses</CardTitle>
             <CardDescription>Track and manage all farm expenses</CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingExpense(null);
-                setFormData({
-                  flockId: "",
-                  category: "feed",
-                  amount: 0,
-                  date: new Date(),
-                  description: "",
-                });
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Expense
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingExpense ? "Edit Expense" : "Add New Expense"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingExpense ? "Update expense details" : "Record a new expense for your farm"}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="flock">Flock</Label>
-                    <Select
-                      value={formData.flockId}
-                      onValueChange={(value) => setFormData({ ...formData, flockId: value })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select flock" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {flocks.map((flock) => (
-                          <SelectItem key={flock.id} value={flock.id}>
-                            {flock.batchCode} ({flock.breed})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value as ExpenseCategory })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EXPENSE_CATEGORIES.map((category) => (
-                          <SelectItem key={category.value} value={category.value}>
-                            {category.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="amount">Amount</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date.toISOString().split('T')[0]}
-                      onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Additional details about this expense..."
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">
-                    {editingExpense ? "Update Expense" : "Add Expense"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => {
+            setEditingExpense(null);
+            setIsDialogOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Expense
+          </Button>
         </CardHeader>
                <CardContent>
                  <ExpenseTable
@@ -407,7 +259,6 @@ export function ExpenseTracking() {
                    onView={handleView}
                    onEdit={handleEdit}
                    onDelete={handleDeleteClick}
-                   flocks={flocks}
                    loading={loading}
                  />
                </CardContent>
@@ -432,25 +283,41 @@ export function ExpenseTracking() {
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Flock</Label>
-                  <p className="text-sm font-medium">
-                    {viewingExpense.flock.batchCode} ({viewingExpense.flock.breed})
-                  </p>
-                </div>
-                <div>
                   <Label className="text-sm font-medium text-muted-foreground">Category</Label>
                   <p className="text-sm font-medium">
                     {EXPENSE_CATEGORIES.find(c => c.value === viewingExpense.category)?.label || viewingExpense.category}
                   </p>
                 </div>
+                {viewingExpense.quantity && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Quantity</Label>
+                    <p className="text-sm font-medium">{viewingExpense.quantity}</p>
+                  </div>
+                )}
+                {viewingExpense.costPerQuantity && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Cost per Quantity</Label>
+                    <p className="text-sm font-medium">
+                      {new Intl.NumberFormat("en-ET", {
+                        style: "currency",
+                        currency: "ETB",
+                      }).format(viewingExpense.costPerQuantity)}
+                    </p>
+                  </div>
+                )}
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
-                  <p className="text-sm font-medium">
+                  <Label className="text-sm font-medium text-muted-foreground">Total Amount</Label>
+                  <p className="text-lg font-semibold text-red-600">
                     {new Intl.NumberFormat("en-ET", {
                       style: "currency",
                       currency: "ETB",
                     }).format(viewingExpense.amount)}
                   </p>
+                  {viewingExpense.quantity && viewingExpense.costPerQuantity && (
+                    <p className="text-xs text-muted-foreground">
+                      Calculated: {viewingExpense.quantity} × {viewingExpense.costPerQuantity} = {viewingExpense.quantity * viewingExpense.costPerQuantity}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
@@ -474,6 +341,28 @@ export function ExpenseTracking() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reusable Expense Dialog */}
+      <ExpenseDialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setEditingExpense(null);
+        }}
+        onSubmit={handleExpenseSubmit}
+        initialData={editingExpense ? {
+          flockId: editingExpense.flockId,
+          category: editingExpense.category as ExpenseCategory,
+          quantity: editingExpense.quantity || 0,
+          costPerQuantity: editingExpense.costPerQuantity || 0,
+          amount: editingExpense.amount,
+          date: new Date(editingExpense.date),
+          description: editingExpense.description || "",
+        } : undefined}
+        title={editingExpense ? "Edit Expense" : "Add New Expense"}
+        description={editingExpense ? "Update expense details" : "Record a new expense for your farm"}
+        submitButtonText={editingExpense ? "Update Expense" : "Add Expense"}
+      />
 
       {/* Confirmation Dialog */}
       <ConfirmDialog

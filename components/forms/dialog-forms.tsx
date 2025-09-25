@@ -101,7 +101,7 @@ export const DISEASE_OPTIONS = [
 interface FlockFormProps {
   form: UseFormReturn<z.infer<typeof flockSchema>>;
   flocks?: any[];
-  onGenerateBatchCode?: (breed: string) => void;
+  onGenerateBatchCode?: (breed: string) => Promise<string | null>;
 }
 
 export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormProps) {
@@ -125,7 +125,15 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => onGenerateBatchCode(form.getValues('breed'))}
+                    onClick={async () => {
+                      const breed = form.getValues('breed');
+                      if (breed) {
+                        const batchCode = await onGenerateBatchCode(breed);
+                        if (batchCode) {
+                          form.setValue('batchCode', batchCode);
+                        }
+                      }
+                    }}
                     className="whitespace-nowrap h-10 px-4"
                   >
                     Generate
