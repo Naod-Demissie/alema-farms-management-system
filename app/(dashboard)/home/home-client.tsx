@@ -34,8 +34,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuickActionDialog } from "@/components/home/quick-action-dialog";
 import { QuickStats } from "@/components/home/quick-stats";
+import { ReusableDialog } from "@/components/ui/reusable-dialog";
+import { FlockForm, flockSchema } from "@/components/forms/dialog-forms";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useState as useStateReact } from "react";
+import { toast } from "sonner";
 
 type DashboardSummary = {
   eggsToday: number;
@@ -48,6 +52,8 @@ export default function HomeClient({ summary }: { summary: DashboardSummary }) {
   const router = useRouter();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
+  const [isFlockDialogOpen, setIsFlockDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const kpiStats = [
     { title: "Today's Egg Production", value: (summary.eggsToday || 0).toLocaleString(), icon: Egg, color: "bg-yellow-500" },
@@ -59,6 +65,8 @@ export default function HomeClient({ summary }: { summary: DashboardSummary }) {
   const handleQuickAction = (action: any) => {
     if (action.href) {
       router.push(action.href);
+    } else if (action.id === "add-flock") {
+      setIsFlockDialogOpen(true);
     } else {
       setSelectedQuickAction(action.id);
       setIsQuickActionOpen(true);
@@ -68,6 +76,46 @@ export default function HomeClient({ summary }: { summary: DashboardSummary }) {
   const handleCloseQuickAction = () => {
     setIsQuickActionOpen(false);
     setSelectedQuickAction(null);
+  };
+
+  const handleCreateFlock = async (data: any) => {
+    try {
+      setIsLoading(true);
+      // Simulate API call - in real implementation, you would call the actual API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success("Flock created successfully!", {
+        description: `Batch ${data.batchCode} has been added to your flocks.`
+      });
+      
+      setIsFlockDialogOpen(false);
+      // Optionally refresh the page or update data
+      router.refresh();
+    } catch (error) {
+      console.error('Error creating flock:', error);
+      toast.error("Failed to create flock", {
+        description: "An unexpected error occurred. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateBatchCode = async (breed: string) => {
+    try {
+      // Simulate batch code generation
+      const breedPrefix = breed === 'broiler' ? 'BR' : breed === 'layer' ? 'LY' : 'DP';
+      const date = new Date();
+      const year = date.getFullYear().toString().slice(-2);
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const batchCode = `${breedPrefix}${year}${month}${random}`;
+      
+      // In a real implementation, you would call the API to generate the batch code
+      return batchCode;
+    } catch (error) {
+      console.error('Error generating batch code:', error);
+    }
   };
 
   const getAlertColor = (priority: string) => {
@@ -188,6 +236,38 @@ export default function HomeClient({ summary }: { summary: DashboardSummary }) {
 
       {/* Quick Action Dialog */}
       <QuickActionDialog isOpen={isQuickActionOpen} onClose={handleCloseQuickAction} actionType={selectedQuickAction} />
+      
+      {/* Reusable Flock Creation Dialog */}
+      <ReusableDialog
+        open={isFlockDialogOpen}
+        onOpenChange={setIsFlockDialogOpen}
+        config={{
+          schema: flockSchema,
+          defaultValues: {
+            batchCode: "",
+            breed: "broiler",
+            source: "hatchery",
+            arrivalDate: new Date(),
+            initialCount: 0,
+            currentCount: 0,
+            ageInDays: 0,
+            notes: "",
+          },
+          title: "Add New Flock",
+          description: "Create a new flock with unique batch code and tracking information",
+          submitText: "Create Flock",
+          onSubmit: handleCreateFlock,
+          maxWidth: "max-w-3xl",
+          children: (form) => (
+            <FlockForm 
+              form={form} 
+              flocks={[]} // Empty array for home page - no existing flocks to reference
+              onGenerateBatchCode={handleGenerateBatchCode}
+            />
+          ),
+        }}
+        loading={isLoading}
+      />
     </div>
   );
 }

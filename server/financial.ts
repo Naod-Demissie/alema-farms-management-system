@@ -137,6 +137,8 @@ export async function getExpenses(filters: FinancialFilters = {}) {
 export async function createRevenue(data: {
   flockId: string;
   source: RevenueSource;
+  quantity: number;
+  costPerQuantity: number;
   amount: number;
   date: Date;
   description?: string;
@@ -146,6 +148,8 @@ export async function createRevenue(data: {
       data: {
         flockId: data.flockId,
         source: data.source,
+        quantity: data.quantity,
+        costPerQuantity: data.costPerQuantity,
         amount: data.amount,
         date: data.date,
         description: data.description,
@@ -170,6 +174,8 @@ export async function createRevenue(data: {
 
 export async function updateRevenue(id: string, data: {
   source?: RevenueSource;
+  quantity?: number;
+  costPerQuantity?: number;
   amount?: number;
   date?: Date;
   description?: string;

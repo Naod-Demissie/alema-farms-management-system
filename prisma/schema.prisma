@@ -280,15 +280,17 @@ model Expenses {
 }
 
 model Revenue {
-  id          String        @id @default(uuid())
-  flockId     String
-  source      RevenueSource
-  amount      Float
-  date        DateTime
-  description String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  flock       Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  id              String        @id @default(uuid())
+  flockId         String
+  source          RevenueSource
+  quantity        Float         // Quantity of items sold/produced
+  costPerQuantity Float         // Cost per unit/quantity
+  amount          Float         // Total amount (calculated)
+  date            DateTime
+  description     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  flock           Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("revenue")
 }
@@ -442,7 +444,7 @@ enum ExpenseCategory {
 enum RevenueSource {
   egg_sales
   bird_sales
-  subsidy
+  manure
   other
 }
 

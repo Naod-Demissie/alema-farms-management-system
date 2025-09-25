@@ -10,6 +10,8 @@ interface Revenue {
   id: string;
   flockId: string;
   source: string;
+  quantity: number | null;
+  costPerQuantity: number | null;
   amount: number;
   date: Date;
   description?: string | null;
@@ -61,7 +63,7 @@ export function RevenueTable({ data, onView, onEdit, onDelete, flocks, loading =
   const sourceOptions = [
     { label: "Egg Sales", value: "egg_sales" },
     { label: "Bird Sales", value: "bird_sales" },
-    { label: "Subsidy", value: "subsidy" },
+    { label: "Manure", value: "manure" },
     { label: "Other", value: "other" },
   ];
 

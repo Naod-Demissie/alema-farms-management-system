@@ -17,6 +17,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ReusableDialog } from "@/components/ui/reusable-dialog";
+import { TreatmentForm, treatmentSchema } from "@/components/forms/dialog-forms";
 import {
   Select,
   SelectContent,
@@ -64,25 +66,6 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
-// Validation schema
-const treatmentSchema = z.object({
-  flockId: z.string().min(1, "Flock ID is required"),
-  disease: z.enum(["respiratory", "digestive", "parasitic", "nutritional", "other"], {
-    message: "Disease type is required",
-  }),
-  diseaseName: z.string().min(1, "Disease name is required"),
-  medication: z.string().min(1, "Medication is required"),
-  dosage: z.string().min(1, "Dosage is required"),
-  frequency: z.string().min(1, "Frequency is required"),
-  duration: z.string().min(1, "Duration is required"),
-  treatedBy: z.string().min(1, "Treated by is required"),
-  startDate: z.date({
-    message: "Start date is required",
-  }),
-  endDate: z.date().optional(),
-  notes: z.string().optional(),
-  symptoms: z.string().optional(),
-});
 
 export function DiseaseTreatment() {
   const [treatments, setTreatments] = useState<any[]>([]);
@@ -102,24 +85,6 @@ export function DiseaseTreatment() {
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Form setup
-  const form = useForm<z.infer<typeof treatmentSchema>>({
-    resolver: zodResolver(treatmentSchema),
-    defaultValues: {
-      flockId: "",
-      disease: "respiratory",
-      diseaseName: "",
-      medication: "",
-      dosage: "",
-      frequency: "",
-      duration: "",
-      treatedBy: "",
-      startDate: new Date(),
-      endDate: undefined,
-      notes: "",
-      symptoms: "",
-    },
-  });
 
   // Load data on component mount
   useEffect(() => {
@@ -184,25 +149,6 @@ export function DiseaseTreatment() {
   const handleEdit = (treatment: any) => {
     console.log("handleEdit called with treatment:", treatment);
     setEditingTreatment(treatment);
-    
-    const formData = {
-      flockId: treatment.flockId,
-      disease: treatment.disease,
-      diseaseName: treatment.diseaseName,
-      medication: treatment.medication,
-      dosage: treatment.dosage,
-      frequency: treatment.frequency,
-      duration: treatment.duration,
-      treatedBy: treatment.treatedBy?.id || treatment.treatedById,
-      startDate: new Date(treatment.startDate),
-      endDate: treatment.endDate ? new Date(treatment.endDate) : undefined,
-      notes: treatment.notes || "",
-      symptoms: treatment.symptoms || "",
-    };
-    
-    console.log("Form data to reset:", formData);
-    form.reset(formData);
-    console.log("Setting dialog open to true, editingTreatment:", treatment);
     setIsAddDialogOpen(true);
   };
 
@@ -318,330 +264,69 @@ export function DiseaseTreatment() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-            console.log("Dialog onOpenChange called with:", open, "editingTreatment:", editingTreatment);
-            setIsAddDialogOpen(open);
-            if (!open) {
-              setEditingTreatment(null);
-              form.reset();
-            }
-          }}>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
                 Add Treatment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingTreatment ? "Edit Treatment" : "Add New Treatment"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingTreatment 
-                    ? "Update the treatment information below."
-                    : "Fill in the details below to add a new treatment record."
-                  }
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(editingTreatment ? handleUpdate : handleSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="flockId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Flock ID</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select flock" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {flocks.map((flock) => (
-                                <SelectItem key={flock.id} value={flock.id}>
-                                  {flock.batchCode}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="disease"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Disease Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select disease type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="respiratory">Respiratory</SelectItem>
-                              <SelectItem value="digestive">Digestive</SelectItem>
-                              <SelectItem value="parasitic">Parasitic</SelectItem>
-                              <SelectItem value="nutritional">Nutritional</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="diseaseName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Disease Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Infectious Bronchitis" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="medication"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Medication</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Amoxicillin" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="dosage"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Dosage</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 10mg/kg body weight" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="frequency"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Frequency</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Twice daily" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="duration"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Duration</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 5 days" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="treatedBy"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Treated By</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select veterinarian" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {veterinarians.map((vet) => (
-                                <SelectItem key={vet.id} value={vet.id}>
-                                  {vet.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="startDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Start Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) =>
-                                  date > new Date() || date < new Date("1900-01-01")
-                                }
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Date (Optional)</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="symptoms"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Symptoms</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe the symptoms observed..."
-                            className="resize-none"
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Additional notes about the treatment..."
-                            className="resize-none"
-                            rows={3}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => {
-                      setIsAddDialogOpen(false);
-                      setEditingTreatment(null);
-                      form.reset();
-                    }}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={actionLoading === "create" || actionLoading === "update"}
-                    >
-                      {actionLoading === "create" || actionLoading === "update" ? (
-                        "Saving..."
-                      ) : editingTreatment ? (
-                        "Update Treatment"
-                      ) : (
-                        "Add Treatment"
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
           </Dialog>
+          
+          <ReusableDialog
+            open={isAddDialogOpen}
+            onOpenChange={(open) => {
+              console.log("Dialog onOpenChange called with:", open, "editingTreatment:", editingTreatment);
+              setIsAddDialogOpen(open);
+              if (!open) {
+                setEditingTreatment(null);
+              }
+            }}
+            config={{
+              schema: treatmentSchema,
+              defaultValues: editingTreatment ? {
+                flockId: editingTreatment.flockId,
+                disease: editingTreatment.disease,
+                diseaseName: editingTreatment.diseaseName,
+                medication: editingTreatment.medication,
+                dosage: editingTreatment.dosage,
+                frequency: editingTreatment.frequency,
+                duration: editingTreatment.duration,
+                treatedBy: editingTreatment.treatedBy?.id || editingTreatment.treatedById,
+                startDate: new Date(editingTreatment.startDate),
+                endDate: editingTreatment.endDate ? new Date(editingTreatment.endDate) : undefined,
+                notes: editingTreatment.notes || "",
+                symptoms: editingTreatment.symptoms || "",
+              } : {
+                flockId: "",
+                disease: "respiratory",
+                diseaseName: "",
+                medication: "",
+                dosage: "",
+                frequency: "",
+                duration: "",
+                treatedBy: "",
+                startDate: new Date(),
+                endDate: undefined,
+                notes: "",
+                symptoms: "",
+              },
+              title: editingTreatment ? "Edit Treatment" : "Add New Treatment",
+              description: editingTreatment 
+                ? "Update the treatment information below."
+                : "Fill in the details below to add a new treatment record.",
+              submitText: editingTreatment ? "Update Treatment" : "Add Treatment",
+              onSubmit: editingTreatment ? handleUpdate : handleSubmit,
+              children: (form) => (
+                <TreatmentForm 
+                  form={form} 
+                  flocks={flocks}
+                  veterinarians={veterinarians}
+                />
+              ),
+            }}
+            loading={actionLoading === "create" || actionLoading === "update"}
+          />
         </div>
       </div>
 

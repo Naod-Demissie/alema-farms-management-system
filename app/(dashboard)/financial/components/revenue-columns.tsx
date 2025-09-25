@@ -19,6 +19,8 @@ interface Revenue {
   id: string;
   flockId: string;
   source: RevenueSource;
+  quantity: number | null;
+  costPerQuantity: number | null;
   amount: number;
   date: Date;
   description?: string | null;
@@ -61,14 +63,45 @@ export const getRevenueColumns = (
     },
   },
   {
-    accessorKey: "amount",
-    header: "Amount",
+    accessorKey: "quantity",
+    header: "Quantity",
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"));
-      return new Intl.NumberFormat("en-ET", {
+      const quantity = row.getValue("quantity") as number | null;
+      return quantity ? quantity.toLocaleString() : "-";
+    },
+  },
+  {
+    accessorKey: "costPerQuantity",
+    header: "Cost/Unit",
+    cell: ({ row }) => {
+      const costPerQuantity = row.getValue("costPerQuantity") as number | null;
+      return costPerQuantity ? new Intl.NumberFormat("en-ET", {
         style: "currency",
         currency: "ETB",
-      }).format(amount);
+      }).format(costPerQuantity) : "-";
+    },
+  },
+  {
+    accessorKey: "amount",
+    header: "Total Amount",
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue("amount"));
+      const revenue = row.original;
+      return (
+        <div className="text-right">
+          <div className="font-semibold text-green-600">
+            {new Intl.NumberFormat("en-ET", {
+              style: "currency",
+              currency: "ETB",
+            }).format(amount)}
+          </div>
+          {revenue.quantity && revenue.costPerQuantity && (
+            <div className="text-xs text-muted-foreground">
+              {revenue.quantity} × {revenue.costPerQuantity}
+            </div>
+          )}
+        </div>
+      );
     },
   },
   {

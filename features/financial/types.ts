@@ -52,6 +52,8 @@ export interface ExpenseFormData {
 export interface RevenueFormData {
   flockId: string;
   source: RevenueSource;
+  quantity: number;
+  costPerQuantity: number;
   amount: number;
   date: Date;
   description?: string;
@@ -77,6 +79,6 @@ export const EXPENSE_CATEGORIES = [
 export const REVENUE_SOURCES = [
   { value: "egg_sales", label: "Egg Sales" },
   { value: "bird_sales", label: "Bird Sales" },
-  { value: "subsidy", label: "Subsidy" },
+  { value: "manure", label: "Manure" },
   { value: "other", label: "Other" },
 ] as const;

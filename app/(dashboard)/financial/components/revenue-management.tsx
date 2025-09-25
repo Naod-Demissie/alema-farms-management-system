@@ -27,6 +27,8 @@ interface Revenue {
   id: string;
   flockId: string;
   source: string;
+  quantity: number | null;
+  costPerQuantity: number | null;
   amount: number;
   date: Date;
   description?: string | null;
@@ -63,6 +65,8 @@ export function RevenueManagement() {
   const [formData, setFormData] = useState<RevenueFormData>({
     flockId: "",
     source: "egg_sales",
+    quantity: 0,
+    costPerQuantity: 0,
     amount: 0,
     date: new Date(),
     description: "",
@@ -114,12 +118,24 @@ export function RevenueManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.flockId || !formData.source || !formData.quantity || !formData.costPerQuantity) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Calculate total amount
+    const calculatedAmount = formData.quantity * formData.costPerQuantity;
+    
     try {
       let result;
       if (editingRevenue) {
         result = await updateRevenue(editingRevenue.id, {
           source: formData.source,
-          amount: formData.amount,
+          quantity: formData.quantity,
+          costPerQuantity: formData.costPerQuantity,
+          amount: calculatedAmount,
           date: formData.date,
           description: formData.description,
         });
@@ -127,7 +143,9 @@ export function RevenueManagement() {
         result = await createRevenue({
           flockId: formData.flockId,
           source: formData.source,
-          amount: formData.amount,
+          quantity: formData.quantity,
+          costPerQuantity: formData.costPerQuantity,
+          amount: calculatedAmount,
           date: formData.date,
           description: formData.description,
         });
@@ -140,6 +158,8 @@ export function RevenueManagement() {
         setFormData({
           flockId: "",
           source: "egg_sales",
+          quantity: 0,
+          costPerQuantity: 0,
           amount: 0,
           date: new Date(),
           description: "",
@@ -164,6 +184,8 @@ export function RevenueManagement() {
     setFormData({
       flockId: revenue.flockId,
       source: revenue.source as RevenueSource,
+      quantity: revenue.quantity || 0,
+      costPerQuantity: revenue.costPerQuantity || 0,
       amount: revenue.amount,
       date: new Date(revenue.date),
       description: revenue.description || "",
@@ -298,6 +320,8 @@ export function RevenueManagement() {
                 setFormData({
                   flockId: "",
                   source: "egg_sales",
+                  quantity: 0,
+                  costPerQuantity: 0,
                   amount: 0,
                   date: new Date(),
                   description: "",
@@ -358,17 +382,58 @@ export function RevenueManagement() {
                     </Select>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="quantity" className="flex items-center gap-1">
+                        Quantity <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="quantity"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.quantity || ""}
+                        onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                        placeholder="e.g., 100"
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="costPerQuantity" className="flex items-center gap-1">
+                        Cost per Quantity <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="costPerQuantity"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.costPerQuantity || ""}
+                        onChange={(e) => setFormData({ ...formData, costPerQuantity: parseFloat(e.target.value) || 0 })}
+                        placeholder="e.g., 2.50"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid gap-2">
-                    <Label htmlFor="amount">Amount</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-                      required
-                    />
+                    <Label htmlFor="amount">Total Amount</Label>
+                    <div className="bg-muted/50 p-3 rounded-lg text-center">
+                      <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
+                      <div className="text-xl font-semibold">
+                        {formData.quantity && formData.costPerQuantity 
+                          ? new Intl.NumberFormat("en-ET", {
+                              style: "currency",
+                              currency: "ETB",
+                            }).format(formData.quantity * formData.costPerQuantity)
+                          : "0.00 ETB"
+                        }
+                      </div>
+                      {formData.quantity && formData.costPerQuantity && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {formData.quantity} × {formData.costPerQuantity}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid gap-2">
@@ -443,14 +508,36 @@ export function RevenueManagement() {
                     {REVENUE_SOURCES.find(s => s.value === viewingRevenue.source)?.label || viewingRevenue.source}
                   </p>
                 </div>
+                {viewingRevenue.quantity && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Quantity</Label>
+                    <p className="text-sm font-medium">{viewingRevenue.quantity}</p>
+                  </div>
+                )}
+                {viewingRevenue.costPerQuantity && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Cost per Quantity</Label>
+                    <p className="text-sm font-medium">
+                      {new Intl.NumberFormat("en-ET", {
+                        style: "currency",
+                        currency: "ETB",
+                      }).format(viewingRevenue.costPerQuantity)}
+                    </p>
+                  </div>
+                )}
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
-                  <p className="text-sm font-medium">
+                  <Label className="text-sm font-medium text-muted-foreground">Total Amount</Label>
+                  <p className="text-lg font-semibold text-green-600">
                     {new Intl.NumberFormat("en-ET", {
                       style: "currency",
                       currency: "ETB",
                     }).format(viewingRevenue.amount)}
                   </p>
+                  {viewingRevenue.quantity && viewingRevenue.costPerQuantity && (
+                    <p className="text-xs text-muted-foreground">
+                      Calculated: {viewingRevenue.quantity} × {viewingRevenue.costPerQuantity} = {viewingRevenue.quantity * viewingRevenue.costPerQuantity}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
