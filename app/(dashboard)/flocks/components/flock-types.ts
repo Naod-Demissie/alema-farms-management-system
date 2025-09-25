@@ -9,6 +9,7 @@ export interface Flock {
   initialCount: number;
   currentCount: number;
   ageInDays?: number;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
   _count?: {

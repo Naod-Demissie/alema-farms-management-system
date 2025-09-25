@@ -153,11 +153,9 @@ model Flocks {
   eggProduction   EggProduction[]
   broilerSales    BroilerSales[]
   manureProduction ManureProduction[]
-  expenses        Expenses[]
   feedUsage       FeedUsage[]
   mortality       Mortality[]
   notifications   Notifications[]
-  revenue         Revenue[]
   treatments      Treatments[]
   vaccinations    Vaccinations[]
 
@@ -267,7 +265,6 @@ model ManureProduction {
 
 model Expenses {
   id              String          @id @default(uuid())
-  flockId         String
   category        ExpenseCategory
   quantity        Float           // Quantity of items purchased/used
   costPerQuantity Float           // Cost per unit/quantity
@@ -276,23 +273,23 @@ model Expenses {
   description     String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
-  flock           Flocks          @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("expenses")
 }
 
 model Revenue {
   id              String        @id @default(uuid())
-  flockId         String
   source          RevenueSource
   quantity        Float         // Quantity of items sold/produced
   costPerQuantity Float         // Cost per unit/quantity
   amount          Float         // Total amount (calculated)
   date            DateTime
   description     String?
+  transactionBy   String?       // Name of the person that made the transaction
+  bankName        BankName?     // Bank name dropdown
+  bankAccountNumber String?     // Bank account number
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  flock           Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("revenue")
 }
@@ -473,6 +470,31 @@ enum InventoryType {
   BROILER
   EGG
   OTHER
+}
+
+enum BankName {
+  COMMERCIAL_BANK_OF_ETHIOPIA
+  AWASH_BANK
+  DASHEN_BANK
+  BANK_OF_ABYSSINIA
+  WEGAGEN_BANK
+  NIB_INTERNATIONAL_BANK
+  HIBRET_BANK
+  BERHAN_BANK
+  BUNNA_BANK
+  ABAY_BANK
+  ADDIS_BANK
+  OROMIA_BANK
+  LION_BANK
+  ZEMEN_BANK
+  ENAT_BANK
+  DEBUB_GLOBAL_BANK
+  SIINQEE_BANK
+  AMHARA_BANK
+  TSEHAY_BANK
+  ZAMZAM_BANK
+  HIJRA_BANK
+  GOH_BETOCH_BANK
 }
 
 model Inventory {

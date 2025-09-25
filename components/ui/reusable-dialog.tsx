@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -63,6 +63,13 @@ export function ReusableDialog<T extends z.ZodType>({
     resolver: zodResolver(schema),
     defaultValues,
   });
+
+  // Reset form with new default values when they change
+  useEffect(() => {
+    if (open) {
+      form.reset(defaultValues);
+    }
+  }, [defaultValues, open, form]);
 
   const handleSubmit = async (data: z.infer<T>) => {
     try {

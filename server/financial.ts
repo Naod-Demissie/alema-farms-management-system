@@ -15,7 +15,6 @@ import { revalidatePath } from "next/cache";
 
 // Expense Management Server Actions
 export async function createExpense(data: {
-  flockId: string;
   category: ExpenseCategory;
   quantity: number;
   costPerQuantity: number;
@@ -26,21 +25,12 @@ export async function createExpense(data: {
   try {
     const expense = await prisma.expenses.create({
       data: {
-        flockId: data.flockId,
         category: data.category,
         quantity: data.quantity,
         costPerQuantity: data.costPerQuantity,
         amount: data.amount,
         date: data.date,
         description: data.description,
-      },
-      include: {
-        flock: {
-          select: {
-            batchCode: true,
-            breed: true,
-          },
-        },
       },
     });
 
@@ -84,14 +74,6 @@ export async function updateExpense(id: string, data: {
     const expense = await prisma.expenses.update({
       where: { id },
       data,
-      include: {
-        flock: {
-          select: {
-            batchCode: true,
-            breed: true,
-          },
-        },
-      },
     });
 
     // Handle inventory updates for feed/medicine expenses
@@ -186,14 +168,6 @@ export async function getExpenses(filters: FinancialFilters = {}) {
 
     const expenses = await prisma.expenses.findMany({
       where,
-      include: {
-        flock: {
-          select: {
-            batchCode: true,
-            breed: true,
-          },
-        },
-      },
       orderBy: {
         date: 'desc',
       },
@@ -208,32 +182,28 @@ export async function getExpenses(filters: FinancialFilters = {}) {
 
 // Revenue Management Server Actions
 export async function createRevenue(data: {
-  flockId: string;
   source: RevenueSource;
   quantity: number;
   costPerQuantity: number;
   amount: number;
   date: Date;
   description?: string;
+  transactionBy?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
 }) {
   try {
     const revenue = await prisma.revenue.create({
       data: {
-        flockId: data.flockId,
         source: data.source,
         quantity: data.quantity,
         costPerQuantity: data.costPerQuantity,
         amount: data.amount,
         date: data.date,
         description: data.description,
-      },
-      include: {
-        flock: {
-          select: {
-            batchCode: true,
-            breed: true,
-          },
-        },
+        transactionBy: data.transactionBy,
+        bankName: data.bankName as any,
+        bankAccountNumber: data.bankAccountNumber,
       },
     });
 
@@ -273,6 +243,9 @@ export async function updateRevenue(id: string, data: {
   amount?: number;
   date?: Date;
   description?: string;
+  transactionBy?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
 }) {
   try {
     // Get the existing revenue record to calculate inventory differences
@@ -286,14 +259,9 @@ export async function updateRevenue(id: string, data: {
 
     const revenue = await prisma.revenue.update({
       where: { id },
-      data,
-      include: {
-        flock: {
-          select: {
-            batchCode: true,
-            breed: true,
-          },
-        },
+      data: {
+        ...data,
+        bankName: data.bankName as any,
       },
     });
 
@@ -399,14 +367,6 @@ export async function getRevenue(filters: FinancialFilters = {}) {
 
     const revenue = await prisma.revenue.findMany({
       where,
-      include: {
-        flock: {
-          select: {
-            batchCode: true,
-            breed: true,
-          },
-        },
-      },
       orderBy: {
         date: 'desc',
       },

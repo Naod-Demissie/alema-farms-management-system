@@ -57,8 +57,9 @@ import {
   deleteFlock, 
   updateFlockPopulation,
   generateBatchCode,
+  Flock,
 } from "@/server/flocks";
-import { Flock, FlockFormData, BREED_OPTIONS, SOURCE_OPTIONS, POPULATION_UPDATE_REASONS } from "./flock-types";
+import { FlockFormData, BREED_OPTIONS, SOURCE_OPTIONS, POPULATION_UPDATE_REASONS } from "./flock-types";
 import { format } from "date-fns";
 import { FlockTable } from "./flock-table";
 import { flockColumns } from "./flock-table-columns";
@@ -443,7 +444,7 @@ export function FlockManagementMerged({
             initialCount: editingFlock.initialCount,
             currentCount: editingFlock.currentCount,
             ageInDays: editingFlock.ageInDays || 0,
-            notes: "",
+            notes: editingFlock.notes || "",
           } : {
             batchCode: "",
             breed: "broiler",

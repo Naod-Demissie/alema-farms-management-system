@@ -36,7 +36,6 @@ export function ExpenseDialog({
 }: ExpenseDialogProps) {
   const [formData, setFormData] = useState<ExpenseFormData>(
     initialData || {
-      flockId: "",
       category: "feed",
       quantity: 0,
       costPerQuantity: 0,

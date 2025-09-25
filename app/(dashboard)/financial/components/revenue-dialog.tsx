@@ -10,8 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { RevenueFormData, REVENUE_SOURCES } from "@/features/financial/types";
-import { RevenueSource } from "@/lib/generated/prisma";
+import { RevenueFormData, REVENUE_SOURCES, BANK_NAMES } from "@/features/financial/types";
+import { RevenueSource, BankName } from "@/lib/generated/prisma";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -36,13 +36,15 @@ export function RevenueDialog({
 }: RevenueDialogProps) {
   const [formData, setFormData] = useState<RevenueFormData>(
     initialData || {
-      flockId: "",
       source: "egg_sales",
       quantity: 0,
       costPerQuantity: 0,
       amount: 0,
       date: new Date(),
       description: "",
+      transactionBy: "",
+      bankName: undefined,
+      bankAccountNumber: "",
     }
   );
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(formData.date);
@@ -83,7 +85,7 @@ export function RevenueDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -199,6 +201,50 @@ export function RevenueDialog({
                   }
                 </div>
               </div>
+            </div>
+
+            {/* Third row: Bank Name and Bank Account Number */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="bankName">Bank Name</Label>
+                <Select
+                  value={formData.bankName || ""}
+                  onValueChange={(value) => setFormData({ ...formData, bankName: value as BankName })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select bank" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    {BANK_NAMES.map((bank) => (
+                      <SelectItem key={bank.value} value={bank.value}>
+                        {bank.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="bankAccountNumber">Account Number</Label>
+                <Input
+                  id="bankAccountNumber"
+                  type="text"
+                  value={formData.bankAccountNumber || ""}
+                  onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
+                  placeholder="e.g., 1000123456789"
+                />
+              </div>
+            </div>
+
+            {/* Fourth row: Transaction By (Full width) */}
+            <div className="grid gap-2">
+              <Label htmlFor="transactionBy">Sender Name  </Label>
+              <Input
+                id="transactionBy"
+                type="text"
+                value={formData.transactionBy || ""}
+                onChange={(e) => setFormData({ ...formData, transactionBy: e.target.value })}
+                placeholder="e.g., John Doe"
+              />
             </div>
 
             {/* Description */}

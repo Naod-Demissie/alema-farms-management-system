@@ -8,6 +8,29 @@ import { ApiResponse, PaginatedResponse, FilterParams, PaginationParams, SortPar
 // Flock Management Types
 // ===================
 
+export interface Flock {
+  id: string;
+  batchCode: string;
+  breed: 'broiler' | 'layer' | 'dual_purpose';
+  source: 'hatchery' | 'farm' | 'imported';
+  arrivalDate: Date;
+  initialCount: number;
+  currentCount: number;
+  ageInDays?: number;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  _count?: {
+    vaccinations: number;
+    treatments: number;
+    mortality: number;
+    feedUsage: number;
+    eggProduction: number;
+    expenses: number;
+    revenue: number;
+  };
+}
+
 export interface FlockFilters extends FilterParams {
   breed?: 'broiler' | 'layer' | 'dual_purpose';
   source?: 'hatchery' | 'farm' | 'imported';
@@ -125,7 +148,7 @@ export async function getFlocks(
   filters: FlockFilters = {},
   pagination: PaginationParams = {},
   sort: SortParams = { field: 'createdAt', direction: 'desc' }
-): Promise<PaginatedResponse<any>> {
+): Promise<PaginatedResponse<Flock>> {
   try {
     // Get authenticated user
     const authResult = await getAuthenticatedUser();
@@ -187,8 +210,9 @@ export async function getFlocks(
             mortality: true,
             feedUsage: true,
             eggProduction: true,
-            expenses: true,
-            revenue: true
+            broilerSales: true,
+            manureProduction: true,
+            notifications: true
           }
         }
       }
@@ -252,11 +276,11 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
           orderBy: { date: 'desc' },
           take: 5
         },
-        expenses: {
+        broilerSales: {
           orderBy: { date: 'desc' },
           take: 5
         },
-        revenue: {
+        manureProduction: {
           orderBy: { date: 'desc' },
           take: 5
         },
@@ -267,8 +291,9 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
             mortality: true,
             feedUsage: true,
             eggProduction: true,
-            expenses: true,
-            revenue: true
+            broilerSales: true,
+            manureProduction: true,
+            notifications: true
           }
         }
       }
@@ -412,8 +437,9 @@ export async function deleteFlock(flockId: string): Promise<ApiResponse> {
             mortality: true,
             feedUsage: true,
             eggProduction: true,
-            expenses: true,
-            revenue: true
+            broilerSales: true,
+            manureProduction: true,
+            notifications: true
           }
         }
       }
