@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { FeedType, BreedType } from "@/lib/generated/prisma";
+import { FeedType } from "@/lib/generated/prisma";
 
 export async function getFeedProgramAction() {
   try {
     const program = await prisma.feedProgram.findMany({
       orderBy: [
-        { breed: 'asc' },
         { ageInWeeks: 'asc' }
       ],
     });
@@ -20,7 +19,6 @@ export async function getFeedProgramAction() {
 }
 
 export async function createFeedProgramAction(data: {
-  breed: BreedType;
   ageInWeeks: number;
   ageInDays: string;
   feedType: FeedType;
@@ -39,7 +37,6 @@ export async function createFeedProgramAction(data: {
 }
 
 export async function updateFeedProgramAction(id: string, data: {
-  breed?: BreedType;
   ageInWeeks?: number;
   ageInDays?: string;
   feedType?: FeedType;

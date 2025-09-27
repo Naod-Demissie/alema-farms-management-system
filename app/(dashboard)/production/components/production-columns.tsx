@@ -148,7 +148,7 @@ export const eggProductionColumns = (
   },
 ];
 
-export const broilerSalesColumns = (
+export const broilerProductionColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
   onDelete: (record: any) => void
@@ -189,43 +189,7 @@ export const broilerSalesColumns = (
         <div className="flex items-center space-x-2">
           <Bird className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{production.quantity || 0}</span>
-          <span className="text-muted-foreground">{production.unit || "units"}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "pricePerUnit",
-    header: "Price/Unit",
-    cell: ({ row }) => {
-      const production = row.original;
-      return (
-        <div className="text-sm">
-          {production.pricePerUnit ? `$${production.pricePerUnit.toFixed(2)}` : "-"}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "totalAmount",
-    header: "Total Amount",
-    cell: ({ row }) => {
-      const production = row.original;
-      return (
-        <div className="text-sm font-medium">
-          {production.totalAmount ? `$${production.totalAmount.toFixed(2)}` : "-"}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "buyer",
-    header: "Buyer",
-    cell: ({ row }) => {
-      const production = row.original;
-      return (
-        <div className="max-w-[150px] truncate text-sm">
-          {production.buyer || "-"}
+          <span className="text-muted-foreground">birds</span>
         </div>
       );
     },
@@ -321,7 +285,7 @@ export const manureProductionColumns = (
         <div className="flex items-center space-x-2">
           <Droplets className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{production.quantity || 0}</span>
-          <span className="text-muted-foreground">{production.unit || "kg"}</span>
+          <span className="text-muted-foreground">{production.unit || "bags"}</span>
         </div>
       );
     },

@@ -4,35 +4,34 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, Egg, Bird, Droplets, RefreshCw, AlertCircle, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import { Plus, Egg, Bird, Droplets, AlertCircle, AlertTriangle, TrendingUp, Activity } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { 
   eggProductionColumns, 
-  broilerSalesColumns, 
+  broilerProductionColumns, 
   manureProductionColumns 
 } from "./components/production-columns";
-import { ProductionForm } from "./components/production-form";
 import { 
   getEggProduction, 
-  getBroilerSales, 
+  getBroilerProduction, 
   getManureProduction,
   deleteEggProduction,
-  deleteBroilerSales,
+  deleteBroilerProduction,
   deleteManureProduction,
   updateEggProduction,
-  updateBroilerSales,
+  updateBroilerProduction,
   updateManureProduction
 } from "@/server/production";
 import { getFlocks } from "@/server/flocks";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ProductionDialog } from "@/components/dialogs/production-dialog";
 import { format } from "date-fns";
 
 interface Flock {
   id: string;
   batchCode: string;
-  breed: string;
   currentCount: number;
 }
 
@@ -68,7 +67,6 @@ export default function ProductionManagementPage() {
           setFlocks(result.data.map(flock => ({
             id: flock.id,
             batchCode: flock.batchCode,
-            breed: flock.breed,
             currentCount: flock.currentCount
           })));
         } else {
@@ -97,7 +95,7 @@ export default function ProductionManagementPage() {
           result = await getEggProduction({}, { page: 1, limit: 100 });
           break;
         case "broiler":
-          result = await getBroilerSales({}, { page: 1, limit: 100 });
+          result = await getBroilerProduction({}, { page: 1, limit: 100 });
           break;
         case "manure":
           result = await getManureProduction({}, { page: 1, limit: 100 });
@@ -154,7 +152,7 @@ export default function ProductionManagementPage() {
           result = await deleteEggProduction(confirmDialog.record.id);
           break;
         case "broiler":
-          result = await deleteBroilerSales(confirmDialog.record.id);
+          result = await deleteBroilerProduction(confirmDialog.record.id);
           break;
         case "manure":
           result = await deleteManureProduction(confirmDialog.record.id);
@@ -192,7 +190,7 @@ export default function ProductionManagementPage() {
       case "eggs":
         return eggProductionColumns(handleView, handleEdit, handleDeleteClick);
       case "broiler":
-        return broilerSalesColumns(handleView, handleEdit, handleDeleteClick);
+        return broilerProductionColumns(handleView, handleEdit, handleDeleteClick);
       case "manure":
         return manureProductionColumns(handleView, handleEdit, handleDeleteClick);
       default:
@@ -218,7 +216,7 @@ export default function ProductionManagementPage() {
       case "eggs":
         return "Egg Production";
       case "broiler":
-        return "Broiler Sales";
+        return "Broiler Production";
       case "manure":
         return "Manure Production";
       default:
@@ -231,7 +229,7 @@ export default function ProductionManagementPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Production Management</h1>
         <p className="text-muted-foreground">
-          Track and manage egg production, broiler sales, and manure production for your poultry operation.
+          Track and manage egg production, broiler production, and manure production for your poultry operation.
         </p>
       </div>
 
@@ -243,7 +241,7 @@ export default function ProductionManagementPage() {
           </TabsTrigger>
           <TabsTrigger value="broiler" className="flex items-center gap-2">
             <Bird className="h-4 w-4" />
-            Broiler Sales
+            Broiler Production
           </TabsTrigger>
           <TabsTrigger value="manure" className="flex items-center gap-2">
             <Droplets className="h-4 w-4" />
@@ -281,8 +279,8 @@ export default function ProductionManagementPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {activeTab === "eggs" ? "Eggs collected today" : 
-                   activeTab === "broiler" ? "Birds sold today" : 
-                   "kg produced today"}
+                   activeTab === "broiler" ? "Birds available today" : 
+                   "bags produced today"}
                 </p>
               </CardContent>
             </Card>
@@ -313,8 +311,8 @@ export default function ProductionManagementPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {activeTab === "eggs" ? "Eggs collected this week" : 
-                   activeTab === "broiler" ? "Birds sold this week" : 
-                   "kg produced this week"}
+                   activeTab === "broiler" ? "Birds available this week" : 
+                   "bags produced this week"}
                 </p>
               </CardContent>
             </Card>
@@ -345,8 +343,8 @@ export default function ProductionManagementPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {activeTab === "eggs" ? "Eggs collected this month" : 
-                   activeTab === "broiler" ? "Birds sold this month" : 
-                   "kg produced this month"}
+                   activeTab === "broiler" ? "Birds available this month" : 
+                   "bags produced this month"}
                 </p>
               </CardContent>
             </Card>
@@ -375,22 +373,6 @@ export default function ProductionManagementPage() {
               </Card>
             )}
 
-            {activeTab === "broiler" && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <Bird className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${data.reduce((sum, record) => sum + (record.totalAmount || 0), 0).toLocaleString()}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Total sales revenue
-                  </p>
-                </CardContent>
-              </Card>
-            )}
 
             {activeTab === "manure" && (
               <Card>
@@ -404,7 +386,7 @@ export default function ProductionManagementPage() {
                       const totalManure = data.reduce((sum, record) => sum + (record.quantity || 0), 0);
                       const days = data.length || 1;
                       return (totalManure / days).toFixed(1);
-                    })()}kg
+                    })()} bags
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Average daily production
@@ -422,21 +404,13 @@ export default function ProductionManagementPage() {
                   {getTabTitle()}
                 </CardTitle>
                 <CardDescription>
-                  Manage and track {activeTab === "broiler" ? "broiler sales" : activeTab} records
+                  Manage and track {activeTab} records
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={fetchData}
-                  disabled={loading}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
                 <Button onClick={() => setIsFormOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add {activeTab === "broiler" ? "Sale" : "Record"}
+                  Add Record
                 </Button>
               </div>
             </CardHeader>
@@ -444,7 +418,7 @@ export default function ProductionManagementPage() {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                     <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
                   </div>
                 </div>
@@ -464,59 +438,38 @@ export default function ProductionManagementPage() {
       </Tabs>
 
       {/* Add/Edit Form Dialog */}
-      <Dialog open={isFormOpen || isEditOpen} onOpenChange={(open) => {
-        if (!open) {
-          setIsFormOpen(false);
-          setIsEditOpen(false);
-          setEditingRecord(null);
-        }
-      }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditOpen ? "Edit" : "Add"} {activeTab === "eggs" ? "Egg Production" : activeTab === "broiler" ? "Broiler Sale" : "Manure Production"}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditOpen 
-                ? "Update the production record details below." 
-                : "Add a new production record to your system."
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <ProductionForm
-            flocks={flocks}
-            flocksLoading={flocksLoading}
-            productionType={activeTab as "eggs" | "broiler" | "manure"}
-            onSuccess={handleFormSuccess}
-            onCancel={() => {
-              setIsFormOpen(false);
-              setIsEditOpen(false);
-              setEditingRecord(null);
-            }}
-            initialData={editingRecord ? {
-              id: editingRecord.id,
-              flockId: editingRecord.flockId,
-              date: format(new Date(editingRecord.date), "yyyy-MM-dd"),
-              ...(activeTab === "eggs" ? {
-                totalCount: editingRecord.totalCount,
-                gradeCounts: editingRecord.gradeCounts
-              } : {
-                quantity: editingRecord.quantity
-              }),
-              ...(activeTab === "broiler" && {
-                unit: editingRecord.unit,
-                pricePerUnit: editingRecord.pricePerUnit,
-                totalAmount: editingRecord.totalAmount,
-                buyer: editingRecord.buyer
-              }),
-              ...(activeTab === "manure" && {
-                unit: editingRecord.unit
-              }),
-              notes: editingRecord.notes || ""
-            } : undefined}
-          />
-        </DialogContent>
-      </Dialog>
+      <ProductionDialog
+        open={isFormOpen || isEditOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsFormOpen(false);
+            setIsEditOpen(false);
+            setEditingRecord(null);
+          }
+        }}
+        productionType={activeTab as "eggs" | "broiler" | "manure"}
+        flocks={flocks}
+        flocksLoading={flocksLoading}
+        initialData={editingRecord ? {
+          id: editingRecord.id,
+          flockId: editingRecord.flockId,
+          date: new Date(editingRecord.date),
+          ...(activeTab === "eggs" ? {
+            totalCount: editingRecord.totalCount,
+            gradeCounts: editingRecord.gradeCounts
+          } : {
+            quantity: editingRecord.quantity
+          }),
+          ...(activeTab === "broiler" && {
+            pricePerUnit: editingRecord.pricePerUnit,
+            totalAmount: editingRecord.totalAmount,
+            buyer: editingRecord.buyer
+          }),
+          notes: editingRecord.notes || ""
+        } : undefined}
+        onSuccess={handleFormSuccess}
+        loading={loading}
+      />
 
       {/* View Details Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
@@ -524,7 +477,7 @@ export default function ProductionManagementPage() {
           <DialogHeader>
             <DialogTitle>Production Record Details</DialogTitle>
             <DialogDescription>
-              View detailed information about this {activeTab === "broiler" ? "broiler sale" : activeTab} record
+              View detailed information about this {activeTab} record
             </DialogDescription>
           </DialogHeader>
           {selectedRecord && (
@@ -567,29 +520,9 @@ export default function ProductionManagementPage() {
                   <div>
                     <label className="text-sm font-medium">Quantity</label>
                     <p className="text-sm text-muted-foreground">
-                      {selectedRecord.quantity} {selectedRecord.unit || "units"}
+                      {selectedRecord.quantity} {activeTab === "broiler" ? "birds" : activeTab === "manure" ? "bags" : "units"}
                     </p>
                   </div>
-                )}
-                {activeTab === "broiler" && (
-                  <>
-                    <div>
-                      <label className="text-sm font-medium">Price per Unit</label>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedRecord.pricePerUnit ? `$${selectedRecord.pricePerUnit.toFixed(2)}` : "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Total Amount</label>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedRecord.totalAmount ? `$${selectedRecord.totalAmount.toFixed(2)}` : "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Buyer</label>
-                      <p className="text-sm text-muted-foreground">{selectedRecord.buyer || "Not specified"}</p>
-                    </div>
-                  </>
                 )}
               </div>
               {selectedRecord.notes && (

@@ -216,6 +216,7 @@ export async function createRevenue(data: {
       }
     } else if (data.source === "bird_sales") {
       // Deduct broilers from inventory when sold
+      // Note: Flock current count should already be updated when broiler sales record was created
       const inventoryResult = await deductFromInventory(InventoryType.BROILER, data.quantity);
       if (!inventoryResult.success) {
         console.warn("Failed to update broiler inventory:", inventoryResult.error);
@@ -485,7 +486,6 @@ export async function getFlockFinancialSummaries(filters: FinancialFilters = {})
       select: {
         id: true,
         batchCode: true,
-        breed: true,
         arrivalDate: true,
       },
     });
@@ -493,20 +493,29 @@ export async function getFlockFinancialSummaries(filters: FinancialFilters = {})
     const summaries: FlockFinancialSummary[] = [];
 
     for (const flock of flocks) {
-      const flockFilters = { ...filters, flockId: flock.id };
-      const [expensesResult, revenueResult] = await Promise.all([
-        getExpenses(flockFilters),
-        getRevenue(flockFilters),
-      ]);
+      // Get expenses for this flock (expenses can be filtered by flockId)
+      const flockExpensesFilters = { ...filters, flockId: flock.id };
+      const expensesResult = await getExpenses(flockExpensesFilters);
 
-      if (!expensesResult.success || !revenueResult.success) {
-        continue; // Skip this flock if data fetch failed
+      if (!expensesResult.success) {
+        continue; // Skip this flock if expenses fetch failed
       }
 
       const expenses = expensesResult.data || [];
-      const revenue = revenueResult.data || [];
-
       const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+      // For revenue, we can't filter by flockId since Revenue model doesn't have that field
+      // Instead, we'll get all revenue and calculate a proportional share based on flock performance
+      // or simply show total farm revenue (this depends on business logic)
+      
+      // Option 1: Get all revenue (farm-wide)
+      const revenueResult = await getRevenue(filters);
+      const revenue = revenueResult.success ? (revenueResult.data || []) : [];
+      
+      // Option 2: Calculate flock-specific revenue based on production records
+      // This would require joining with production tables to estimate revenue per flock
+      
+      // For now, we'll use farm-wide revenue and let the business logic decide how to allocate it
       const totalRevenue = revenue.reduce((sum, rev) => sum + rev.amount, 0);
       const netProfit = totalRevenue - totalExpenses;
       const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
@@ -514,9 +523,8 @@ export async function getFlockFinancialSummaries(filters: FinancialFilters = {})
       summaries.push({
         flockId: flock.id,
         batchCode: flock.batchCode,
-        breed: flock.breed,
         totalExpenses,
-        totalRevenue,
+        totalRevenue, // This is farm-wide revenue, not flock-specific
         netProfit,
         profitMargin,
         startDate: flock.arrivalDate,
@@ -528,6 +536,59 @@ export async function getFlockFinancialSummaries(filters: FinancialFilters = {})
   } catch (error) {
     console.error("Error fetching flock financial summaries:", error);
     return { success: false, message: "Failed to fetch flock financial summaries", data: [] };
+  }
+}
+
+export async function getDailyFinancialData(filters: FinancialFilters = {}) {
+  try {
+    const [expensesResult, revenueResult] = await Promise.all([
+      getExpenses(filters),
+      getRevenue(filters),
+    ]);
+
+    if (!expensesResult.success || !revenueResult.success) {
+      return { success: false, message: "Failed to fetch financial data", data: [] };
+    }
+
+    const expenses = expensesResult.data || [];
+    const revenue = revenueResult.data || [];
+
+    // Group by date
+    const dailyData = new Map<string, { expenses: number; revenue: number }>();
+
+    expenses.forEach(expense => {
+      const dateKey = expense.date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      if (!dailyData.has(dateKey)) {
+        dailyData.set(dateKey, { expenses: 0, revenue: 0 });
+      }
+      
+      const data = dailyData.get(dateKey)!;
+      data.expenses += expense.amount;
+    });
+
+    revenue.forEach(rev => {
+      const dateKey = rev.date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      if (!dailyData.has(dateKey)) {
+        dailyData.set(dateKey, { expenses: 0, revenue: 0 });
+      }
+      
+      const data = dailyData.get(dateKey)!;
+      data.revenue += rev.amount;
+    });
+
+    const dailyDataArray = Array.from(dailyData.entries()).map(([dateKey, data]) => ({
+      date: dateKey,
+      expenses: data.expenses,
+      revenue: data.revenue,
+      profit: data.revenue - data.expenses,
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    return { success: true, data: dailyDataArray };
+  } catch (error) {
+    console.error("Error fetching daily financial data:", error);
+    return { success: false, message: "Failed to fetch daily financial data", data: [] };
   }
 }
 

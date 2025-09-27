@@ -24,7 +24,6 @@ export interface RevenueSummary {
 export interface FlockFinancialSummary {
   flockId: string;
   batchCode: string;
-  breed: string;
   totalExpenses: number;
   totalRevenue: number;
   netProfit: number;

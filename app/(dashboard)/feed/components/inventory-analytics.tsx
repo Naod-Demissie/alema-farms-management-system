@@ -93,7 +93,7 @@ export function InventoryAnalytics() {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                     <p className="mt-2 text-sm text-muted-foreground">Loading projections...</p>
                   </div>
                 </div>
@@ -217,7 +217,7 @@ export function InventoryAnalytics() {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                     <p className="mt-2 text-sm text-muted-foreground">Loading analytics...</p>
                   </div>
                 </div>

@@ -95,14 +95,6 @@ export const supplierColumns = (
     },
   },
   {
-    accessorKey: "isActive",
-    header: "Status",
-    cell: ({ row }) => {
-      const record = row.original;
-      return getStatusBadge(record.isActive);
-    },
-  },
-  {
     accessorKey: "createdAt",
     header: "Created",
     cell: ({ row }) => {

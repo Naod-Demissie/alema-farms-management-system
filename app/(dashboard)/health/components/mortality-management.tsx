@@ -365,7 +365,7 @@ export function MortalityManagement() {
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-10">
+                              <SelectTrigger className="w-full h-10">
                                 <SelectValue placeholder="Select flock" />
                               </SelectTrigger>
                             </FormControl>
@@ -459,7 +459,7 @@ export function MortalityManagement() {
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-10">
+                              <SelectTrigger className="w-full h-10">
                                 <SelectValue placeholder="Select staff member" />
                               </SelectTrigger>
                             </FormControl>
@@ -485,7 +485,7 @@ export function MortalityManagement() {
                           </FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-10">
+                              <SelectTrigger className="w-full h-10">
                                 <SelectValue placeholder="Select cause" />
                               </SelectTrigger>
                             </FormControl>
@@ -605,7 +605,7 @@ export function MortalityManagement() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
               </div>
             </div>

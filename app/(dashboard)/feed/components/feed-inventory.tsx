@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Plus, Package, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -484,7 +484,8 @@ export function FeedInventory() {
                         Cancel
                       </Button>
                       <Button type="submit" disabled={loading}>
-                        {loading ? "Saving..." : editingItem ? "Update" : "Add"} Feed Item
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {editingItem ? "Update" : "Add"} Feed Item
                       </Button>
                     </DialogFooter>
                   </form>
@@ -497,13 +498,13 @@ export function FeedInventory() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="mt-2 text-sm text-muted-foreground">Loading inventory...</p>
               </div>
             </div>
           ) : (
             <InventoryTable
-              columns={inventoryColumns(handleView, handleEdit, handleDeleteClick, getStatusBadge, getStockStatus)}
+              columns={inventoryColumns(handleView, handleEdit, handleDeleteClick, getStatusBadge)}
               data={inventory}
               onView={handleView}
               onEdit={handleEdit}

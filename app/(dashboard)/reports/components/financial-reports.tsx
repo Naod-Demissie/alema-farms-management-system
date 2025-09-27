@@ -34,6 +34,7 @@ import {
 import {
   getFlockFinancialSummaries,
   getMonthlyFinancialData,
+  getDailyFinancialData,
   getExpenseSummary,
   getRevenueSummary,
   getFinancialSummary,
@@ -44,6 +45,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   ChartConfig,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import {
   BarChart,
@@ -54,6 +57,9 @@ import {
   Pie,
   Cell,
   Label,
+  AreaChart,
+  Area,
+  YAxis,
 } from "recharts";
 
 interface ReportFilters {
@@ -80,18 +86,12 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
   const [loading, setLoading] = useState(true);
 
   // Chart-specific state
-  const [revenueChartMonthlyData, setRevenueChartMonthlyData] = useState<
-    MonthlyFinancialData[]
-  >([]);
-  const [flockChartFinancials, setFlockChartFinancials] = useState<
-    FlockFinancialSummary[]
-  >([]);
-  const [revenueTimeFilter, setRevenueTimeFilter] = useState<string>("3months");
-  const [flockTimeFilter, setFlockTimeFilter] = useState<string>("3months");
+  const [revenueChartDailyData, setRevenueChartDailyData] = useState<any[]>([]);
   const [revenuePieTimeFilter, setRevenuePieTimeFilter] =
     useState<string>("3months");
   const [expensePieTimeFilter, setExpensePieTimeFilter] =
     useState<string>("3months");
+  const [areaChartTimeFilter, setAreaChartTimeFilter] = useState<string>("3months");
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().getFullYear(), 0, 1),
     endDate: new Date(),
@@ -101,7 +101,7 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
   const chartConfig = {
     revenue: { label: "Revenue", color: "#16a34a" },
     expenses: { label: "Expenses", color: "#dc2626" },
-    net: { label: "Net", color: "#16a34a" },
+    net: { label: "Net Profit", color: "#2563eb" },
   } satisfies ChartConfig;
 
   // Helper: map time filter to date range
@@ -176,40 +176,6 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
     }));
   };
 
-  // Fetch revenue monthly data when revenueTimeFilter changes (runs on mount too)
-  useEffect(() => {
-    const fetchRevenueData = async () => {
-      try {
-        const { startDate, endDate } = getDateRangeForFilter(revenueTimeFilter);
-        const res = await getMonthlyFinancialData({ startDate, endDate });
-        if (res.success) {
-          setRevenueChartMonthlyData(normalizeMonthlyData(res.data || []));
-        } else {
-          setRevenueChartMonthlyData([]);
-        }
-      } catch (err) {
-        console.error("Error fetching revenue chart data:", err);
-        setRevenueChartMonthlyData([]);
-      }
-    };
-    fetchRevenueData();
-  }, [revenueTimeFilter]);
-
-  // Fetch flock chart when flockTimeFilter changes
-  useEffect(() => {
-    const fetchFlockData = async () => {
-      try {
-        const { startDate, endDate } = getDateRangeForFilter(flockTimeFilter);
-        const res = await getFlockFinancialSummaries({ startDate, endDate });
-        if (res.success) setFlockChartFinancials(res.data || []);
-        else setFlockChartFinancials([]);
-      } catch (err) {
-        console.error("Error fetching flock chart data:", err);
-        setFlockChartFinancials([]);
-      }
-    };
-    fetchFlockData();
-  }, [flockTimeFilter]);
 
   // Fetch pie breakdowns when their filters change
   useEffect(() => {
@@ -243,6 +209,25 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
     };
     fetchExpenseBreakdown();
   }, [expensePieTimeFilter]);
+
+  // Fetch area chart data when areaChartTimeFilter changes
+  useEffect(() => {
+    const fetchAreaChartData = async () => {
+      try {
+        const { startDate, endDate } = getDateRangeForFilter(areaChartTimeFilter);
+        const res = await getDailyFinancialData({ startDate, endDate });
+        if (res.success) {
+          setRevenueChartDailyData(res.data || []);
+        } else {
+          setRevenueChartDailyData([]);
+        }
+      } catch (err) {
+        console.error("Error fetching area chart data:", err);
+        setRevenueChartDailyData([]);
+      }
+    };
+    fetchAreaChartData();
+  }, [areaChartTimeFilter]);
 
   // Export handler
   const handleExport = async (format: "csv" | "pdf") => {
@@ -281,56 +266,18 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
   const totalProfit = financialSummary?.netProfit || 0;
   const profitMargin = financialSummary?.profitMargin || 0;
 
-  // --- Transformations for charts ---
 
-  // Revenue vs Expenses: return EXACTLY 3 items: Revenue, Expenses, Profit
-  const getRevenueExpenseData = () => {
-    const totalRev = revenueChartMonthlyData.reduce(
-      (s, m) => s + Number(m.revenue || 0),
-      0
-    );
-    const totalExp = revenueChartMonthlyData.reduce(
-      (s, m) => s + Number(m.expenses || 0),
-      0
-    );
-    const net = totalRev - totalExp;
-
-    return [
-      {
-        category: "Revenue",
-        value: Math.abs(totalRev),
-        color: chartConfig.revenue.color,
-      },
-      {
-        category: "Expenses",
-        value: Math.abs(totalExp),
-        color: chartConfig.expenses.color,
-      },
-      {
-        category: "Profit",
-        value: Math.abs(net),
-        color: net >= 0 ? chartConfig.net.color : "#dc2626",
-      },
-    ];
+  // Area chart data: transform daily data for area chart
+  const getAreaChartData = () => {
+    return revenueChartDailyData.map((dayData) => ({
+      date: dayData.date,
+      revenue: Number(dayData.revenue || 0),
+      expenses: Number(dayData.expenses || 0),
+      net: Number(dayData.profit || 0),
+    }));
   };
 
-  // Flock performance: three bars per flock (revenue, expenses, net)
-  const getFlockPerformanceData = () => {
-    return flockChartFinancials.map((flock) => {
-      const revenue = Number(flock.totalRevenue || 0);
-      const expenses = Number(flock.totalExpenses || 0);
-      const net = Number(flock.netProfit ?? revenue - expenses);
-      return {
-        category: flock.batchCode || flock.flockId || "unknown",
-        revenue: Math.abs(revenue),
-        expenses: Math.abs(expenses),
-        net: Math.abs(net),
-      };
-    });
-  };
-
-  const revenueChartData = getRevenueExpenseData();
-  const flockChartData = getFlockPerformanceData();
+  const areaChartData = getAreaChartData();
 
   // Pie data mapping
   const expensePieChartData = expenseSummary.map((exp) => ({
@@ -345,8 +292,9 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
     percentage: Number(r.percentage || 0),
   }));
 
-  // --- Reusable interactive bar chart (renders exactly one Bar with Cells) ---
-  const ChartBarInteractive = ({
+
+  // Area Chart Component for Revenue, Expenses, and Net Profit
+  const FinancialAreaChart = ({
     title,
     description,
     data,
@@ -354,105 +302,11 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
     timeRange,
     setTimeRange,
   }: any) => {
-    const total = React.useMemo(
-      () => ({
-        value: data.reduce(
-          (acc: number, curr: any) => acc + (curr.value || 0),
-          0
-        ),
-      }),
-      [data]
-    );
-
-    return (
-      <Card className="pt-0">
-        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-          <div className="grid flex-1 gap-1">
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
-
-          {/* explicit callback so Select updates state properly */}
-          <Select value={timeRange} onValueChange={(v) => setTimeRange(v)}>
-            <SelectTrigger
-              className="w-[160px] rounded-lg sm:ml-auto"
-              aria-label="Select a time range"
-            >
-              <SelectValue placeholder="Last 3 months" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="3months" className="rounded-lg">
-                Last 3 months
-              </SelectItem>
-              <SelectItem value="month" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="week" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </CardHeader>
-
-        <CardContent className="px-2 sm:p-6">
-          <ChartContainer
-            config={config}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <BarChart data={data} margin={{ left: 12, right: 12 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="category"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                minTickGap={32}
-              />
-              <ChartTooltip
-                content={<ChartTooltipContent className="w-[150px]" />}
-              />
-
-              {/* Single Bar - color each cell individually */}
-              <Bar dataKey="value" radius={6}>
-                {data.map((entry: any, idx: number) => (
-                  <Cell
-                    key={`cell-${idx}`}
-                    fill={
-                      entry.color ||
-                      (idx === 2
-                        ? chartConfig.net.color
-                        : chartConfig.revenue.color)
-                    }
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Grouped Bar Chart Component for Flock Performance
-  const FlockPerformanceChart = ({
-    title,
-    description,
-    data,
-    config,
-    timeRange,
-    setTimeRange,
-  }: any) => {
-    const total = React.useMemo(
-      () => ({
-        revenue: data.reduce((acc: number, curr: any) => acc + curr.revenue, 0),
-        expenses: data.reduce(
-          (acc: number, curr: any) => acc + curr.expenses,
-          0
-        ),
-        net: data.reduce((acc: number, curr: any) => acc + curr.net, 0),
-      }),
-      [data]
-    );
+    const financialMetrics = [
+      { key: "revenue", label: "Revenue", color: "#16a34a" },
+      { key: "expenses", label: "Expenses", color: "#dc2626" },
+      { key: "net", label: "Net Profit", color: "#2563eb" }
+    ];
 
     return (
       <Card className="pt-0">
@@ -483,32 +337,79 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
         </CardHeader>
         <CardContent className="px-2 sm:p-6">
           <ChartContainer
-            config={config}
-            className="aspect-auto h-[250px] w-full"
+            config={{
+              revenue: { label: "Revenue", color: "#16a34a" },
+              expenses: { label: "Expenses", color: "#dc2626" },
+              net: { label: "Net Profit", color: "#2563eb" }
+            }}
+            className="aspect-auto h-[300px] w-full"
           >
-            <BarChart
-              accessibilityLayer
-              data={data}
-              margin={{
-                left: 12,
-                right: 12,
-              }}
-            >
+            <AreaChart data={data}>
+              <defs>
+                {financialMetrics.map((metric, index) => (
+                  <linearGradient key={`fill${metric.key}`} id={`fill${metric.key}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={metric.color}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={metric.color}
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                ))}
+              </defs>
               <CartesianGrid vertical={false} />
               <XAxis
-                dataKey="category"
+                dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={32}
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                }}
               />
               <ChartTooltip
-                content={<ChartTooltipContent className="w-[150px]" />}
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      });
+                    }}
+                    formatter={(value, name) => [
+                      new Intl.NumberFormat("en-ET", {
+                        style: "currency",
+                        currency: "ETB",
+                      }).format(Number(value)),
+                      name,
+                    ]}
+                    indicator="dot"
+                  />
+                }
               />
-              <Bar dataKey="revenue" fill="#16a34a" radius={4} />
-              <Bar dataKey="expenses" fill="#dc2626" radius={4} />
-              <Bar dataKey="net" fill="#16a34a" radius={4} />
-            </BarChart>
+              {financialMetrics.map((metric, index) => (
+                <Area
+                  key={metric.key}
+                  dataKey={metric.key}
+                  type="linear"
+                  fill={`url(#fill${metric.key})`}
+                  stroke={metric.color}
+                  stackId="a"
+                />
+              ))}
+              <ChartLegend content={<ChartLegendContent />} />
+            </AreaChart>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -609,26 +510,15 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
         </Card>
       </div>
 
-      {/* Top: 2 Bar Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartBarInteractive
-          title="Revenue vs Expenses"
-          description="Showing revenue and expense totals for the selected period"
-          data={revenueChartData}
+      {/* Financial Overview Area Chart */}
+      <FinancialAreaChart
+        title="Financial Overview"
+        description="Revenue, expenses, and net profit trends over time"
+        data={areaChartData}
           config={chartConfig}
-          timeRange={revenueTimeFilter}
-          setTimeRange={setRevenueTimeFilter}
-        />
-
-        <FlockPerformanceChart
-          title="Flock Performance"
-          description="Revenue, expenses, and net profit per flock in selected period"
-          data={flockChartData}
-          config={chartConfig}
-          timeRange={flockTimeFilter}
-          setTimeRange={setFlockTimeFilter}
-        />
-      </div>
+        timeRange={areaChartTimeFilter}
+        setTimeRange={setAreaChartTimeFilter}
+      />
 
       {/* Pie charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -745,8 +635,8 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             </ChartContainer>
           </CardContent>
 
-          <div className="flex-col gap-2 text-sm px-6 pb-6">
-            <div className="flex items-center gap-2 leading-none font-medium">
+          <div className="flex-col gap-2 text-sm px-6 pb-6 text-center">
+            <div className="flex items-center justify-center gap-2 leading-none font-medium">
               <TrendingUp className="h-4 w-4" />
               {revenuePieChartData[0]?.source
                 ?.replace("_", " ")
@@ -876,8 +766,8 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             </ChartContainer>
           </CardContent>
 
-          <div className="flex-col gap-2 text-sm px-6 pb-6">
-            <div className="flex items-center gap-2 leading-none font-medium">
+          <div className="flex-col gap-2 text-sm px-6 pb-6 text-center">
+            <div className="flex items-center justify-center gap-2 leading-none font-medium">
               <TrendingDown className="h-4 w-4" />
               {expensePieChartData[0]?.category
                 ?.replace("_", " ")

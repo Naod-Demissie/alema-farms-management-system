@@ -15,7 +15,7 @@ model Staff {
   firstName        String
   lastName         String
   name             String
-  email            String? @unique
+  email            String?         @unique
   emailVerified    Boolean         @default(false)
   image            String?
   phoneNumber      String?
@@ -29,11 +29,11 @@ model Staff {
   leaveRequests    LeaveRequest[]  @relation("StaffLeave")
   payrolls         Payroll[]
   accounts         Accounts[]
+  feedUsageRecords FeedUsage[]     @relation("FeedUsageRecordedBy")
   mortalityRecords Mortality[]     @relation("RecordedByStaff")
   notifications    Notifications[] @relation("StaffNotifications")
   sessions         Sessions[]
   treatments       Treatments[]    @relation("TreatedByStaff")
-  feedUsageRecords FeedUsage[]     @relation("FeedUsageRecordedBy")
 
   @@map("staff")
 }
@@ -139,25 +139,23 @@ model LeaveBalance {
 }
 
 model Flocks {
-  id            String          @id @default(uuid())
-  batchCode     String          @unique
-  breed         BreedType
-  source        SourceType
-  arrivalDate   DateTime
-  initialCount  Int
-  currentCount  Int
-  ageInDays     Int?
-  notes         String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  eggProduction   EggProduction[]
-  broilerSales    BroilerSales[]
-  manureProduction ManureProduction[]
-  feedUsage       FeedUsage[]
-  mortality       Mortality[]
-  notifications   Notifications[]
-  treatments      Treatments[]
-  vaccinations    Vaccinations[]
+  id                String              @id @default(uuid())
+  batchCode         String              @unique
+  arrivalDate       DateTime
+  initialCount      Int
+  currentCount      Int
+  ageInDays         Int?
+  notes             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  broilerProduction BroilerProduction[]
+  eggProduction     EggProduction[]
+  feedUsage         FeedUsage[]
+  manureProduction  ManureProduction[]
+  mortality         Mortality[]
+  notifications     Notifications[]
+  treatments        Treatments[]
+  vaccinations      Vaccinations[]
 
   @@map("flocks")
 }
@@ -222,8 +220,8 @@ model EggProduction {
   id          String   @id @default(uuid())
   flockId     String
   date        DateTime
-  totalCount  Int      // Total eggs collected
-  gradeCounts Json     // JSON: {normal: number, cracked: number, spoiled: number}
+  totalCount  Int
+  gradeCounts Json
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -232,33 +230,28 @@ model EggProduction {
   @@map("egg_production")
 }
 
-model BroilerSales {
-  id          String   @id @default(uuid())
-  flockId     String
-  date        DateTime
-  quantity    Int      // Number of birds sold
-  unit        String   @default("birds")
-  pricePerUnit Float?  // Price per bird
-  totalAmount Float?   // Total sale amount
-  buyer       String?  // Buyer information
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  flock       Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+model BroilerProduction {
+  id        String   @id @default(uuid())
+  flockId   String
+  date      DateTime
+  quantity  Int
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  flock     Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
-  @@map("broiler_sales")
+  @@map("broiler_production")
 }
 
 model ManureProduction {
-  id          String   @id @default(uuid())
-  flockId     String
-  date        DateTime
-  quantity    Float    // Weight in kg
-  unit        String   @default("kg")
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  flock       Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  flockId   String
+  date      DateTime
+  quantity  Float
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  flock     Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
   @@map("manure_production")
 }
@@ -266,9 +259,9 @@ model ManureProduction {
 model Expenses {
   id              String          @id @default(uuid())
   category        ExpenseCategory
-  quantity        Float           // Quantity of items purchased/used
-  costPerQuantity Float           // Cost per unit/quantity
-  amount          Float           // Total amount (calculated)
+  quantity        Float
+  costPerQuantity Float
+  amount          Float
   date            DateTime
   description     String?
   createdAt       DateTime        @default(now())
@@ -278,18 +271,18 @@ model Expenses {
 }
 
 model Revenue {
-  id              String        @id @default(uuid())
-  source          RevenueSource
-  quantity        Float         // Quantity of items sold/produced
-  costPerQuantity Float         // Cost per unit/quantity
-  amount          Float         // Total amount (calculated)
-  date            DateTime
-  description     String?
-  transactionBy   String?       // Name of the person that made the transaction
-  bankName        BankName?     // Bank name dropdown
-  bankAccountNumber String?     // Bank account number
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  source            RevenueSource
+  quantity          Float
+  costPerQuantity   Float
+  amount            Float
+  date              DateTime
+  description       String?
+  transactionBy     String?
+  bankName          BankName?
+  bankAccountNumber String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@map("revenue")
 }
@@ -309,94 +302,97 @@ model Notifications {
 }
 
 model FeedInventory {
-  id          String    @id @default(uuid())
+  id          String        @id @default(uuid())
   feedType    FeedType
-  supplierId  String?   // Reference to supplier
-  quantity    Float     // Current stock quantity
-  unit        String    @default("kg") // Unit of measurement (kg, bags, etc.)
-  costPerUnit Float?    // Cost per unit
-  totalCost   Float?    // Total cost (quantity * costPerUnit)
-  minStock    Float?    // Minimum stock level for alerts
-  notes       String?   // Additional notes
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
+  supplierId  String?
+  quantity    Float
+  unit        String        @default("kg")
+  costPerUnit Float?
+  totalCost   Float?
+  minStock    Float?
+  notes       String?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   supplier    FeedSupplier? @relation(fields: [supplierId], references: [id])
   feedUsage   FeedUsage[]
-  
+
   @@map("feed_inventory")
 }
 
 model FeedSupplier {
-  id          String    @id @default(uuid())
-  name        String
-  contactName String?
-  phone       String?
-  address     String?
-  notes       String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
+  id            String          @id @default(uuid())
+  name          String
+  contactName   String?
+  phone         String?
+  address       String?
+  notes         String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
   feedInventory FeedInventory[]
-  
+
   @@map("feed_suppliers")
 }
 
 model FeedUsage {
-  id         String    @id @default(uuid())
-  flockId    String
-  feedId     String
-  date       DateTime
-  amountUsed Float
-  unit       String    @default("kg")
-  notes      String?   // Additional notes
-  recordedById String? // Staff who recorded the usage
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id           String        @id @default(uuid())
+  flockId      String
+  feedId       String
+  date         DateTime
+  amountUsed   Float
+  unit         String        @default("kg")
+  notes        String?
+  recordedById String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  feed         FeedInventory @relation(fields: [feedId], references: [id])
+  flock        Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  recordedBy   Staff?        @relation("FeedUsageRecordedBy", fields: [recordedById], references: [id])
 
-  // Relations
-  flock      Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
-  feed       FeedInventory @relation(fields: [feedId], references: [id])
-  recordedBy Staff?        @relation("FeedUsageRecordedBy", fields: [recordedById], references: [id])
-  
   @@map("feed_usage")
 }
 
 model FeedProgram {
-  id          String    @id @default(uuid())
-  breed       BreedType
-  ageInWeeks  Int
-  ageInDays   String    // e.g., "1-7", "8-14"
-  feedType    FeedType
-  gramPerHen  Float
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String   @id @default(uuid())
+  ageInWeeks Int      @unique
+  ageInDays  String
+  feedType   FeedType
+  gramPerHen Float
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@unique([breed, ageInWeeks])
   @@map("feed_program")
+}
+
+model Inventory {
+  id              String        @id @default(uuid())
+  type            InventoryType
+  name            String
+  quantity        Float
+  unit            String        @default("kg")
+  threshold       Float?
+  feedDetails     Json?
+  eggCount        Int?
+  broilerCount    Int?
+  manureWeight    Float?
+  medicineDetails Json?
+  otherDetails    Json?
+  costPerUnit     Float?
+  totalValue      Float?
+  notes           String?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("inventory")
 }
 
 enum StaffRole {
   ADMIN
   VETERINARIAN
   WORKER
-}
-
-enum BreedType {
-  broiler
-  layer
-  dual_purpose
-}
-
-enum SourceType {
-  hatchery
-  farm
-  imported
 }
 
 enum TreatmentResponse {
@@ -428,8 +424,6 @@ enum FeedType {
   LAYER_PHASE_1
   CUSTOM
 }
-
-
 
 enum ExpenseCategory {
   feed
@@ -496,27 +490,3 @@ enum BankName {
   HIJRA_BANK
   GOH_BETOCH_BANK
 }
-
-model Inventory {
-  id              String        @id @default(uuid())
-  type            InventoryType
-  name            String        // Name of the inventory item
-  quantity        Float         // Current stock quantity
-  unit            String        @default("kg") // Unit of measurement
-  threshold       Float?        // Minimum stock level for alerts
-  feedDetails     Json?         // JSON field for feed types: {LAYER_STARTER: 100, REARING: 50, ...}
-  eggCount        Int?          // For egg inventory
-  broilerCount    Int?          // For broiler inventory
-  manureWeight    Float?        // For manure inventory (in kg)
-  medicineDetails Json?         // JSON field for medicine details: {name: "Antibiotic", dosage: "5ml", ...}
-  otherDetails    Json?         // JSON field for other items
-  costPerUnit     Float?        // Cost per unit
-  totalValue      Float?        // Total value (quantity * costPerUnit)
-  notes           String?       // Additional notes
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  @@map("inventory")
-}
-

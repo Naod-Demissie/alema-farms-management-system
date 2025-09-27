@@ -128,16 +128,6 @@ export function SupplierTable({ columns, data, toolbar, onView, onEdit, onDelete
           table={table}
           filterColumnId="name"
           filterPlaceholder="Filter suppliers..."
-          facetedFilters={[
-            {
-              columnId: "isActive",
-              title: "Status",
-              options: [
-                { label: "Active", value: "true" },
-                { label: "Inactive", value: "false" },
-              ],
-            },
-          ]}
         />
       )}
       <div className="rounded-md border">

@@ -91,7 +91,6 @@ export function ExpenseTracking() {
         });
       } else {
         result = await createExpense({
-          flockId: "", // No flock association for expenses
           category: data.category,
           quantity: data.quantity,
           costPerQuantity: data.costPerQuantity,
@@ -351,7 +350,6 @@ export function ExpenseTracking() {
         }}
         onSubmit={handleExpenseSubmit}
         initialData={editingExpense ? {
-          flockId: editingExpense.flockId,
           category: editingExpense.category as ExpenseCategory,
           quantity: editingExpense.quantity || 0,
           costPerQuantity: editingExpense.costPerQuantity || 0,

@@ -82,16 +82,32 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   const handleCreateFlock = async (data: any) => {
     try {
       setIsLoading(true);
-      // Simulate API call - in real implementation, you would call the actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      toast.success("Flock created successfully!", {
-        description: `Batch ${data.batchCode} has been added to your flocks.`
+      // Import the createFlock function dynamically to avoid SSR issues
+      const { createFlock } = await import("@/server/flocks");
+      
+      const result = await createFlock({
+        batchCode: data.batchCode,
+        arrivalDate: data.arrivalDate,
+        initialCount: data.initialCount,
+        currentCount: data.currentCount,
+        ageInDays: data.ageInDays,
+        notes: data.notes,
       });
       
-      setIsFlockDialogOpen(false);
-      // Optionally refresh the page or update data
-      router.refresh();
+      if (result.success) {
+        toast.success("Flock created successfully!", {
+          description: `Batch ${data.batchCode} has been added to your flocks.`
+        });
+        
+        setIsFlockDialogOpen(false);
+        // Refresh the page to show updated data
+        router.refresh();
+      } else {
+        toast.error("Failed to create flock", {
+          description: result.message || "An unexpected error occurred."
+        });
+      }
     } catch (error) {
       console.error('Error creating flock:', error);
       toast.error("Failed to create flock", {
@@ -104,18 +120,20 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
   const handleGenerateBatchCode = async (breed: string) => {
     try {
-      // Simulate batch code generation
-      const breedPrefix = breed === 'broiler' ? 'BR' : breed === 'layer' ? 'LY' : 'DP';
-      const date = new Date();
-      const year = date.getFullYear().toString().slice(-2);
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      const batchCode = `${breedPrefix}${year}${month}${random}`;
+      // Import the generateBatchCode function dynamically to avoid SSR issues
+      const { generateBatchCode } = await import("@/server/flocks");
       
-      // In a real implementation, you would call the API to generate the batch code
-      return batchCode;
+      const result = await generateBatchCode(breed);
+      
+      if (result.success && result.data?.batchCode) {
+        return result.data.batchCode;
+      } else {
+        console.error('Failed to generate batch code:', result.message);
+        return null;
+      }
     } catch (error) {
       console.error('Error generating batch code:', error);
+      return null;
     }
   };
 
@@ -201,6 +219,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
             {[
               { id: "add-flock", title: "Add New Flock", icon: Bird, color: "bg-blue-500" },
               { id: "record-production", title: "Record Egg Production", icon: Egg, color: "bg-green-500" },
+              { id: "record-broiler-production", title: "Record Broiler Production", icon: Bird, color: "bg-orange-500" },
+              { id: "record-manure-production", title: "Record Manure Production", icon: Activity, color: "bg-brown-500" },
               { id: "add-expense", title: "Add Expense", icon: Minus, color: "bg-purple-500" },
               { id: "add-revenue", title: "Add Revenue", icon: DollarSign, color: "bg-green-600" },
               { id: "add-staff", title: "Add Staff Member", icon: UserPlus, color: "bg-indigo-500" },
@@ -280,7 +300,12 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       </div>
 
       {/* Quick Action Dialog */}
-      <QuickActionDialog isOpen={isQuickActionOpen} onClose={handleCloseQuickAction} actionType={selectedQuickAction} />
+      <QuickActionDialog 
+        isOpen={isQuickActionOpen} 
+        onClose={handleCloseQuickAction} 
+        actionType={selectedQuickAction}
+        onRefresh={() => router.refresh()}
+      />
       
       {/* Reusable Flock Creation Dialog */}
       <ReusableDialog
@@ -290,8 +315,6 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
           schema: flockSchema,
           defaultValues: {
             batchCode: "",
-            breed: "broiler",
-            source: "hatchery",
             arrivalDate: new Date(),
             initialCount: 0,
             currentCount: 0,

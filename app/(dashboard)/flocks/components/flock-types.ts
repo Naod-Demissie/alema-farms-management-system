@@ -3,8 +3,6 @@
 export interface Flock {
   id: string;
   batchCode: string;
-  breed: 'broiler' | 'layer' | 'dual_purpose';
-  source: 'hatchery' | 'farm' | 'imported';
   arrivalDate: Date;
   initialCount: number;
   currentCount: number;
@@ -25,8 +23,6 @@ export interface Flock {
 
 export interface FlockFormData {
   batchCode: string;
-  breed: 'broiler' | 'layer' | 'dual_purpose';
-  source: 'hatchery' | 'farm' | 'imported';
   arrivalDate: Date;
   initialCount: number;
   currentCount: number;
@@ -44,24 +40,12 @@ export interface FlockPopulationUpdate {
 export interface FlockStatistics {
   totalFlocks: number;
   totalBirds: number;
-  flocksByBreed: Array<{
-    breed: string;
-    count: number;
-    birds: number;
-  }>;
-  flocksBySource: Array<{
-    source: string;
-    count: number;
-    birds: number;
-  }>;
   recentFlocks: number;
   averageMortalityRate: number;
 }
 
 export interface FlockFilters {
   search?: string;
-  breed?: 'broiler' | 'layer' | 'dual_purpose';
-  source?: 'hatchery' | 'farm' | 'imported';
   batchCode?: string;
   dateRange?: {
     start: Date;
@@ -69,17 +53,6 @@ export interface FlockFilters {
   };
 }
 
-export const BREED_OPTIONS = [
-  { value: 'broiler', label: 'Broiler', description: 'Meat production' },
-  { value: 'layer', label: 'Layer', description: 'Egg production' },
-  { value: 'dual_purpose', label: 'Dual Purpose', description: 'Both meat and eggs' }
-] as const;
-
-export const SOURCE_OPTIONS = [
-  { value: 'hatchery', label: 'Hatchery', description: 'Commercial hatchery' },
-  { value: 'farm', label: 'Farm', description: 'Own farm breeding' },
-  { value: 'imported', label: 'Imported', description: 'Imported from other sources' }
-] as const;
 
 export const POPULATION_UPDATE_REASONS = [
   'Mortality',

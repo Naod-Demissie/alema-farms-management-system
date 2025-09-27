@@ -77,10 +77,10 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
         ]}
       />
       {loading ? (
-        <div className="flex items-center justify-center h-32">
-          <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-            <span className="text-sm text-muted-foreground">Loading expenses...</span>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-sm text-muted-foreground">Loading expenses...</p>
           </div>
         </div>
       ) : (

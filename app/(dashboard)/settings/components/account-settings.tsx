@@ -32,11 +32,9 @@ import {
   deleteAccount,
 } from "@/server/settings";
 
-interface AccountSettingsProps {
-  onChanges: (hasChanges: boolean) => void;
-}
+interface AccountSettingsProps {}
 
-export function AccountSettings({ onChanges }: AccountSettingsProps) {
+export function AccountSettings({}: AccountSettingsProps) {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);

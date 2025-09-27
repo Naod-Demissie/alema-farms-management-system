@@ -19,10 +19,10 @@ import { cn } from "@/lib/utils";
 import { ProductionFormData, EGG_GRADES, BROILER_UNITS } from "./production-types";
 import { 
   createEggProduction, 
-  createBroilerSales, 
+  createBroilerProduction, 
   createManureProduction,
   updateEggProduction,
-  updateBroilerSales,
+  updateBroilerProduction,
   updateManureProduction
 } from "@/server/production";
 import { toast } from "sonner";
@@ -36,14 +36,10 @@ const eggProductionSchema = z.object({
   notes: z.string().optional()
 });
 
-const broilerSalesSchema = z.object({
+const broilerProductionSchema = z.object({
   flockId: z.string().min(1, "Please select a flock"),
   date: z.string().min(1, "Please select a date"),
   quantity: z.number().min(0, "Quantity must be 0 or greater"),
-  unit: z.string().optional(),
-  pricePerUnit: z.number().min(0).optional(),
-  totalAmount: z.number().min(0).optional(),
-  buyer: z.string().optional(),
   notes: z.string().optional()
 });
 
@@ -51,7 +47,6 @@ const manureProductionSchema = z.object({
   flockId: z.string().min(1, "Please select a flock"),
   date: z.string().min(1, "Please select a date"),
   quantity: z.number().min(0, "Quantity must be 0 or greater"),
-  unit: z.string().optional(),
   notes: z.string().optional()
 });
 
@@ -90,7 +85,7 @@ export function ProductionForm({
       case 'eggs':
         return eggProductionSchema;
       case 'broiler':
-        return broilerSalesSchema;
+        return broilerProductionSchema;
       case 'manure':
         return manureProductionSchema;
       default:
@@ -98,7 +93,7 @@ export function ProductionForm({
     }
   };
 
-  const form = useForm<z.infer<typeof eggProductionSchema> | z.infer<typeof broilerSalesSchema> | z.infer<typeof manureProductionSchema>>({
+  const form = useForm<z.infer<typeof eggProductionSchema> | z.infer<typeof broilerProductionSchema> | z.infer<typeof manureProductionSchema>>({
     resolver: zodResolver(getSchema()),
     defaultValues: {
       flockId: initialData?.flockId || "",
@@ -108,13 +103,7 @@ export function ProductionForm({
         crackedCount: (initialData as any)?.gradeCounts?.cracked || 0,
         spoiledCount: (initialData as any)?.gradeCounts?.spoiled || 0
       } : {
-        quantity: (initialData as any)?.quantity || 0,
-        unit: 'kg',
-        ...(productionType === 'broiler' ? {
-          pricePerUnit: (initialData as any)?.pricePerUnit || 0,
-          totalAmount: (initialData as any)?.totalAmount || 0,
-          buyer: (initialData as any)?.buyer || ""
-        } : {})
+        quantity: (initialData as any)?.quantity || 0
       }),
       notes: initialData?.notes || ""
     }
@@ -161,21 +150,14 @@ export function ProductionForm({
           break;
         case 'broiler':
           if (isUpdate) {
-            result = await updateBroilerSales(initialData.id!, {
+            result = await updateBroilerProduction(initialData.id!, {
               quantity: data.quantity,
-              unit: data.unit || 'birds',
-              pricePerUnit: data.pricePerUnit,
-              totalAmount: data.totalAmount,
-              buyer: data.buyer,
               notes: data.notes
             });
           } else {
-            result = await createBroilerSales({
+            result = await createBroilerProduction({
               ...baseData,
-              unit: data.unit || 'birds',
-              pricePerUnit: data.pricePerUnit,
-              totalAmount: data.totalAmount,
-              buyer: data.buyer
+              quantity: data.quantity
             });
           }
           break;
@@ -183,13 +165,12 @@ export function ProductionForm({
           if (isUpdate) {
             result = await updateManureProduction(initialData.id!, {
               quantity: data.quantity,
-              unit: data.unit || 'kg',
               notes: data.notes
             });
           } else {
             result = await createManureProduction({
               ...baseData,
-              unit: data.unit || 'kg'
+              quantity: data.quantity
             });
           }
           break;
@@ -227,10 +208,10 @@ export function ProductionForm({
             name="flockId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Flock *</FormLabel>
+                <FormLabel>Flock <span className="text-red-500">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a flock" />
                     </SelectTrigger>
                   </FormControl>
@@ -270,7 +251,7 @@ export function ProductionForm({
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date *</FormLabel>
+                <FormLabel>Date <span className="text-red-500">*</span></FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -315,7 +296,7 @@ export function ProductionForm({
               name="quantity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantity *</FormLabel>
+                  <FormLabel>Quantity <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -331,38 +312,6 @@ export function ProductionForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="unit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unit</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select unit" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {productionType === 'broiler' ? (
-                        BROILER_UNITS.map((unit) => (
-                          <SelectItem key={unit.value} value={unit.value}>
-                            {unit.label}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <>
-                          <SelectItem value="kg">Kilograms (kg)</SelectItem>
-                          <SelectItem value="lbs">Pounds (lbs)</SelectItem>
-                          <SelectItem value="tons">Tons</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
         )}
 
@@ -377,7 +326,7 @@ export function ProductionForm({
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-500" />
-                      Normal
+                      Normal <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -399,7 +348,7 @@ export function ProductionForm({
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-orange-500" />
-                      Cracked
+                      Cracked <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -421,7 +370,7 @@ export function ProductionForm({
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500" />
-                      Spoiled
+                      Spoiled <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -447,65 +396,10 @@ export function ProductionForm({
           </>
         )}
 
-        {/* Broiler Sales Fields */}
+        {/* Broiler Production Fields - Simplified */}
         {productionType === 'broiler' && (
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="pricePerUnit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price per Unit (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="totalAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Amount (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="buyer"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Buyer (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Buyer name or company"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="text-center py-4 text-muted-foreground">
+            {/* Broiler production form fields will be handled by the main form */}
           </div>
         )}
 
@@ -514,7 +408,7 @@ export function ProductionForm({
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes (Optional)</FormLabel>
+              <FormLabel>Notes</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Add any additional notes about this production record..."

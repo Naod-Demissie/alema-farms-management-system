@@ -497,7 +497,7 @@ export function FlockReports({ filters }: FlockReportsProps) {
             <div className="text-muted-foreground leading-none">
               Showing distribution across {data.flocksByBreed.length} breed types
             </div>
-          </CardFooter>
+          </CardFooter> leading with 
         </Card>
       </div>
     </div>

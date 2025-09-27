@@ -11,8 +11,6 @@ import { ApiResponse, PaginatedResponse, FilterParams, PaginationParams, SortPar
 export interface Flock {
   id: string;
   batchCode: string;
-  breed: 'broiler' | 'layer' | 'dual_purpose';
-  source: 'hatchery' | 'farm' | 'imported';
   arrivalDate: Date;
   initialCount: number;
   currentCount: number;
@@ -20,6 +18,9 @@ export interface Flock {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  mortality?: Array<{
+    count: number;
+  }>;
   _count?: {
     vaccinations: number;
     treatments: number;
@@ -32,8 +33,6 @@ export interface Flock {
 }
 
 export interface FlockFilters extends FilterParams {
-  breed?: 'broiler' | 'layer' | 'dual_purpose';
-  source?: 'hatchery' | 'farm' | 'imported';
   batchCode?: string;
   dateRange?: {
     start: Date;
@@ -43,8 +42,6 @@ export interface FlockFilters extends FilterParams {
 
 export interface CreateFlockData {
   batchCode: string;
-  breed: 'broiler' | 'layer' | 'dual_purpose';
-  source: 'hatchery' | 'farm' | 'imported';
   arrivalDate: Date;
   initialCount: number;
   currentCount: number;
@@ -54,8 +51,6 @@ export interface CreateFlockData {
 
 export interface UpdateFlockData {
   batchCode?: string;
-  breed?: 'broiler' | 'layer' | 'dual_purpose';
-  source?: 'hatchery' | 'farm' | 'imported';
   arrivalDate?: Date;
   initialCount?: number;
   currentCount?: number;
@@ -117,8 +112,6 @@ export async function createFlock(data: CreateFlockData): Promise<ApiResponse> {
     const flock = await prisma.flocks.create({
       data: {
         batchCode: data.batchCode,
-        breed: data.breed,
-        source: data.source,
         arrivalDate: data.arrivalDate,
         initialCount: data.initialCount,
         currentCount: data.currentCount,
@@ -168,18 +161,8 @@ export async function getFlocks(
 
     if (filters.search) {
       where.OR = [
-        { batchCode: { contains: filters.search, mode: 'insensitive' } },
-        { breed: { contains: filters.search, mode: 'insensitive' } },
-        { source: { contains: filters.search, mode: 'insensitive' } }
+        { batchCode: { contains: filters.search, mode: 'insensitive' } }
       ];
-    }
-
-    if (filters.breed) {
-      where.breed = filters.breed;
-    }
-
-    if (filters.source) {
-      where.source = filters.source;
     }
 
     if (filters.batchCode) {
@@ -203,6 +186,11 @@ export async function getFlocks(
       take: limit,
       orderBy: { [sort.field]: sort.direction },
       include: {
+        mortality: {
+          select: {
+            count: true
+          }
+        },
         _count: {
           select: {
             vaccinations: true,
@@ -210,7 +198,7 @@ export async function getFlocks(
             mortality: true,
             feedUsage: true,
             eggProduction: true,
-            broilerSales: true,
+            broilerProduction: true,
             manureProduction: true,
             notifications: true
           }
@@ -276,7 +264,7 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
           orderBy: { date: 'desc' },
           take: 5
         },
-        broilerSales: {
+        broilerProduction: {
           orderBy: { date: 'desc' },
           take: 5
         },
@@ -291,7 +279,7 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
             mortality: true,
             feedUsage: true,
             eggProduction: true,
-            broilerSales: true,
+            broilerProduction: true,
             manureProduction: true,
             notifications: true
           }
@@ -437,7 +425,7 @@ export async function deleteFlock(flockId: string): Promise<ApiResponse> {
             mortality: true,
             feedUsage: true,
             eggProduction: true,
-            broilerSales: true,
+            broilerProduction: true,
             manureProduction: true,
             notifications: true
           }
@@ -639,7 +627,7 @@ export async function getFlockStatistics(): Promise<ApiResponse> {
 }
 
 // Generate unique batch code
-export async function generateBatchCode(breed: 'broiler' | 'layer' | 'dual_purpose'): Promise<ApiResponse> {
+export async function generateBatchCode(breed: string): Promise<ApiResponse> {
   try {
     // Get authenticated user
     const authResult = await getAuthenticatedUser();
@@ -650,17 +638,11 @@ export async function generateBatchCode(breed: 'broiler' | 'layer' | 'dual_purpo
       };
     }
 
-    const breedPrefix = {
-      broiler: 'BR',
-      layer: 'LY',
-      dual_purpose: 'DP'
-    };
-
-    const prefix = breedPrefix[breed];
+    const prefix = 'FL'; // Generic flock prefix
     const year = new Date().getFullYear().toString().slice(-2);
     const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
     
-    // Find the highest existing batch code for this breed and month
+    // Find the highest existing batch code for this month
     const existingCodes = await prisma.flocks.findMany({
       where: {
         batchCode: {

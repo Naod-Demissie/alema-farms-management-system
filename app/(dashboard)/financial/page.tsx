@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ExpenseTracking } from "./components/expense-tracking";
 import { RevenueManagement } from "./components/revenue-management";
-import { FinancialReporting } from "./components/financial-reporting";
 
 export default function FinancialManagementPage() {
   const [activeTab, setActiveTab] = useState("expenses");

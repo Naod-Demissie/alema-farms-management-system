@@ -21,7 +21,6 @@ import { format } from "date-fns";
 
 interface Revenue {
   id: string;
-  flockId: string;
   source: string;
   quantity: number | null;
   costPerQuantity: number | null;
@@ -30,10 +29,6 @@ interface Revenue {
   description?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  flock: {
-    batchCode: string;
-    breed: string;
-  };
 }
 
 
@@ -90,7 +85,6 @@ export function RevenueManagement() {
         });
       } else {
         result = await createRevenue({
-          flockId: "", // No flock association for revenue
           source: data.source,
           quantity: data.quantity,
           costPerQuantity: data.costPerQuantity,
@@ -282,12 +276,6 @@ export function RevenueManagement() {
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Flock</Label>
-                  <p className="text-sm font-medium">
-                    {viewingRevenue.flock.batchCode} ({viewingRevenue.flock.breed})
-                  </p>
-                </div>
-                <div>
                   <Label className="text-sm font-medium text-muted-foreground">Source</Label>
                   <p className="text-sm font-medium">
                     {REVENUE_SOURCES.find(s => s.value === viewingRevenue.source)?.label || viewingRevenue.source}
@@ -356,7 +344,6 @@ export function RevenueManagement() {
         }}
         onSubmit={handleRevenueSubmit}
         initialData={editingRevenue ? {
-          flockId: editingRevenue.flockId,
           source: editingRevenue.source as any,
           quantity: editingRevenue.quantity || 0,
           costPerQuantity: editingRevenue.costPerQuantity || 0,

@@ -1,10 +1,9 @@
 import { prisma } from '@/lib/prisma';
-import { BreedType, FeedType } from '@/lib/generated/prisma';
+import { FeedType } from '@/lib/generated/prisma';
 
 export interface Flock {
   id: string;
   batchCode: string;
-  breed: BreedType;
   arrivalDate: Date;
   currentCount: number;
   ageInDays?: number;
@@ -43,7 +42,6 @@ export async function getFeedRecommendation(flockId: string): Promise<FeedRecomm
       select: { 
         id: true,
         batchCode: true,
-        breed: true,
         arrivalDate: true,
         currentCount: true,
         ageInDays: true,
@@ -59,7 +57,6 @@ export async function getFeedRecommendation(flockId: string): Promise<FeedRecomm
     // Get current week's program
     const currentProgram = await prisma.feedProgram.findFirst({
       where: { 
-        breed: flock.breed,
         ageInWeeks: ageInWeeks,
         isActive: true
       }
@@ -69,14 +66,13 @@ export async function getFeedRecommendation(flockId: string): Promise<FeedRecomm
       // For flocks older than the program, use the last available program (22 weeks)
       const lastProgram = await prisma.feedProgram.findFirst({
         where: { 
-          breed: flock.breed,
           isActive: true
         },
         orderBy: { ageInWeeks: 'desc' }
       });
       
       if (!lastProgram) {
-        console.warn(`No feed program found for ${flock.breed} at ${ageInWeeks} weeks`);
+        console.warn(`No feed program found at ${ageInWeeks} weeks`);
         return null;
       }
       
@@ -96,7 +92,6 @@ export async function getFeedRecommendation(flockId: string): Promise<FeedRecomm
     // Get next week's program to check for transitions
     const nextProgram = await prisma.feedProgram.findFirst({
       where: { 
-        breed: flock.breed,
         ageInWeeks: ageInWeeks + 1,
         isActive: true
       }
@@ -135,7 +130,6 @@ export async function getAllFeedRecommendations(): Promise<Array<{
       select: {
         id: true,
         batchCode: true,
-        breed: true,
         arrivalDate: true,
         currentCount: true,
         ageInDays: true,
@@ -334,7 +328,6 @@ export async function getFeedCompliance(flockId: string, days: number = 7): Prom
       // Get program for this age
       let program = await prisma.feedProgram.findFirst({
         where: {
-          breed: flock.breed,
           ageInWeeks: ageInWeeks,
           isActive: true
         }
@@ -344,7 +337,6 @@ export async function getFeedCompliance(flockId: string, days: number = 7): Prom
       if (!program) {
         program = await prisma.feedProgram.findFirst({
           where: {
-            breed: flock.breed,
             isActive: true
           },
           orderBy: { ageInWeeks: 'desc' }

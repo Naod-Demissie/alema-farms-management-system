@@ -8,7 +8,6 @@ import { getRevenueColumns } from "./revenue-columns";
 
 interface Revenue {
   id: string;
-  flockId: string;
   source: string;
   quantity: number | null;
   costPerQuantity: number | null;
@@ -17,10 +16,6 @@ interface Revenue {
   description?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  flock: {
-    batchCode: string;
-    breed: string;
-  };
 }
 
 interface RevenueTableProps {
@@ -75,10 +70,10 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
         ]}
       />
       {loading ? (
-        <div className="flex items-center justify-center h-32">
-          <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-            <span className="text-sm text-muted-foreground">Loading revenues...</span>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-sm text-muted-foreground">Loading revenues...</p>
           </div>
         </div>
       ) : (

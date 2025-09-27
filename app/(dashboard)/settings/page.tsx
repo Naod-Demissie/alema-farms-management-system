@@ -2,17 +2,10 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import {
-  Settings,
   User,
   Shield,
-  Bell,
   Palette,
-  Save,
-  RefreshCw,
-  CheckCircle,
-  AlertTriangle,
 } from "lucide-react";
 
 // Import settings components
@@ -22,13 +15,6 @@ import { PreferencesSettings } from "./components/preferences-settings";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
-  const [hasChanges, setHasChanges] = useState(false);
-
-  const handleSave = () => {
-    // Handle save logic
-    setHasChanges(false);
-    // Show success message
-  };
 
   return (
     <div className="space-y-6">
@@ -39,16 +25,6 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">
             Manage your account settings and preferences.
           </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" disabled={!hasChanges}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
-          <Button onClick={handleSave} disabled={!hasChanges}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Changes
-          </Button>
         </div>
       </div>
 
@@ -64,8 +40,8 @@ export default function SettingsPage() {
             Profile
           </TabsTrigger>
           <TabsTrigger value="account" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Account
+            <Shield className="h-4 w-4" />
+            Security
           </TabsTrigger>
           <TabsTrigger value="preferences" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
@@ -75,17 +51,17 @@ export default function SettingsPage() {
 
         {/* Profile Settings Tab */}
         <TabsContent value="profile">
-          <ProfileSettings onChanges={setHasChanges} />
+          <ProfileSettings />
         </TabsContent>
 
         {/* Account Settings Tab */}
         <TabsContent value="account">
-          <AccountSettings onChanges={setHasChanges} />
+          <AccountSettings />
         </TabsContent>
 
         {/* Preferences Settings Tab */}
         <TabsContent value="preferences">
-          <PreferencesSettings onChanges={setHasChanges} />
+          <PreferencesSettings />
         </TabsContent>
       </Tabs>
     </div>

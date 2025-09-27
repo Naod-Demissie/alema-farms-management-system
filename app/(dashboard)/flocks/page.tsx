@@ -56,17 +56,6 @@ export default function FlocksPage() {
     loadData(); // Refresh data
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading flocks...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Main Content */}
@@ -76,6 +65,7 @@ export default function FlocksPage() {
         onFlockUpdated={handleFlockUpdated}
         onFlockDeleted={handleFlockDeleted}
         onRefresh={handleRefresh}
+        loading={loading}
       />
     </div>
   );

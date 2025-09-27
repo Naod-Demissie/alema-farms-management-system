@@ -26,6 +26,9 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ExpenseDialog } from "@/app/(dashboard)/financial/components/expense-dialog";
 import { RevenueDialog } from "@/app/(dashboard)/financial/components/revenue-dialog";
+import { EggProductionDialog } from "@/app/(dashboard)/production/components/egg-production-dialog";
+import { BroilerProductionDialog } from "@/app/(dashboard)/production/components/broiler-production-dialog";
+import { ManureProductionDialog } from "@/app/(dashboard)/production/components/manure-production-dialog";
 import { ExpenseFormData, RevenueFormData } from "@/features/financial/types";
 import { createExpense, createRevenue } from "@/server/financial";
 import { toast } from "sonner";
@@ -34,13 +37,17 @@ interface QuickActionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   actionType: string | null;
+  onRefresh?: () => void;
 }
 
-export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDialogProps) {
+export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: QuickActionDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false);
+  const [isEggProductionDialogOpen, setIsEggProductionDialogOpen] = useState(false);
+  const [isBroilerProductionDialogOpen, setIsBroilerProductionDialogOpen] = useState(false);
+  const [isManureProductionDialogOpen, setIsManureProductionDialogOpen] = useState(false);
 
   // Open expense dialog directly when actionType is "add-expense"
   React.useEffect(() => {
@@ -53,6 +60,19 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
   React.useEffect(() => {
     if (isOpen && actionType === "add-revenue") {
       setIsRevenueDialogOpen(true);
+    }
+  }, [isOpen, actionType]);
+
+  // Open production dialogs directly when actionType is a production type
+  React.useEffect(() => {
+    if (isOpen && actionType && actionType.startsWith("record-") && actionType.includes("production")) {
+      if (actionType === "record-production") {
+        setIsEggProductionDialogOpen(true);
+      } else if (actionType === "record-broiler-production") {
+        setIsBroilerProductionDialogOpen(true);
+      } else if (actionType === "record-manure-production") {
+        setIsManureProductionDialogOpen(true);
+      }
     }
   }, [isOpen, actionType]);
 
@@ -70,7 +90,6 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
   const handleExpenseSubmit = async (data: ExpenseFormData) => {
     try {
       const result = await createExpense({
-        flockId: "",
         category: data.category,
         quantity: data.quantity,
         costPerQuantity: data.costPerQuantity,
@@ -95,7 +114,6 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
   const handleRevenueSubmit = async (data: RevenueFormData) => {
     try {
       const result = await createRevenue({
-        flockId: "",
         source: data.source,
         quantity: data.quantity,
         costPerQuantity: data.costPerQuantity,
@@ -193,66 +211,12 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
         );
 
       case "record-production":
+      case "record-broiler-production":
+      case "record-manure-production":
         return (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="flock">Flock</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select flock" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="flock-1">Flock A - Broiler</SelectItem>
-                  <SelectItem value="flock-2">Flock B - Layer</SelectItem>
-                  <SelectItem value="flock-3">Flock C - Dual Purpose</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="eggCount">Egg Count</Label>
-                <Input id="eggCount" type="number" placeholder="1250" required />
-              </div>
-              <div>
-                <Label htmlFor="grade">Grade</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select grade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="cracked">Cracked</SelectItem>
-                    <SelectItem value="spoiled">Spoiled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="productionDate">Production Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </form>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Opening production recording form...</p>
+          </div>
         );
 
       case "add-expense":
@@ -322,18 +286,22 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
           <DialogTitle>
             {actionType === "add-flock" && "Add New Flock"}
             {actionType === "record-production" && "Record Egg Production"}
+            {actionType === "record-broiler-production" && "Record Broiler Production"}
+            {actionType === "record-manure-production" && "Record Manure Production"}
             {actionType === "add-expense" && "Add Expense"}
             {actionType === "add-revenue" && "Add Revenue"}
             {actionType === "add-staff" && "Add Staff Member"}
-            {!["add-flock", "record-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Quick Action"}
+            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Quick Action"}
           </DialogTitle>
           <DialogDescription>
             {actionType === "add-flock" && "Register a new flock batch in your system."}
             {actionType === "record-production" && "Log daily egg production data."}
+            {actionType === "record-broiler-production" && "Record broiler production and sales data."}
+            {actionType === "record-manure-production" && "Record manure production from your flocks."}
             {actionType === "add-expense" && "Record a new farm expense."}
             {actionType === "add-revenue" && "Record a new farm revenue."}
             {actionType === "add-staff" && "Add a new staff member to your team."}
-            {!["add-flock", "record-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Complete this action quickly."}
+            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Complete this action quickly."}
           </DialogDescription>
         </DialogHeader>
         
@@ -348,11 +316,13 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
           <Button onClick={handleSubmit} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {actionType === "add-flock" && "Add Flock"}
-            {actionType === "record-production" && "Record Production"}
+            {actionType === "record-production" && "Record Egg Production"}
+            {actionType === "record-broiler-production" && "Record Broiler Production"}
+            {actionType === "record-manure-production" && "Record Manure Production"}
             {actionType === "add-expense" && "Add Expense"}
             {actionType === "add-revenue" && "Add Revenue"}
             {actionType === "add-staff" && "Add Staff"}
-            {!["add-flock", "record-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Submit"}
+            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Submit"}
           </Button>
         </div>
       </DialogContent>
@@ -381,6 +351,52 @@ export function QuickActionDialog({ isOpen, onClose, actionType }: QuickActionDi
         title="Add New Revenue"
         description="Record a new revenue for your farm"
         submitButtonText="Add Revenue"
+      />
+
+      {/* Reusable Production Dialogs */}
+      <EggProductionDialog
+        open={isEggProductionDialogOpen}
+        onOpenChange={(open) => {
+          setIsEggProductionDialogOpen(open);
+          if (!open) {
+            onClose();
+          }
+        }}
+        onSuccess={() => {
+          setIsEggProductionDialogOpen(false);
+          onClose();
+          onRefresh?.();
+        }}
+      />
+
+      <BroilerProductionDialog
+        open={isBroilerProductionDialogOpen}
+        onOpenChange={(open) => {
+          setIsBroilerProductionDialogOpen(open);
+          if (!open) {
+            onClose();
+          }
+        }}
+        onSuccess={() => {
+          setIsBroilerProductionDialogOpen(false);
+          onClose();
+          onRefresh?.();
+        }}
+      />
+
+      <ManureProductionDialog
+        open={isManureProductionDialogOpen}
+        onOpenChange={(open) => {
+          setIsManureProductionDialogOpen(open);
+          if (!open) {
+            onClose();
+          }
+        }}
+        onSuccess={() => {
+          setIsManureProductionDialogOpen(false);
+          onClose();
+          onRefresh?.();
+        }}
       />
     </Dialog>
   );

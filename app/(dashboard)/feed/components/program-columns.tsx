@@ -10,7 +10,6 @@ import {
   Eye,
   Calendar,
   Package,
-  Bird,
   Scale
 } from "lucide-react";
 import {
@@ -40,38 +39,11 @@ const feedTypeColors = {
   CUSTOM: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
 };
 
-const breedLabels = {
-  broiler: "Broiler",
-  layer: "Layer",
-  dual_purpose: "Dual Purpose"
-};
-
-const breedColors = {
-  broiler: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-  layer: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
-  dual_purpose: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
-};
-
 export const programColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
   onDelete: (record: any) => void
 ): ColumnDef<any>[] => [
-  {
-    accessorKey: "breed",
-    header: "Breed",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="flex items-center space-x-2">
-          <Bird className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="outline" className={breedColors[record.breed as keyof typeof breedColors] || "bg-gray-100 text-gray-800"}>
-            {breedLabels[record.breed as keyof typeof breedLabels] || record.breed}
-          </Badge>
-        </div>
-      );
-    },
-  },
   {
     accessorKey: "ageInWeeks",
     header: "Week",
@@ -120,7 +92,7 @@ export const programColumns = (
       return (
         <div className="flex items-center space-x-2">
           <Scale className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{record.gramPerHen}g</span>
+          <span className="text-sm font-medium">{record.gramPerHen}g</span>
         </div>
       );
     },
@@ -130,35 +102,52 @@ export const programColumns = (
     header: "Actions",
     cell: ({ row }) => {
       const record = row.original;
-      
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onView(record)}>
-              <Eye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onEdit(record)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Program
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onDelete(record)}
-              className="text-red-600"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Program
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onView(record)}
+            className="h-8 w-8 p-0"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(record)}
+            className="h-8 w-8 p-0"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onView(record)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(record)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => onDelete(record)}
+                className="text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       );
     },
   },

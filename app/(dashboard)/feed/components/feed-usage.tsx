@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, TrendingUp, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Calendar, TrendingUp, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -522,7 +522,8 @@ export function FeedUsage() {
                           disabled={loading}
                           className="px-4 h-9"
                         >
-                          {loading ? "Saving..." : editingItem ? "Update Usage" : "Record Usage"}
+                          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {editingItem ? "Update Usage" : "Record Usage"}
                         </Button>
                       </div>
                     </DialogFooter>
@@ -536,7 +537,7 @@ export function FeedUsage() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="mt-2 text-sm text-muted-foreground">Loading usage records...</p>
               </div>
             </div>

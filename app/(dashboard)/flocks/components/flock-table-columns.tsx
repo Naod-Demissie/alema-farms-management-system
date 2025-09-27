@@ -29,52 +29,6 @@ export const flockColumns: ColumnDef<Flock>[] = [
     ),
   },
   {
-    accessorKey: "breed",
-    header: "Breed",
-    cell: ({ row }) => {
-      const breed = row.getValue("breed") as string;
-      const getBreedBadgeVariant = (breed: string) => {
-        switch (breed) {
-          case 'broiler': return 'default';
-          case 'layer': return 'secondary';
-          case 'dual_purpose': return 'outline';
-          default: return 'default';
-        }
-      };
-      
-      const getBreedLabel = (breed: string) => {
-        const breedOptions = [
-          { value: 'broiler', label: 'Broiler' },
-          { value: 'layer', label: 'Layer' },
-          { value: 'dual_purpose', label: 'Dual Purpose' }
-        ];
-        return breedOptions.find(option => option.value === breed)?.label || breed;
-      };
-
-      return (
-        <Badge variant={getBreedBadgeVariant(breed)}>
-          {getBreedLabel(breed)}
-        </Badge>
-      );
-    },
-  },
-  {
-    accessorKey: "source",
-    header: "Source",
-    cell: ({ row }) => {
-      const source = row.getValue("source") as string;
-      const getSourceLabel = (source: string) => {
-        const sourceOptions = [
-          { value: 'hatchery', label: 'Hatchery' },
-          { value: 'farm', label: 'Farm' },
-          { value: 'imported', label: 'Imported' }
-        ];
-        return sourceOptions.find(option => option.value === source)?.label || source;
-      };
-      return <div>{getSourceLabel(source)}</div>;
-    },
-  },
-  {
     accessorKey: "arrivalDate",
     header: "Arrival Date",
     cell: ({ row }) => {
@@ -155,9 +109,10 @@ export const flockColumns: ColumnDef<Flock>[] = [
     accessorKey: "mortalityRate",
     header: "Mortality Rate",
     cell: ({ row }) => {
-      const initialCount = row.getValue("initialCount") as number;
-      const currentCount = row.getValue("currentCount") as number;
-      const mortalityRate = ((initialCount - currentCount) / initialCount) * 100;
+      const flock = row.original;
+      const initialCount = flock.initialCount;
+      const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+      const mortalityRate = initialCount > 0 ? (totalMortality / initialCount) * 100 : 0;
       
       const getMortalityStatus = (rate: number) => {
         if (rate > 15) return { status: 'high', color: 'text-red-600', icon: AlertTriangle };
@@ -182,9 +137,10 @@ export const flockColumns: ColumnDef<Flock>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const initialCount = row.getValue("initialCount") as number;
-      const currentCount = row.getValue("currentCount") as number;
-      const mortalityRate = ((initialCount - currentCount) / initialCount) * 100;
+      const flock = row.original;
+      const initialCount = flock.initialCount;
+      const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+      const mortalityRate = initialCount > 0 ? (totalMortality / initialCount) * 100 : 0;
       
       const getMortalityStatus = (rate: number) => {
         if (rate > 15) return { status: 'HIGH RISK', color: 'text-red-600' };

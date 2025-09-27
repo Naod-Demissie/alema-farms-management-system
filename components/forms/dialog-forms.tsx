@@ -33,8 +33,6 @@ import { format } from "date-fns";
 // Schemas
 export const flockSchema = z.object({
   batchCode: z.string().min(1, "Batch code is required"),
-  breed: z.enum(['broiler', 'layer', 'dual_purpose']),
-  source: z.enum(['hatchery', 'farm', 'imported']),
   arrivalDate: z.date(),
   initialCount: z.number().min(1, "Initial count must be at least 1"),
   currentCount: z.number().min(0, "Current count cannot be negative"),
@@ -126,12 +124,9 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                     type="button"
                     variant="outline"
                     onClick={async () => {
-                      const breed = form.getValues('breed');
-                      if (breed) {
-                        const batchCode = await onGenerateBatchCode(breed);
-                        if (batchCode) {
-                          form.setValue('batchCode', batchCode);
-                        }
+                      const batchCode = await onGenerateBatchCode('');
+                      if (batchCode) {
+                        form.setValue('batchCode', batchCode);
                       }
                     }}
                     className="whitespace-nowrap h-10 px-4"
@@ -146,69 +141,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
         />
       </div>
 
-      {/* Row 2: Breed Type and Source */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <FormField
-          control={form.control}
-          name="breed"
-          render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormLabel className="flex items-center gap-1">
-                Breed Type <span className="text-red-500">*</span>
-              </FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-16 min-h-[4rem] w-full overflow-hidden">
-                    <SelectValue placeholder="Select breed" className="truncate" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {BREED_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="py-3">
-                      <div className="text-left">
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-sm text-muted-foreground">{option.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="source"
-          render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormLabel className="flex items-center gap-1">
-                Source <span className="text-red-500">*</span>
-              </FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-16 min-h-[4rem] w-full overflow-hidden">
-                    <SelectValue placeholder="Select source" className="truncate" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {SOURCE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="py-3">
-                      <div className="text-left">
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-sm text-muted-foreground">{option.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      {/* Row 3: Arrival Date and Age in Days */}
+      {/* Row 2: Arrival Date and Age in Days */}
       <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
@@ -277,7 +210,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
         />
       </div>
 
-      {/* Row 4: Initial Count and Current Count */}
+      {/* Row 3: Initial Count and Current Count */}
       <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
@@ -329,7 +262,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
         />
       </div>
 
-      {/* Row 5: Notes */}
+      {/* Row 4: Notes */}
       <FormField
         control={form.control}
         name="notes"
@@ -386,7 +319,7 @@ export function VaccinationForm({ form, flocks, veterinarians }: VaccinationForm
               </FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select flock" />
                   </SelectTrigger>
                 </FormControl>
@@ -458,7 +391,7 @@ export function VaccinationForm({ form, flocks, veterinarians }: VaccinationForm
               </FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select veterinarian" />
                   </SelectTrigger>
                 </FormControl>
@@ -553,7 +486,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
               <FormLabel>Flock ID</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select flock" />
                   </SelectTrigger>
                 </FormControl>
@@ -577,7 +510,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
               <FormLabel>Disease Type</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select disease type" />
                   </SelectTrigger>
                 </FormControl>
@@ -676,7 +609,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
               <FormLabel>Treated By</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select veterinarian" />
                   </SelectTrigger>
                 </FormControl>

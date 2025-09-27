@@ -17,7 +17,6 @@ import {
 
 interface Revenue {
   id: string;
-  flockId: string;
   source: RevenueSource;
   quantity: number | null;
   costPerQuantity: number | null;
@@ -26,10 +25,6 @@ interface Revenue {
   description?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  flock: {
-    batchCode: string;
-    breed: string;
-  };
 }
 
 export const getRevenueColumns = (

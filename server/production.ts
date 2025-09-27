@@ -41,24 +41,16 @@ export interface UpdateEggProductionData {
   notes?: string;
 }
 
-// Broiler Sales Interfaces
-export interface CreateBroilerSalesData {
+// Broiler Production Interfaces
+export interface CreateBroilerProductionData {
   flockId: string;
   date: Date;
   quantity: number;
-  unit?: string;
-  pricePerUnit?: number;
-  totalAmount?: number;
-  buyer?: string;
   notes?: string;
 }
 
-export interface UpdateBroilerSalesData {
+export interface UpdateBroilerProductionData {
   quantity?: number;
-  unit?: string;
-  pricePerUnit?: number;
-  totalAmount?: number;
-  buyer?: string;
   notes?: string;
 }
 
@@ -67,13 +59,11 @@ export interface CreateManureProductionData {
   flockId: string;
   date: Date;
   quantity: number;
-  unit?: string;
   notes?: string;
 }
 
 export interface UpdateManureProductionData {
   quantity?: number;
-  unit?: string;
   notes?: string;
 }
 
@@ -94,15 +84,12 @@ export interface EggProductionSummary {
   }>;
 }
 
-export interface BroilerSalesSummary {
+export interface BroilerProductionSummary {
   totalBirds: number;
-  totalRevenue: number;
-  averagePricePerBird: number;
-  averageDailySales: number;
-  salesTrend: Array<{
+  averageDailyProduction: number;
+  productionTrend: Array<{
     date: string;
     birds: number;
-    revenue: number;
   }>;
 }
 
@@ -121,7 +108,6 @@ export interface DailyProductionData {
   date: string;
   flockId: string;
   flockCode: string;
-  breed: string;
   totalEggs: number;
   normal: number;
   cracked: number;
@@ -212,8 +198,7 @@ export async function createEggProduction(data: CreateEggProductionData): Promis
       include: {
         flock: {
           select: {
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       }
@@ -297,8 +282,8 @@ export async function getEggProduction(
         flock: {
           select: {
             id: true,
-            batchCode: true,
-            breed: true,
+            batchCode: true
+,
             currentCount: true
           }
         }
@@ -349,7 +334,6 @@ export async function getEggProductionById(productionId: string): Promise<ApiRes
           select: {
             id: true,
             batchCode: true,
-            breed: true,
             currentCount: true,
             arrivalDate: true
           }
@@ -449,8 +433,7 @@ export async function updateEggProduction(
       include: {
         flock: {
           select: {
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       }
@@ -544,7 +527,7 @@ export async function deleteEggProduction(productionId: string): Promise<ApiResp
 // Broiler Sales Management
 // ===================
 
-export async function createBroilerSales(data: CreateBroilerSalesData): Promise<ApiResponse> {
+export async function createBroilerProduction(data: CreateBroilerProductionData): Promise<ApiResponse> {
   try {
     // Get authenticated user
     const authResult = await getAuthenticatedUser();
@@ -576,52 +559,47 @@ export async function createBroilerSales(data: CreateBroilerSalesData): Promise<
       };
     }
 
-    // Create broiler sales record
-    const broilerSales = await prisma.broilerSales.create({
+    // Create broiler production record
+    const broilerProduction = await prisma.broilerProduction.create({
       data: {
         flockId: data.flockId,
         date: data.date,
         quantity: data.quantity,
-        unit: data.unit || 'birds',
-        pricePerUnit: data.pricePerUnit,
-        totalAmount: data.totalAmount,
-        buyer: data.buyer,
         notes: data.notes
       },
       include: {
         flock: {
           select: {
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       }
     });
 
-    // Add broilers to inventory when sold (this represents available broilers for sale)
+    // Add broilers to inventory when produced
     const inventoryResult = await addToInventory(InventoryType.BROILER, data.quantity);
     if (!inventoryResult.success) {
       console.warn("Failed to update broiler inventory:", inventoryResult.error);
-      // Don't fail the sales creation if inventory update fails
+      // Don't fail the production creation if inventory update fails
     }
 
     return {
       success: true,
-      data: broilerSales,
-      message: "Broiler sales record created successfully"
+      data: broilerProduction,
+      message: "Broiler production record created successfully"
     };
 
   } catch (error) {
-    console.error("Error creating broiler sales:", error);
+    console.error("Error creating broiler production:", error);
     return {
       success: false,
-      message: "Failed to create broiler sales record",
+      message: "Failed to create broiler production record",
       error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
 
-export async function getBroilerSales(
+export async function getBroilerProduction(
   filters: ProductionFilters = {},
   pagination: PaginationParams = {},
   sort: SortParams = { field: 'date', direction: 'desc' }
@@ -669,17 +647,17 @@ export async function getBroilerSales(
     }
 
     // Get total count
-    const total = await prisma.broilerSales.count({ where });
+    const total = await prisma.broilerProduction.count({ where });
 
-    // Get broiler sales records
-    const broilerSales = await prisma.broilerSales.findMany({
+    // Get broiler production records
+    const broilerProduction = await prisma.broilerProduction.findMany({
       where,
       include: {
         flock: {
           select: {
             id: true,
-            batchCode: true,
-            breed: true,
+            batchCode: true
+,
             currentCount: true
           }
         }
@@ -693,7 +671,7 @@ export async function getBroilerSales(
 
     return {
       success: true,
-      data: broilerSales,
+      data: broilerProduction,
       pagination: {
         page,
         limit,
@@ -703,18 +681,18 @@ export async function getBroilerSales(
     };
 
   } catch (error) {
-    console.error("Error fetching meat production:", error);
+    console.error("Error fetching broiler production:", error);
     return {
       success: false,
-      message: "Failed to fetch meat production records",
+      message: "Failed to fetch broiler production records",
       error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
 
-export async function updateBroilerSales(
+export async function updateBroilerProduction(
   productionId: string,
-  data: UpdateBroilerSalesData
+  data: UpdateBroilerProductionData
 ): Promise<ApiResponse> {
   try {
     // Get authenticated user
@@ -728,14 +706,14 @@ export async function updateBroilerSales(
     const user = authResult.user!;
 
     // Check if production record exists
-    const existingRecord = await prisma.broilerSales.findUnique({
+    const existingRecord = await prisma.broilerProduction.findUnique({
       where: { id: productionId }
     });
 
     if (!existingRecord) {
       return {
         success: false,
-        message: "Meat production record not found"
+        message: "Broiler production record not found"
       };
     }
 
@@ -752,8 +730,8 @@ export async function updateBroilerSales(
     const newQuantity = data.quantity !== undefined ? data.quantity : oldQuantity;
     const inventoryDifference = newQuantity - oldQuantity;
 
-    // Update meat production record
-    const updatedProduction = await prisma.broilerSales.update({
+    // Update broiler production record
+    const updatedProduction = await prisma.broilerProduction.update({
       where: { id: productionId },
       data: {
         ...data,
@@ -762,8 +740,7 @@ export async function updateBroilerSales(
       include: {
         flock: {
           select: {
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       }
@@ -789,20 +766,20 @@ export async function updateBroilerSales(
     return {
       success: true,
       data: updatedProduction,
-      message: "Meat production record updated successfully"
+      message: "Broiler production record updated successfully"
     };
 
   } catch (error) {
-    console.error("Error updating meat production:", error);
+    console.error("Error updating broiler production:", error);
     return {
       success: false,
-      message: "Failed to update meat production record",
+      message: "Failed to update broiler production record",
       error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 }
 
-export async function deleteBroilerSales(productionId: string): Promise<ApiResponse> {
+export async function deleteBroilerProduction(productionId: string): Promise<ApiResponse> {
   try {
     // Get authenticated user
     const authResult = await getAuthenticatedUser();
@@ -815,14 +792,14 @@ export async function deleteBroilerSales(productionId: string): Promise<ApiRespo
     const user = authResult.user!;
 
     // Check if production record exists
-    const existingRecord = await prisma.broilerSales.findUnique({
+    const existingRecord = await prisma.broilerProduction.findUnique({
       where: { id: productionId }
     });
 
     if (!existingRecord) {
       return {
         success: false,
-        message: "Meat production record not found"
+        message: "Broiler production record not found"
       };
     }
 
@@ -833,21 +810,21 @@ export async function deleteBroilerSales(productionId: string): Promise<ApiRespo
       // Don't fail the deletion if inventory update fails
     }
 
-    // Delete meat production record
-    await prisma.broilerSales.delete({
+    // Delete broiler production record
+    await prisma.broilerProduction.delete({
       where: { id: productionId }
     });
 
     return {
       success: true,
-      message: "Meat production record deleted successfully"
+      message: "Broiler production record deleted successfully"
     };
 
   } catch (error) {
-    console.error("Error deleting meat production:", error);
+    console.error("Error deleting broiler production:", error);
     return {
       success: false,
-      message: "Failed to delete meat production record",
+      message: "Failed to delete broiler production record",
       error: error instanceof Error ? error.message : "Unknown error"
     };
   }
@@ -895,14 +872,12 @@ export async function createManureProduction(data: CreateManureProductionData): 
         flockId: data.flockId,
         date: data.date,
         quantity: data.quantity,
-        unit: data.unit || 'kg',
         notes: data.notes
       },
       include: {
         flock: {
           select: {
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       }
@@ -988,8 +963,8 @@ export async function getManureProduction(
         flock: {
           select: {
             id: true,
-            batchCode: true,
-            breed: true,
+            batchCode: true
+,
             currentCount: true
           }
         }
@@ -1072,8 +1047,7 @@ export async function updateManureProduction(
       include: {
         flock: {
           select: {
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       }
@@ -1200,8 +1174,7 @@ export async function getProductionSummary(
       include: {
         flock: {
           select: {
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       },
@@ -1319,8 +1292,7 @@ export async function getDailyProductionData(
         flock: {
           select: {
             id: true,
-            batchCode: true,
-            breed: true
+            batchCode: true
           }
         }
       },
@@ -1347,7 +1319,6 @@ export async function getDailyProductionData(
           date: dateKey,
           flockId: record.flockId,
           flockCode: record.flock.batchCode,
-          breed: record.flock.breed,
           totalEggs: 0,
           normal: 0,
           cracked: 0,

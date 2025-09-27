@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, TrendingUp, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Plus, Calendar, TrendingUp, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -25,14 +25,7 @@ import { feedTypeLabels, feedTypeColors } from "@/lib/feed-program";
 import { ProgramTable } from "./program-table";
 import { programColumns } from "./program-columns";
 
-const breedLabels = {
-  broiler: "Broiler",
-  layer: "Layer",
-  dual_purpose: "Dual Purpose"
-};
-
 const feedProgramSchema = z.object({
-  breed: z.enum(['broiler', 'layer', 'dual_purpose']),
   ageInWeeks: z.number().min(1, "Age in weeks must be at least 1"),
   ageInDays: z.string().min(1, "Age in days is required"),
   feedType: z.enum(["LAYER_STARTER", "REARING", "PULLET_FEED", "LAYER", "LAYER_PHASE_1", "CUSTOM"]),
@@ -62,7 +55,6 @@ export function FeedProgram() {
   const form = useForm<FeedProgramFormData>({
     resolver: zodResolver(feedProgramSchema),
     defaultValues: {
-      breed: "layer",
       ageInWeeks: 1,
       ageInDays: "1-7",
       feedType: "LAYER_STARTER",
@@ -76,75 +68,36 @@ export function FeedProgram() {
   }, []);
 
   const fetchProgram = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const result = await getFeedProgramAction();
-      if (result && result.success) {
+      if (result.success) {
         setProgram(result.data || []);
       } else {
-        console.error("Failed to fetch feed program:", result?.error || "Unknown error");
-        setProgram([]);
+        toast.error(result.error || "Failed to fetch feed program");
       }
     } catch (error) {
       console.error("Error fetching feed program:", error);
-      setProgram([]);
+      toast.error("Failed to fetch feed program");
     } finally {
       setLoading(false);
     }
   };
 
-  const onSubmit = async (data: FeedProgramFormData) => {
-    try {
-      setLoading(true);
-      let result;
-      
-      if (editingItem) {
-        // Update existing item
-        result = await updateFeedProgramAction(editingItem.id, data);
-        if (result.success) {
-          toast.success("Feed program entry updated successfully!");
-        } else {
-          toast.error("Failed to update feed program entry", {
-            description: result.error || "An unexpected error occurred",
-          });
-          return;
-        }
-      } else {
-        // Add new item
-        result = await createFeedProgramAction(data);
-        if (result.success) {
-          toast.success("Feed program entry created successfully!");
-        } else {
-          toast.error("Failed to create feed program entry", {
-            description: result.error || "An unexpected error occurred",
-          });
-          return;
-        }
-      }
-      
-      await fetchProgram();
-      setIsAddDialogOpen(false);
-      setEditingItem(null);
-      form.reset();
-    } catch (error) {
-      console.error("Error saving feed program entry:", error);
-      toast.error("Failed to save feed program entry", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleView = (item: any) => {
-    setViewingItem(item);
-    setIsViewDialogOpen(true);
+  const handleAdd = () => {
+    setEditingItem(null);
+    form.reset({
+      ageInWeeks: 1,
+      ageInDays: "1-7",
+      feedType: "LAYER_STARTER",
+      gramPerHen: 10,
+    });
+    setIsAddDialogOpen(true);
   };
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
     form.reset({
-      breed: item.breed,
       ageInWeeks: item.ageInWeeks,
       ageInDays: item.ageInDays,
       feedType: item.feedType,
@@ -153,7 +106,12 @@ export function FeedProgram() {
     setIsAddDialogOpen(true);
   };
 
-  const handleDeleteClick = (item: any) => {
+  const handleView = (item: any) => {
+    setViewingItem(item);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleDelete = (item: any) => {
     setConfirmDialog({
       open: true,
       type: 'delete',
@@ -161,291 +119,236 @@ export function FeedProgram() {
     });
   };
 
-  const handleDelete = (item: any) => {
-    handleDeleteClick(item);
+  const handleSubmit = async (data: FeedProgramFormData) => {
+    try {
+      setLoading(true);
+      let result;
+      if (editingItem) {
+        result = await updateFeedProgramAction(editingItem.id, data);
+      } else {
+        result = await createFeedProgramAction(data);
+      }
+
+      if (result.success) {
+        toast.success(editingItem ? "Feed program updated successfully" : "Feed program created successfully");
+        setIsAddDialogOpen(false);
+        setEditingItem(null);
+        form.reset();
+        fetchProgram();
+      } else {
+        toast.error(result.error || "Failed to save feed program");
+      }
+    } catch (error) {
+      console.error("Error saving feed program:", error);
+      toast.error("Failed to save feed program");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleConfirmAction = async () => {
-    if (!confirmDialog.type) return;
-
     if (confirmDialog.type === 'delete' && confirmDialog.item) {
-      await executeDeleteItem(confirmDialog.item);
-    }
-
-    setConfirmDialog({
-      open: false,
-      type: null,
-      item: null,
-    });
-  };
-
-  const executeDeleteItem = async (item: any) => {
-    setActionLoading(item.id);
-    try {
-      const result = await deleteFeedProgramAction(item.id);
-      
-      if (result.success) {
-        toast.success("Feed program entry deleted successfully!", {
-          description: `${breedLabels[item.breed as keyof typeof breedLabels]} week ${item.ageInWeeks} has been removed`,
-        });
-        await fetchProgram();
-      } else {
-        toast.error("Failed to delete feed program entry", {
-          description: result.error || "An unexpected error occurred",
-        });
+      setActionLoading(confirmDialog.item.id);
+      try {
+        const result = await deleteFeedProgramAction(confirmDialog.item.id);
+        if (result.success) {
+          toast.success("Feed program deleted successfully");
+          fetchProgram();
+        } else {
+          toast.error(result.error || "Failed to delete feed program");
+        }
+      } catch (error) {
+        console.error("Error deleting feed program:", error);
+        toast.error("Failed to delete feed program");
+      } finally {
+        setActionLoading(null);
+        setConfirmDialog({ open: false, type: null, item: null });
       }
-    } catch (error) {
-      console.error("Error deleting feed program entry:", error);
-      toast.error("Failed to delete feed program entry", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-      });
-    } finally {
-      setActionLoading(null);
     }
   };
 
+  const columns = programColumns(handleView, handleEdit, handleDelete);
 
   return (
     <div className="space-y-6">
-      {/* Main Content */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Feed Program Management</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Feed Program Management
+              </CardTitle>
               <CardDescription>
-                Manage feeding schedules and programs for different breeds and ages.
+                Manage feed programs for different age groups and feed types
               </CardDescription>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => {
-                  setEditingItem(null);
-                  form.reset();
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Program Entry
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingItem ? "Edit Feed Program Entry" : "Add New Feed Program Entry"}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {editingItem 
-                      ? "Update the feed program entry details below."
-                      : "Add a new feed program entry for a specific breed and age."
-                    }
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="breed"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Breed</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select breed" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {Object.entries(breedLabels).map(([value, label]) => (
-                                  <SelectItem key={value} value={value}>
-                                    {label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="ageInWeeks"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Age in Weeks</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="1" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="ageInDays"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Age in Days (Range)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="1-7" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="gramPerHen"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Grams per Hen</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.1"
-                                placeholder="10.0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="feedType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Feed Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select feed type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(feedTypeLabels).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={loading}>
-                        {loading ? "Saving..." : editingItem ? "Update" : "Add"} Entry
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={handleAdd} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Program
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading feed program...</p>
-              </div>
-            </div>
-          ) : (
-            <ProgramTable
-              columns={programColumns(handleView, handleEdit, handleDelete)}
-              data={program}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          )}
+          <ProgramTable
+            columns={columns}
+            data={program}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         </CardContent>
       </Card>
 
+      {/* Add/Edit Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingItem ? "Edit Feed Program" : "Add New Feed Program"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingItem ? "Update the feed program details below." : "Add a new feed program to your system."}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="ageInWeeks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Age in Weeks</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        placeholder="Enter age in weeks"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="ageInDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Age Range (Days)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., 1-7, 8-14"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="feedType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Feed Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select feed type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="LAYER_STARTER">Layer Starter</SelectItem>
+                        <SelectItem value="REARING">Rearing</SelectItem>
+                        <SelectItem value="PULLET_FEED">Pullet Feed</SelectItem>
+                        <SelectItem value="LAYER">Layer</SelectItem>
+                        <SelectItem value="LAYER_PHASE_1">Layer Phase 1</SelectItem>
+                        <SelectItem value="CUSTOM">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gramPerHen"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grams per Hen</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        placeholder="Enter grams per hen"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0.1)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingItem ? "Update" : "Add"} Program
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Feed Program Entry Details</DialogTitle>
+            <DialogTitle>Feed Program Details</DialogTitle>
             <DialogDescription>
-              Detailed information about the feed program entry
+              View details of the selected feed program
             </DialogDescription>
           </DialogHeader>
           {viewingItem && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Breed</Label>
-                  <p className="text-sm font-medium">
-                    {breedLabels[viewingItem.breed as keyof typeof breedLabels]}
-                  </p>
-                </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Age in Weeks</Label>
                   <p className="text-sm font-medium">{viewingItem.ageInWeeks}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Age in Days</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">Age Range</Label>
                   <p className="text-sm font-medium">{viewingItem.ageInDays}</p>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Feed Type</Label>
-                  <div className="mt-1">
-                    <Badge className={feedTypeColors[viewingItem.feedType as keyof typeof feedTypeColors]}>
-                      {feedTypeLabels[viewingItem.feedType as keyof typeof feedTypeLabels]}
-                    </Badge>
-                  </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Feed Type</Label>
+                <div className="mt-1">
+                  <Badge variant="outline" className={feedTypeColors[viewingItem.feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
+                    {feedTypeLabels[viewingItem.feedType as keyof typeof feedTypeLabels] || viewingItem.feedType}
+                  </Badge>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Grams per Hen</Label>
-                  <p className="text-sm font-medium">{viewingItem.gramPerHen}g</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
-                  <div className="mt-1">
-                    {viewingItem.isActive ? (
-                      <Badge variant="default" className="bg-green-100 text-green-800">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Inactive
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Grams per Hen</Label>
+                <p className="text-sm font-medium">{viewingItem.gramPerHen}g</p>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
               Close
-            </Button>
-            <Button onClick={() => {
-              setIsViewDialogOpen(false);
-              handleEdit(viewingItem);
-            }}>
-              Edit Entry
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -455,23 +358,11 @@ export function FeedProgram() {
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title={
-          confirmDialog.type === 'delete'
-            ? 'Delete Feed Program Entry'
-            : 'Confirm Action'
-        }
-        desc={
-          confirmDialog.type === 'delete'
-            ? `Are you sure you want to delete the feed program entry for ${breedLabels[confirmDialog.item?.breed as keyof typeof breedLabels]} week ${confirmDialog.item?.ageInWeeks}? This action cannot be undone.`
-            : 'Are you sure you want to proceed?'
-        }
-        confirmText={
-          confirmDialog.type === 'delete'
-            ? 'Delete Entry'
-            : 'Continue'
-        }
+        title="Delete Feed Program"
+        desc={`Are you sure you want to delete this feed program? This action cannot be undone.`}
+        confirmText="Delete"
         cancelBtnText="Cancel"
-        destructive={confirmDialog.type === 'delete'}
+        destructive={true}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.item?.id}
       />

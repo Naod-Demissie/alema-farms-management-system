@@ -47,8 +47,7 @@ export const inventoryColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
   onDelete: (record: any) => void,
-  getStatusBadge: (isActive: boolean) => React.ReactNode,
-  getStockStatus: (quantity: number, minStock: number) => React.ReactNode
+  getStatusBadge: (isActive: boolean) => React.ReactNode
 ): ColumnDef<any>[] => [
   {
     accessorKey: "feedType",
@@ -123,14 +122,6 @@ export const inventoryColumns = (
       ) : (
         <span className="text-muted-foreground text-sm">N/A</span>
       );
-    },
-  },
-  {
-    accessorKey: "stockStatus",
-    header: "Stock Status",
-    cell: ({ row }) => {
-      const record = row.original;
-      return getStockStatus(record.quantity, record.minStock || 0);
     },
   },
   {

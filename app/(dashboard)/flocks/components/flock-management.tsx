@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { 
   Form,
   FormControl,
@@ -49,17 +50,17 @@ import {
   Users,
   AlertTriangle,
   Edit,
-  CalendarIcon
+  CalendarIcon,
+  Eye
 } from "lucide-react";
 import { 
   createFlock, 
   updateFlock, 
   deleteFlock, 
-  updateFlockPopulation,
   generateBatchCode,
   Flock,
 } from "@/server/flocks";
-import { FlockFormData, BREED_OPTIONS, SOURCE_OPTIONS, POPULATION_UPDATE_REASONS } from "./flock-types";
+import { FlockFormData } from "./flock-types";
 import { format } from "date-fns";
 import { FlockTable } from "./flock-table";
 import { flockColumns } from "./flock-table-columns";
@@ -67,11 +68,6 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 
 
-const populationUpdateSchema = z.object({
-  newCount: z.number().min(0, "Count cannot be negative"),
-  reason: z.string().min(1, "Reason is required"),
-  notes: z.string().optional(),
-});
 
 interface FlockManagementMergedProps {
   flocks: Flock[];
@@ -79,6 +75,7 @@ interface FlockManagementMergedProps {
   onFlockUpdated: (flock: Flock) => void;
   onFlockDeleted: (flockId: string) => void;
   onRefresh: () => void;
+  loading?: boolean;
 }
 
 export function FlockManagementMerged({
@@ -86,13 +83,14 @@ export function FlockManagementMerged({
   onFlockCreated,
   onFlockUpdated,
   onFlockDeleted,
-  onRefresh
+  onRefresh,
+  loading: pageLoading = false
 }: FlockManagementMergedProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isUpdatePopulationDialogOpen, setIsUpdatePopulationDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingFlock, setEditingFlock] = useState<Flock | null>(null);
-  const [selectedFlock, setSelectedFlock] = useState<Flock | null>(null);
+  const [viewingFlock, setViewingFlock] = useState<Flock | null>(null);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState({
@@ -101,14 +99,6 @@ export function FlockManagementMerged({
   });
 
 
-  const populationForm = useForm<Omit<{ flockId: string; newCount: number; reason: string; notes?: string }, 'flockId'>>({
-    resolver: zodResolver(populationUpdateSchema),
-    defaultValues: {
-      newCount: 0,
-      reason: "",
-      notes: "",
-    },
-  });
 
   const handleCreateFlock = async (data: z.infer<typeof flockSchema>) => {
     try {
@@ -165,38 +155,6 @@ export function FlockManagementMerged({
     }
   };
 
-  const handleUpdatePopulation = async (data: Omit<{ flockId: string; newCount: number; reason: string; notes?: string }, 'flockId'>) => {
-    if (!selectedFlock) return;
-    
-    try {
-      setLoading(true);
-      const result = await updateFlockPopulation({
-        flockId: selectedFlock.id,
-        ...data
-      });
-      
-      if (result.success) {
-        onFlockUpdated(result.data);
-        populationForm.reset();
-        setIsUpdatePopulationDialogOpen(false);
-        setSelectedFlock(null);
-        toast.success("Population updated successfully!", {
-          description: `Flock population updated to ${data.newCount} birds.`
-        });
-      } else {
-        toast.error("Failed to update population", {
-          description: result.message || "An unexpected error occurred."
-        });
-      }
-    } catch (error) {
-      console.error('Error updating population:', error);
-      toast.error("Failed to update population", {
-        description: "An unexpected error occurred. Please try again."
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteFlock = (flockId: string) => {
     const flock = flocks.find(f => f.id === flockId);
@@ -241,15 +199,11 @@ export function FlockManagementMerged({
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdatePopulationClick = (flock: Flock) => {
-    setSelectedFlock(flock);
-    populationForm.reset({
-      newCount: flock.currentCount,
-      reason: "",
-      notes: "",
-    });
-    setIsUpdatePopulationDialogOpen(true);
+  const handleViewClick = (flock: Flock) => {
+    setViewingFlock(flock);
+    setIsViewDialogOpen(true);
   };
+
 
   const handleGenerateBatchCode = async (breed: string) => {
     try {
@@ -268,22 +222,25 @@ export function FlockManagementMerged({
   const totalBirds = flocks.reduce((sum, flock) => sum + flock.currentCount, 0);
   const averageMortalityRate = flocks.length > 0 
     ? flocks.reduce((sum, flock) => {
-        const mortalityRate = ((flock.initialCount - flock.currentCount) / flock.initialCount) * 100;
+        const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+        const mortalityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 : 0;
         return sum + mortalityRate;
       }, 0) / flocks.length
     : 0;
   const highRiskFlocks = flocks.filter(flock => {
-    const mortalityRate = ((flock.initialCount - flock.currentCount) / flock.initialCount) * 100;
+    const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+    const mortalityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 : 0;
     return mortalityRate > 15;
   }).length;
   const healthyFlocks = flocks.filter(flock => {
-    const mortalityRate = ((flock.initialCount - flock.currentCount) / flock.initialCount) * 100;
+    const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+    const mortalityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 : 0;
     return mortalityRate <= 5;
   }).length;
 
   const tableMeta = {
     onEdit: handleEditClick,
-    onUpdatePopulation: handleUpdatePopulationClick,
+    onView: handleViewClick,
     onDelete: handleDeleteFlock,
   };
 
@@ -388,8 +345,6 @@ export function FlockManagementMerged({
                 schema: flockSchema,
                 defaultValues: {
                   batchCode: "",
-                  breed: "broiler",
-                  source: "hatchery",
                   arrivalDate: new Date(),
                   initialCount: 0,
                   currentCount: 0,
@@ -419,8 +374,9 @@ export function FlockManagementMerged({
             data={flocks}
             toolbar={undefined}
             onEdit={handleEditClick}
-            onUpdatePopulation={handleUpdatePopulationClick}
+            onView={handleViewClick}
             onDelete={handleDeleteFlock}
+            loading={pageLoading || loading}
           />
         </CardContent>
       </Card>
@@ -438,8 +394,6 @@ export function FlockManagementMerged({
           schema: flockSchema,
           defaultValues: editingFlock ? {
             batchCode: editingFlock.batchCode,
-            breed: editingFlock.breed,
-            source: editingFlock.source,
             arrivalDate: new Date(editingFlock.arrivalDate),
             initialCount: editingFlock.initialCount,
             currentCount: editingFlock.currentCount,
@@ -447,8 +401,6 @@ export function FlockManagementMerged({
             notes: editingFlock.notes || "",
           } : {
             batchCode: "",
-            breed: "broiler",
-            source: "hatchery",
             arrivalDate: new Date(),
             initialCount: 0,
             currentCount: 0,
@@ -471,112 +423,129 @@ export function FlockManagementMerged({
         loading={loading}
       />
 
-      {/* Update Population Dialog */}
-      <Dialog open={isUpdatePopulationDialogOpen} onOpenChange={setIsUpdatePopulationDialogOpen}>
-        <DialogContent>
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={(open) => {
+        setIsViewDialogOpen(open);
+        if (!open) {
+          setViewingFlock(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Update Flock Population</DialogTitle>
+            <DialogTitle>Flock Details</DialogTitle>
             <DialogDescription>
-              Update the current population count for {selectedFlock?.batchCode}
+              View detailed information for batch {viewingFlock?.batchCode}
             </DialogDescription>
           </DialogHeader>
-          <Form {...populationForm}>
-            <form onSubmit={populationForm.handleSubmit(handleUpdatePopulation)} className="space-y-6">
+          {viewingFlock && (
+            <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Initial Count</label>
-                  <div className="text-2xl font-bold text-muted-foreground">
-                    {selectedFlock?.initialCount.toLocaleString()}
-                  </div>
+                  <label className="text-sm font-medium text-muted-foreground">Batch Code</label>
+                  <div className="text-lg font-semibold">{viewingFlock.batchCode}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Current Count</label>
-                  <div className="text-2xl font-bold">
-                    {selectedFlock?.currentCount.toLocaleString()}
+                  <label className="text-sm font-medium text-muted-foreground">Arrival Date</label>
+                  <div className="text-lg font-semibold">{format(new Date(viewingFlock.arrivalDate), 'MMM dd, yyyy')}</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Initial Count</label>
+                  <div className="text-lg font-semibold">{viewingFlock.initialCount.toLocaleString()}</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Current Count</label>
+                  <div className="text-lg font-semibold">{viewingFlock.currentCount.toLocaleString()}</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Age at Arrival</label>
+                  <div className="text-lg font-semibold">{viewingFlock.ageInDays || 0} days</div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Current Age</label>
+                  <div className="text-lg font-semibold">
+                    {(() => {
+                      const arrivalDate = new Date(viewingFlock.arrivalDate);
+                      const ageAtArrival = viewingFlock.ageInDays || 0;
+                      const today = new Date();
+                      const daysSinceArrival = Math.floor((today.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24));
+                      const totalAgeInDays = ageAtArrival + daysSinceArrival;
+                      const weeks = Math.floor(totalAgeInDays / 7);
+                      const days = totalAgeInDays % 7;
+                      return `${weeks > 0 ? `${weeks}w ` : ''}${days}d (${totalAgeInDays} days)`;
+                    })()}
                   </div>
                 </div>
               </div>
+              
+              {viewingFlock.notes && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                  <div className="text-sm bg-muted p-3 rounded-md mt-1">{viewingFlock.notes}</div>
+                </div>
+              )}
 
-              <FormField
-                control={populationForm.control}
-                name="newCount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Count</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        max={selectedFlock?.initialCount || 0}
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={populationForm.control}
-                name="reason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reason for Change</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select reason" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {POPULATION_UPDATE_REASONS.map((reason) => (
-                          <SelectItem key={reason} value={reason}>
-                            {reason}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={populationForm.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional details about the population change..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsUpdatePopulationDialogOpen(false);
-                    setSelectedFlock(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Update Population
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Population Change</label>
+                  <div className="text-lg font-semibold">
+                    {(() => {
+                      const change = viewingFlock.currentCount - viewingFlock.initialCount;
+                      const percentage = (change / viewingFlock.initialCount) * 100;
+                      return (
+                        <div className="flex items-center space-x-1">
+                          {change > 0 ? (
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                          ) : change < 0 ? (
+                            <TrendingDown className="h-4 w-4 text-red-600" />
+                          ) : null}
+                          <span className={change > 0 ? 'text-green-600' : change < 0 ? 'text-red-600' : ''}>
+                            {change > 0 ? '+' : ''}{change.toLocaleString()}
+                          </span>
+                          <span className="text-muted-foreground">
+                            ({percentage > 0 ? '+' : ''}{percentage.toFixed(1)}%)
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Mortality Rate</label>
+                  <div className="text-lg font-semibold">
+                    {(() => {
+                      const totalMortality = viewingFlock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+                      const mortalityRate = viewingFlock.initialCount > 0 ? (totalMortality / viewingFlock.initialCount) * 100 : 0;
+                      const getMortalityStatus = (rate: number) => {
+                        if (rate > 15) return { status: 'HIGH RISK', color: 'text-red-600' };
+                        if (rate > 5) return { status: 'MEDIUM', color: 'text-yellow-600' };
+                        return { status: 'HEALTHY', color: 'text-green-600' };
+                      };
+                      const status = getMortalityStatus(mortalityRate);
+                      return (
+                        <div className="flex items-center space-x-2">
+                          <span className={status.color}>{mortalityRate.toFixed(1)}%</span>
+                          <Badge variant={mortalityRate > 15 ? "destructive" : mortalityRate > 5 ? "secondary" : "default"}>
+                            {status.status}
+                          </Badge>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setIsViewDialogOpen(false);
+              handleEditClick(viewingFlock!);
+            }}>
+              Edit Flock
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

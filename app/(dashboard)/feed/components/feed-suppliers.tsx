@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Building2, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -369,7 +369,8 @@ export function FeedSuppliers() {
                         Cancel
                       </Button>
                       <Button type="submit" disabled={loading}>
-                        {loading ? "Saving..." : editingSupplier ? "Update" : "Add"} Supplier
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {editingSupplier ? "Update" : "Add"} Supplier
                       </Button>
                     </DialogFooter>
                   </form>
@@ -382,7 +383,7 @@ export function FeedSuppliers() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="mt-2 text-sm text-muted-foreground">Loading suppliers...</p>
               </div>
             </div>
