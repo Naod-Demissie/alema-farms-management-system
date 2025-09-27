@@ -21,6 +21,8 @@ export interface FilterParams {
   role?: string;
   isActive?: boolean;
   dateRange?: DateRange;
+  page?: number;
+  limit?: number;
 }
 
 // Staff Invitation Types

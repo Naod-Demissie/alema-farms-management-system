@@ -53,7 +53,8 @@ export const checkIn = async (staffId: string, location?: string): Promise<ApiRe
       data: {
         staffId,
         date: new Date(),
-        status: "Present"
+        status: "Present",
+        checkIn: new Date()
       }
     });
 
@@ -121,11 +122,19 @@ export const checkOut = async (staffId: string, location?: string): Promise<ApiR
       };
     }
 
+    // Calculate hours worked
+    const checkOutTime = new Date();
+    const hoursWorked = attendance.checkIn 
+      ? (checkOutTime.getTime() - attendance.checkIn.getTime()) / (1000 * 60 * 60)
+      : null;
+
     // Update attendance record
     const updatedAttendance = await prisma.attendance.update({
       where: { id: attendance.id },
       data: {
-        status: "Checked Out"
+        status: "Checked Out",
+        checkOut: checkOutTime,
+        hours: hoursWorked
       }
     });
 
@@ -509,6 +518,46 @@ export const getAttendanceReports = async (filters: AttendanceFilters = {}): Pro
     return {
       success: false,
       message: e.message || "Failed to generate attendance report"
+    };
+  }
+};
+
+// Delete attendance record (for undo functionality)
+export const deleteAttendance = async (attendanceId: string): Promise<ApiResponse> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return {
+        success: false,
+        message: "Authentication required"
+      };
+    }
+
+    const currentUser = session.user as any;
+    
+    // Only admin can delete attendance records
+    if (currentUser.role !== "ADMIN") {
+      return {
+        success: false,
+        message: "Insufficient permissions"
+      };
+    }
+
+    // Delete the attendance record
+    await prisma.attendance.delete({
+      where: { id: attendanceId }
+    });
+
+    return {
+      success: true,
+      message: "Attendance record deleted successfully"
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to delete attendance record"
     };
   }
 };

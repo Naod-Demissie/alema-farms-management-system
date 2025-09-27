@@ -17,7 +17,6 @@ import {
   Utensils,
   DollarSign,
   BarChart3,
-  FileText,
   Settings,
   Eye,
   Download,
@@ -74,7 +73,6 @@ export function QuickSearch({ onResultSelect }: QuickSearchProps) {
     { id: "flock-analytics", title: "Flock Analytics", description: "View flock performance metrics", category: "Flock Management", href: "/flocks?tab=analytics", icon: BarChart3, type: "page" },
     
     // Health & Veterinary
-    { id: "record-vaccination", title: "Record Vaccination", description: "Log vaccination details", category: "Health & Veterinary", href: "/health", icon: Heart, type: "action" },
     { id: "mortality-record", title: "Mortality Record", description: "Record bird deaths", category: "Health & Veterinary", href: "/health?tab=mortality", icon: Heart, type: "action" },
     
     // Production Management
@@ -90,7 +88,6 @@ export function QuickSearch({ onResultSelect }: QuickSearchProps) {
     // Financial Management
     { id: "add-expense", title: "Add Expense", description: "Record farm expenses", category: "Financial Management", href: "/financial", icon: DollarSign, type: "action" },
     { id: "record-revenue", title: "Record Revenue", description: "Log income from sales", category: "Financial Management", href: "/financial", icon: DollarSign, type: "action" },
-    { id: "financial-reports", title: "Financial Reports", description: "Generate financial reports", category: "Financial Management", href: "/reports?tab=financial", icon: FileText, type: "page" },
     
     // Staff Management
     { id: "add-staff", title: "Add Staff Member", description: "Register new staff member", category: "Staff Management", href: "/staff", icon: UserPlus, type: "action" },

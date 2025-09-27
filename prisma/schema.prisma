@@ -106,11 +106,14 @@ model Payroll {
 }
 
 model Attendance {
-  id      String   @id @default(uuid())
-  staffId String
-  date    DateTime
-  status  String
-  staff   Staff    @relation(fields: [staffId], references: [id])
+  id       String   @id @default(uuid())
+  staffId  String
+  date     DateTime
+  status   String
+  checkIn  DateTime?
+  checkOut DateTime?
+  hours    Float?
+  staff    Staff    @relation(fields: [staffId], references: [id])
 
   @@unique([staffId, date])
 }
