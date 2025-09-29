@@ -148,9 +148,10 @@ export async function getExpenses(filters: FinancialFilters = {}) {
   try {
     const where: any = {};
     
-    if (filters.flockId) {
-      where.flockId = filters.flockId;
-    }
+    // Note: Expenses don't have flockId field - they are farm-wide records
+    // if (filters.flockId) {
+    //   where.flockId = filters.flockId;
+    // }
     
     if (filters.category) {
       where.category = filters.category;
@@ -348,9 +349,10 @@ export async function getRevenue(filters: FinancialFilters = {}) {
   try {
     const where: any = {};
     
-    if (filters.flockId) {
-      where.flockId = filters.flockId;
-    }
+    // Note: Revenue doesn't have flockId field - they are farm-wide records
+    // if (filters.flockId) {
+    //   where.flockId = filters.flockId;
+    // }
     
     if (filters.source) {
       where.source = filters.source;
@@ -492,39 +494,36 @@ export async function getFlockFinancialSummaries(filters: FinancialFilters = {})
 
     const summaries: FlockFinancialSummary[] = [];
 
+    // Get farm-wide expenses and revenue (since they don't have flockId)
+    const expensesResult = await getExpenses(filters);
+    const revenueResult = await getRevenue(filters);
+
+    if (!expensesResult.success || !revenueResult.success) {
+      return { success: false, message: "Failed to fetch financial data", data: [] };
+    }
+
+    const allExpenses = expensesResult.data || [];
+    const allRevenue = revenueResult.data || [];
+
+    // Calculate total farm expenses and revenue
+    const totalFarmExpenses = allExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalFarmRevenue = allRevenue.reduce((sum, rev) => sum + rev.amount, 0);
+
     for (const flock of flocks) {
-      // Get expenses for this flock (expenses can be filtered by flockId)
-      const flockExpensesFilters = { ...filters, flockId: flock.id };
-      const expensesResult = await getExpenses(flockExpensesFilters);
+      // Since expenses and revenue are farm-wide, we'll distribute them proportionally
+      // based on flock count or use a different allocation method
+      const flockCount = flocks.length;
+      const flockExpenses = flockCount > 0 ? totalFarmExpenses / flockCount : 0;
+      const flockRevenue = flockCount > 0 ? totalFarmRevenue / flockCount : 0;
 
-      if (!expensesResult.success) {
-        continue; // Skip this flock if expenses fetch failed
-      }
-
-      const expenses = expensesResult.data || [];
-      const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-
-      // For revenue, we can't filter by flockId since Revenue model doesn't have that field
-      // Instead, we'll get all revenue and calculate a proportional share based on flock performance
-      // or simply show total farm revenue (this depends on business logic)
-      
-      // Option 1: Get all revenue (farm-wide)
-      const revenueResult = await getRevenue(filters);
-      const revenue = revenueResult.success ? (revenueResult.data || []) : [];
-      
-      // Option 2: Calculate flock-specific revenue based on production records
-      // This would require joining with production tables to estimate revenue per flock
-      
-      // For now, we'll use farm-wide revenue and let the business logic decide how to allocate it
-      const totalRevenue = revenue.reduce((sum, rev) => sum + rev.amount, 0);
-      const netProfit = totalRevenue - totalExpenses;
-      const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+      const netProfit = flockRevenue - flockExpenses;
+      const profitMargin = flockRevenue > 0 ? (netProfit / flockRevenue) * 100 : 0;
 
       summaries.push({
         flockId: flock.id,
         batchCode: flock.batchCode,
-        totalExpenses,
-        totalRevenue, // This is farm-wide revenue, not flock-specific
+        totalExpenses: flockExpenses,
+        totalRevenue: flockRevenue,
         netProfit,
         profitMargin,
         startDate: flock.arrivalDate,

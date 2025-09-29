@@ -18,16 +18,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Settings,
   Palette,
   Globe,
-  Save,
   Monitor,
   Moon,
   Sun,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import { updatePreferences, getUserPreferences } from "@/server/settings";
+import { updateUserPreferences, getUserPreferences } from "@/server/settings";
 
 interface PreferencesSettingsProps {}
 
@@ -66,7 +66,7 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const result = await updatePreferences(formData);
+      const result = await updateUserPreferences(formData);
 
       if (result.success) {
         toast.success("Preferences updated successfully");
@@ -75,8 +75,7 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
         toast.error(result.message || "Failed to update preferences");
       }
     } catch (error) {
-      console.error("Error updating preferences:", error);
-      toast.error("Failed to update preferences");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -89,40 +88,47 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            Theme
+            Appearance
           </CardTitle>
           <CardDescription>
-            Choose your preferred theme for the interface.
+            Customize how the application looks and feels
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Theme</Label>
-            <Select value={theme} onValueChange={handleThemeChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">
-                  <div className="flex items-center gap-2">
-                    <Sun className="h-4 w-4" />
-                    Light
-                  </div>
-                </SelectItem>
-                <SelectItem value="dark">
-                  <div className="flex items-center gap-2">
-                    <Moon className="h-4 w-4" />
-                    Dark
-                  </div>
-                </SelectItem>
-                <SelectItem value="system">
-                  <div className="flex items-center gap-2">
-                    <Monitor className="h-4 w-4" />
-                    System
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="theme">Theme</Label>
+            <div className="flex gap-2">
+              <Button
+                variant={theme === "light" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleThemeChange("light")}
+                className="flex items-center gap-2"
+              >
+                <Sun className="h-4 w-4" />
+                Light
+              </Button>
+              <Button
+                variant={theme === "dark" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleThemeChange("dark")}
+                className="flex items-center gap-2"
+              >
+                <Moon className="h-4 w-4" />
+                Dark
+              </Button>
+              <Button
+                variant={theme === "system" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleThemeChange("system")}
+                className="flex items-center gap-2"
+              >
+                <Monitor className="h-4 w-4" />
+                System
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Choose your preferred color scheme
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -132,21 +138,21 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Language
+            Language & Region
           </CardTitle>
           <CardDescription>
-            Select your preferred language for the interface.
+            Set your preferred language
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Language</Label>
+            <Label htmlFor="language">Language</Label>
             <Select
               value={formData.language}
               onValueChange={(value) => handleInputChange("language", value)}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
@@ -154,30 +160,34 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
                 <SelectItem value="om">Afaan Oromoo</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-sm text-muted-foreground">
+              Choose your preferred language
+            </p>
           </div>
         </CardContent>
       </Card>
 
       {/* Save Button */}
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges || isLoading}
-          className="min-w-[120px]"
-        >
-          {isLoading ? (
-            <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              Save Preferences
-            </>
-          )}
-        </Button>
-      </div>
+      {hasChanges && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-800">
+                  You have unsaved changes
+                </p>
+                <p className="text-sm text-blue-700">
+                  Don't forget to save your preferences
+                </p>
+              </div>
+              <Button onClick={handleSave} disabled={isLoading}>
+                <Settings className="h-4 w-4 mr-2" />
+                {isLoading ? "Saving..." : "Save Preferences"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { AttendanceFilters, CreateAttendanceData, UpdateAttendanceData, ApiResponse, PaginatedResponse } from "./types";
+import { getServerSession } from "@/lib/auth";
 
 // Check in staff member
 export const checkIn = async (staffId: string, location?: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
@@ -17,31 +18,53 @@ export const checkIn = async (staffId: string, location?: string): Promise<ApiRe
       };
     }
 
-    const currentUser = session.user as any;
-    
-    // Check if user can check in (must be the staff member themselves or admin)
-    if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
+    const user = session.user;
+
+    // Check if user has permission to check in
+    if (user.role !== "ADMIN" && user.id !== staffId) {
       return {
         success: false,
-        message: "Insufficient permissions"
+        message: "You can only check in yourself"
       };
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Check if staff exists
+    const staff = await prisma.staff.findUnique({
+      where: { id: staffId }
+    });
+
+    if (!staff) {
+      return {
+        success: false,
+        message: "Staff member not found"
+      };
+    }
+
+    if (!staff.isActive) {
+      return {
+        success: false,
+        message: "Inactive staff members cannot check in"
+      };
+    }
 
     // Check if already checked in today
-    const existingAttendance = await prisma.attendance.findFirst({
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const existingCheckIn = await prisma.attendance.findFirst({
       where: {
         staffId,
         date: {
           gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-        }
+          lt: tomorrow
+        },
+        checkOut: null
       }
     });
 
-    if (existingAttendance) {
+    if (existingCheckIn) {
       return {
         success: false,
         message: "Already checked in today"
@@ -53,8 +76,8 @@ export const checkIn = async (staffId: string, location?: string): Promise<ApiRe
       data: {
         staffId,
         date: new Date(),
-        status: "Present",
-        checkIn: new Date()
+        checkIn: new Date(),
+        status: "PRESENT"
       }
     });
 
@@ -75,7 +98,7 @@ export const checkIn = async (staffId: string, location?: string): Promise<ApiRe
 // Check out staff member
 export const checkOut = async (staffId: string, location?: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
@@ -84,57 +107,64 @@ export const checkOut = async (staffId: string, location?: string): Promise<ApiR
       };
     }
 
-    const currentUser = session.user as any;
-    
-    // Check if user can check out (must be the staff member themselves or admin)
-    if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
+    const user = session.user;
+
+    // Check if user has permission to check out
+    if (user.role !== "ADMIN" && user.id !== staffId) {
       return {
         success: false,
-        message: "Insufficient permissions"
+        message: "You can only check out yourself"
       };
     }
 
+    // Check if staff exists
+    const staff = await prisma.staff.findUnique({
+      where: { id: staffId }
+    });
+
+    if (!staff) {
+      return {
+        success: false,
+        message: "Staff member not found"
+      };
+    }
+
+    // Find today's check-in record
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Find today's attendance record
     const attendance = await prisma.attendance.findFirst({
       where: {
         staffId,
         date: {
           gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-        }
+          lt: tomorrow
+        },
+        checkOut: null
       }
     });
 
     if (!attendance) {
       return {
         success: false,
-        message: "No check-in record found for today"
-      };
-    }
-
-    if (attendance.status === "Checked Out") {
-      return {
-        success: false,
-        message: "Already checked out today"
+        message: "No active check-in found for today"
       };
     }
 
     // Calculate hours worked
     const checkOutTime = new Date();
-    const hoursWorked = attendance.checkIn 
-      ? (checkOutTime.getTime() - attendance.checkIn.getTime()) / (1000 * 60 * 60)
-      : null;
+    const hoursWorked = attendance.checkIn ? 
+      (checkOutTime.getTime() - attendance.checkIn.getTime()) / (1000 * 60 * 60) : 0;
 
-    // Update attendance record
+    // Update attendance record with check-out time
     const updatedAttendance = await prisma.attendance.update({
       where: { id: attendance.id },
       data: {
-        status: "Checked Out",
         checkOut: checkOutTime,
-        hours: hoursWorked
+        hours: hoursWorked,
+        status: "COMPLETED"
       }
     });
 
@@ -152,57 +182,61 @@ export const checkOut = async (staffId: string, location?: string): Promise<ApiR
   }
 };
 
-// Get attendance records with filters
+// Get attendance records with filtering and pagination
 export const getAttendance = async (filters: AttendanceFilters = {}): Promise<PaginatedResponse<any>> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
         success: false,
-        message: "Authentication required"
+        message: "Authentication required",
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
       };
     }
 
-    const currentUser = session.user as any;
-    const { page = 1, limit = 10, staffId, status, dateRange, search } = filters;
-    const offset = (page - 1) * limit;
+    const user = session.user;
 
-    // Build where clause
+    // Check if user has permission to view attendance
+    if (user.role !== "ADMIN" && user.role !== "VETERINARIAN") {
+      return {
+        success: false,
+        message: "Insufficient permissions to view attendance records",
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
+      };
+    }
+
+    const { page = 1, limit = 10 } = filters;
+    const skip = (page - 1) * limit;
+
     const where: any = {};
 
-    if (staffId) {
-      where.staffId = staffId;
-    } else if (currentUser.role !== "ADMIN") {
-      // Non-admin users can only see their own attendance
-      where.staffId = currentUser.id;
+    if (filters.staffId) {
+      where.staffId = filters.staffId;
     }
 
-    if (status) {
-      where.status = status;
+    if (filters.dateRange) {
+      where.date = {};
+      if (filters.dateRange.start) {
+        where.date.gte = filters.dateRange.start;
+      }
+      if (filters.dateRange.end) {
+        where.date.lte = filters.dateRange.end;
+      }
     }
 
-    if (dateRange) {
-      where.date = {
-        gte: dateRange.start,
-        lte: dateRange.end
-      };
+    if (filters.location) {
+      where.status = { contains: filters.location, mode: 'insensitive' };
     }
 
-    if (search) {
-      where.staff = {
-        OR: [
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-          { name: { contains: search, mode: 'insensitive' } }
-        ]
-      };
-    }
-
-    // Get attendance records with pagination
     const [attendance, total] = await Promise.all([
       prisma.attendance.findMany({
         where,
+        skip,
+        take: limit,
+        orderBy: { date: 'desc' },
         include: {
           staff: {
             select: {
@@ -210,15 +244,11 @@ export const getAttendance = async (filters: AttendanceFilters = {}): Promise<Pa
               firstName: true,
               lastName: true,
               name: true,
+              email: true,
               role: true
             }
           }
-        },
-        orderBy: {
-          date: 'desc'
-        },
-        skip: offset,
-        take: limit
+        }
       }),
       prisma.attendance.count({ where })
     ]);
@@ -237,15 +267,17 @@ export const getAttendance = async (filters: AttendanceFilters = {}): Promise<Pa
     const e = error as Error;
     return {
       success: false,
-      message: e.message || "Failed to fetch attendance records"
+      message: e.message || "Failed to fetch attendance records",
+      data: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
     };
   }
 };
 
-// Get staff attendance history
+// Get attendance records for a specific staff member
 export const getStaffAttendance = async (staffId: string, dateRange?: { start: Date; end: Date }): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
@@ -254,13 +286,25 @@ export const getStaffAttendance = async (staffId: string, dateRange?: { start: D
       };
     }
 
-    const currentUser = session.user as any;
-    
-    // Check permissions
-    if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
+    const user = session.user;
+
+    // Check if user has permission to view this staff's attendance
+    if (user.role !== "ADMIN" && user.role !== "VETERINARIAN" && user.id !== staffId) {
       return {
         success: false,
-        message: "Insufficient permissions"
+        message: "Insufficient permissions to view this staff member's attendance"
+      };
+    }
+
+    // Check if staff exists
+    const staff = await prisma.staff.findUnique({
+      where: { id: staffId }
+    });
+
+    if (!staff) {
+      return {
+        success: false,
+        message: "Staff member not found"
       };
     }
 
@@ -275,6 +319,7 @@ export const getStaffAttendance = async (staffId: string, dateRange?: { start: D
 
     const attendance = await prisma.attendance.findMany({
       where,
+      orderBy: { date: 'desc' },
       include: {
         staff: {
           select: {
@@ -282,12 +327,10 @@ export const getStaffAttendance = async (staffId: string, dateRange?: { start: D
             firstName: true,
             lastName: true,
             name: true,
+            email: true,
             role: true
           }
         }
-      },
-      orderBy: {
-        date: 'desc'
       }
     });
 
@@ -304,10 +347,10 @@ export const getStaffAttendance = async (staffId: string, dateRange?: { start: D
   }
 };
 
-// Update attendance record (Admin only)
+// Update attendance record
 export const updateAttendance = async (attendanceId: string, data: UpdateAttendanceData): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
@@ -316,31 +359,48 @@ export const updateAttendance = async (attendanceId: string, data: UpdateAttenda
       };
     }
 
-    const currentUser = session.user as any;
-    
-    if (currentUser.role !== "ADMIN") {
+    const user = session.user;
+
+    // Check if user has permission to update attendance
+    if (user.role !== "ADMIN") {
       return {
         success: false,
-        message: "Insufficient permissions"
+        message: "Only administrators can update attendance records"
       };
     }
 
-    const attendance = await prisma.attendance.findUnique({
+    // Check if attendance record exists
+    const existingAttendance = await prisma.attendance.findUnique({
       where: { id: attendanceId }
     });
 
-    if (!attendance) {
+    if (!existingAttendance) {
       return {
         success: false,
         message: "Attendance record not found"
       };
     }
 
+    const updateData: any = {};
+    
+    if (data.checkInTime) updateData.checkIn = data.checkInTime;
+    if (data.checkOutTime) updateData.checkOut = data.checkOutTime;
+    if (data.location) updateData.status = data.location;
+
     const updatedAttendance = await prisma.attendance.update({
       where: { id: attendanceId },
-      data: {
-        status: data.status || attendance.status,
-        date: data.checkInTime || attendance.date
+      data: updateData,
+      include: {
+        staff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
       }
     });
 
@@ -358,10 +418,10 @@ export const updateAttendance = async (attendanceId: string, data: UpdateAttenda
   }
 };
 
-// Get attendance statistics
+// Get attendance statistics for a staff member
 export const getAttendanceStats = async (staffId: string, period: string = 'month'): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
@@ -370,16 +430,29 @@ export const getAttendanceStats = async (staffId: string, period: string = 'mont
       };
     }
 
-    const currentUser = session.user as any;
-    
-    // Check permissions
-    if (currentUser.id !== staffId && currentUser.role !== "ADMIN") {
+    const user = session.user;
+
+    // Check if user has permission to view this staff's stats
+    if (user.role !== "ADMIN" && user.role !== "VETERINARIAN" && user.id !== staffId) {
       return {
         success: false,
-        message: "Insufficient permissions"
+        message: "Insufficient permissions to view this staff member's statistics"
       };
     }
 
+    // Check if staff exists
+    const staff = await prisma.staff.findUnique({
+      where: { id: staffId }
+    });
+
+    if (!staff) {
+      return {
+        success: false,
+        message: "Staff member not found"
+      };
+    }
+
+    // Calculate date range based on period
     const now = new Date();
     let startDate: Date;
 
@@ -394,34 +467,46 @@ export const getAttendanceStats = async (staffId: string, period: string = 'mont
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
       default:
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Default to 30 days
     }
 
-    const attendance = await prisma.attendance.findMany({
-      where: {
-        staffId,
-        date: {
-          gte: startDate,
-          lte: now
-        }
+    const where = {
+      staffId,
+      date: {
+        gte: startDate,
+        lte: now
       }
-    });
+    };
 
-    const totalDays = attendance.length;
-    const presentDays = attendance.filter(a => a.status === "Present" || a.status === "Checked Out").length;
-    const absentDays = attendance.filter(a => a.status === "Absent").length;
-    const leaveDays = attendance.filter(a => a.status === "On Leave").length;
+    const [totalDays, completedDays, totalHours] = await Promise.all([
+      prisma.attendance.count({ where }),
+      prisma.attendance.count({
+        where: {
+          ...where,
+          checkOut: { not: null }
+        }
+      }),
+      prisma.attendance.aggregate({
+        where: {
+          ...where,
+          checkOut: { not: null }
+        },
+        _sum: {
+          hours: true
+        }
+      })
+    ]);
 
-    const attendanceRate = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;
+    const averageHoursPerDay = completedDays > 0 ? (totalHours._sum.hours || 0) / completedDays : 0;
 
     return {
       success: true,
       data: {
         totalDays,
-        presentDays,
-        absentDays,
-        leaveDays,
-        attendanceRate: Math.round(attendanceRate * 100) / 100
+        completedDays,
+        totalHours: totalHours._sum.hours || 0,
+        averageHoursPerDay,
+        period
       }
     };
   } catch (error) {
@@ -436,7 +521,7 @@ export const getAttendanceStats = async (staffId: string, period: string = 'mont
 // Get attendance reports
 export const getAttendanceReports = async (filters: AttendanceFilters = {}): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
@@ -445,36 +530,36 @@ export const getAttendanceReports = async (filters: AttendanceFilters = {}): Pro
       };
     }
 
-    const currentUser = session.user as any;
-    
-    if (currentUser.role !== "ADMIN") {
+    const user = session.user;
+
+    // Check if user has permission to view reports
+    if (user.role !== "ADMIN" && user.role !== "VETERINARIAN") {
       return {
         success: false,
-        message: "Insufficient permissions"
+        message: "Insufficient permissions to view attendance reports"
       };
     }
-
-    const { staffId, dateRange, status } = filters;
 
     const where: any = {};
 
-    if (staffId) {
-      where.staffId = staffId;
+    if (filters.staffId) {
+      where.staffId = filters.staffId;
     }
 
-    if (status) {
-      where.status = status;
+    if (filters.dateRange) {
+      where.date = {};
+      if (filters.dateRange.start) {
+        where.date.gte = filters.dateRange.start;
+      }
+      if (filters.dateRange.end) {
+        where.date.lte = filters.dateRange.end;
+      }
     }
 
-    if (dateRange) {
-      where.date = {
-        gte: dateRange.start,
-        lte: dateRange.end
-      };
-    }
-
+    // Get attendance records with staff information
     const attendance = await prisma.attendance.findMany({
       where,
+      orderBy: { date: 'desc' },
       include: {
         staff: {
           select: {
@@ -482,50 +567,64 @@ export const getAttendanceReports = async (filters: AttendanceFilters = {}): Pro
             firstName: true,
             lastName: true,
             name: true,
+            email: true,
             role: true
           }
         }
-      },
-      orderBy: {
-        date: 'desc'
       }
     });
 
-    // Generate summary statistics
-    const summary = {
-      totalRecords: attendance.length,
-      presentCount: attendance.filter(a => a.status === "Present" || a.status === "Checked Out").length,
-      absentCount: attendance.filter(a => a.status === "Absent").length,
-      leaveCount: attendance.filter(a => a.status === "On Leave").length,
-      byRole: {} as Record<string, number>
-    };
+    // Calculate summary statistics
+    const totalRecords = attendance.length;
+    const completedRecords = attendance.filter(record => record.checkOut !== null).length;
+    const totalHours = attendance.reduce((sum, record) => sum + (record.hours || 0), 0);
+    const averageHoursPerDay = completedRecords > 0 ? totalHours / completedRecords : 0;
 
-    // Count by role
-    attendance.forEach(record => {
-      const role = record.staff.role;
-      summary.byRole[role] = (summary.byRole[role] || 0) + 1;
-    });
+    // Group by staff member
+    const staffSummary = attendance.reduce((acc, record) => {
+      const staffId = record.staffId;
+      if (!acc[staffId]) {
+        acc[staffId] = {
+          staff: record.staff,
+          totalDays: 0,
+          completedDays: 0,
+          totalHours: 0
+        };
+      }
+      acc[staffId].totalDays++;
+      if (record.checkOut) {
+        acc[staffId].completedDays++;
+        acc[staffId].totalHours += record.hours || 0;
+      }
+      return acc;
+    }, {} as any);
 
     return {
       success: true,
       data: {
-        records: attendance,
-        summary
+        summary: {
+          totalRecords,
+          completedRecords,
+          totalHours,
+          averageHoursPerDay
+        },
+        staffSummary: Object.values(staffSummary),
+        attendance
       }
     };
   } catch (error) {
     const e = error as Error;
     return {
       success: false,
-      message: e.message || "Failed to generate attendance report"
+      message: e.message || "Failed to fetch attendance reports"
     };
   }
 };
 
-// Delete attendance record (for undo functionality)
+// Delete attendance record
 export const deleteAttendance = async (attendanceId: string): Promise<ApiResponse> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {
@@ -534,17 +633,28 @@ export const deleteAttendance = async (attendanceId: string): Promise<ApiRespons
       };
     }
 
-    const currentUser = session.user as any;
-    
-    // Only admin can delete attendance records
-    if (currentUser.role !== "ADMIN") {
+    const user = session.user;
+
+    // Check if user has permission to delete attendance
+    if (user.role !== "ADMIN") {
       return {
         success: false,
-        message: "Insufficient permissions"
+        message: "Only administrators can delete attendance records"
       };
     }
 
-    // Delete the attendance record
+    // Check if attendance record exists
+    const existingAttendance = await prisma.attendance.findUnique({
+      where: { id: attendanceId }
+    });
+
+    if (!existingAttendance) {
+      return {
+        success: false,
+        message: "Attendance record not found"
+      };
+    }
+
     await prisma.attendance.delete({
       where: { id: attendanceId }
     });

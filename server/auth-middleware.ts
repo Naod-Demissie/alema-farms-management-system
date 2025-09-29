@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { ApiResponse } from "./types";
+import { getServerSession } from "@/lib/auth";
 
 export interface AuthenticatedUser {
   id: string;
@@ -17,7 +18,8 @@ export interface AuthenticatedUser {
 // Get authenticated user session
 export const getAuthenticatedUser = async (): Promise<{ success: boolean; user?: AuthenticatedUser; message?: string }> => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    // Use cached session instead of auth.api.getSession
+    const session = await getServerSession();
 
     if (!session?.user) {
       return {

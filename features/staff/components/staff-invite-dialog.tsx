@@ -30,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useStaff } from "../context/staff-context";
-import { inviteStaff } from "@/server/staff";
+import { createInvite } from "@/server/staff";
 import { toast } from "sonner";
 
 const inviteFormSchema = z.object({
@@ -55,7 +55,7 @@ export function StaffInviteDialog() {
   const onSubmit = async (data: InviteFormValues) => {
     setIsLoading(true);
     try {
-      const result = await inviteStaff(data.email, data.role);
+      const result = await createInvite(data);
       
       if (result.success) {
         toast.success("Invitation sent successfully!");
@@ -79,7 +79,7 @@ export function StaffInviteDialog() {
         <DialogHeader>
           <DialogTitle>Invite Staff Member</DialogTitle>
           <DialogDescription>
-            Send an invitation email to a new staff member. They will receive a magic link to complete their registration.
+            Send an invitation to a new staff member to join the poultry management system.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -92,7 +92,7 @@ export function StaffInviteDialog() {
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter email address"
+                      placeholder="staff@example.com"
                       type="email"
                       {...field}
                     />
@@ -141,4 +141,3 @@ export function StaffInviteDialog() {
     </Dialog>
   );
 }
-

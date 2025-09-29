@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
+import { sessionCache } from './session-cache';
 
 export const auth = betterAuth({
     // Configure user model to use Staff
@@ -153,35 +154,38 @@ export const auth = betterAuth({
 // Server-side session function for use in server actions
 export async function getServerSession() {
   try {
+    // Use the working auth.api.getSession as base
     const { headers } = await import("next/headers");
-    const cookieStore = await headers();
-    const sessionToken = cookieStore.get("better-auth.session_token")?.value;
+    const session = await auth.api.getSession({ headers: await headers() });
     
-    if (!sessionToken) {
+    if (!session?.user) {
       return null;
     }
-
-    // Get session from database
-    const session = await prisma.sessions.findUnique({
-      where: { token: sessionToken },
-      include: {
-        staff: true,
-      },
-    });
-
-    if (!session || session.expiresAt < new Date()) {
-      return null;
+    
+    // Check cache first
+    const cachedSession = sessionCache.get(session.session.token);
+    if (cachedSession) {
+      return {
+        user: cachedSession.user,
+        session: cachedSession.session,
+      };
     }
 
-    return {
-      user: session.staff,
+    // Cache the session data
+    const sessionData = {
+      user: session.user,
       session: {
-        id: session.id,
-        userId: session.userId,
-        expiresAt: session.expiresAt,
-        token: session.token,
+        id: session.session.id,
+        userId: session.session.userId,
+        expiresAt: session.session.expiresAt,
+        token: session.session.token,
       },
     };
+
+    // Cache the session
+    sessionCache.set(session.session.token, sessionData);
+
+    return sessionData;
   } catch (error) {
     console.error("Error getting server session:", error);
     return null;

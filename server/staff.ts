@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { getAuthenticatedUser } from "./auth-middleware";
 import { ApiResponse } from "./types";
+import { getServerSession } from "@/lib/auth";
+import { sessionCache } from "@/lib/session-cache";
 
 // ===================
 // Authentication Actions
@@ -12,11 +14,12 @@ import { ApiResponse } from "./types";
 
 export const signIn = async (email: string, password: string) => {
     try {
-        await auth.api.signInEmail({
+        const result = await auth.api.signInEmail({
             body: {
                 email,
                 password,
-            }
+            },
+            headers: await headers()
         });
 
         return {
@@ -25,7 +28,6 @@ export const signIn = async (email: string, password: string) => {
         };
     } catch (error) {
         const e = error as Error;
-        console.log(e)
 
         return {
             success: false,
@@ -39,11 +41,18 @@ export const signIn = async (email: string, password: string) => {
 
 export const signOut = async () => {
     try {
-        await auth.api.signOut({ headers: {} });
+        const session = await getServerSession();
+        
+        if (session) {
+            // Clear from cache
+            sessionCache.delete(session.session.token);
+        }
+
+        await auth.api.signOut({ headers: await headers() });
         
         return {
             success: true,
-            message: "Signed out successfully."
+            message: "Successfully signed out."
         };
     } catch (error) {
         const e = error as Error;
@@ -60,7 +69,7 @@ export const signOut = async () => {
 
 export const getCurrentSession = async () => {
     try {
-        const session = await auth.api.getSession({ headers: await headers() });
+        const session = await getServerSession();
         
         if (!session) {
             return {
@@ -87,7 +96,7 @@ export const getCurrentSession = async () => {
 // Staff Management Actions
 // ===================
 
-export const getStaff = async () => {
+export const getStaff = async (filters: any = {}, pagination: any = {}, sort: any = { field: 'createdAt', direction: 'desc' }) => {
   try {
     const authResult = await getAuthenticatedUser();
     if (!authResult.success) {
@@ -97,35 +106,267 @@ export const getStaff = async () => {
       };
     }
 
-    const staff = await prisma.staff.findMany({
-            orderBy: {
-                createdAt: "desc",
-            },
+        const user = authResult.user!;
+
+        // Check if user has permission to view staff
+        if (user.role !== "ADMIN" && user.role !== "VETERINARIAN") {
+            return {
+                success: false,
+                message: "Insufficient permissions to view staff"
+            };
+        }
+
+        const { page = 1, limit = 10 } = pagination;
+        const { field = 'createdAt', direction = 'desc' } = sort;
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+
+        if (filters.role) {
+            where.role = filters.role;
+        }
+
+        if (filters.isActive !== undefined) {
+            where.isActive = filters.isActive;
+        }
+
+        if (filters.search) {
+            where.OR = [
+                { firstName: { contains: filters.search, mode: 'insensitive' } },
+                { lastName: { contains: filters.search, mode: 'insensitive' } },
+                { email: { contains: filters.search, mode: 'insensitive' } }
+            ];
+        }
+
+        const [staff, total] = await Promise.all([
+            prisma.staff.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { [field]: direction },
             select: {
                 id: true,
                 firstName: true,
                 lastName: true,
                 name: true,
                 email: true,
-                emailVerified: true,
-                image: true,
                 phoneNumber: true,
                 role: true,
                 isActive: true,
                 createdAt: true,
                 updatedAt: true,
-            },
-        });
+                }
+            }),
+            prisma.staff.count({ where })
+        ]);
 
         return {
             success: true,
-            data: staff
+            data: staff,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit)
+            }
         };
     } catch (error) {
         const e = error as Error;
         return {
             success: false,
             message: e.message || "Failed to fetch staff"
+        };
+    }
+};
+
+export const createStaff = async (data: any) => {
+    try {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success) {
+            return {
+                success: false,
+                message: authResult.message || "Authentication required"
+            };
+        }
+
+        const user = authResult.user!;
+
+        // Check if user has permission to create staff
+        if (user.role !== "ADMIN") {
+            return {
+                success: false,
+                message: "Only administrators can create staff"
+            };
+        }
+
+        // Check if email already exists
+        const existingStaff = await prisma.staff.findUnique({
+            where: { email: data.email }
+        });
+
+        if (existingStaff) {
+            return {
+                success: false,
+                message: "A staff member with this email already exists"
+            };
+        }
+
+        const staff = await prisma.staff.create({
+            data: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                name: `${data.firstName} ${data.lastName}`,
+                email: data.email,
+                phoneNumber: data.phoneNumber,
+                role: data.role || 'WORKER',
+                isActive: data.isActive !== undefined ? data.isActive : true,
+            }
+        });
+
+        return {
+            success: true,
+            data: staff,
+            message: "Staff member created successfully"
+        };
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to create staff member"
+        };
+    }
+};
+
+export const updateStaff = async (id: string, data: any) => {
+    try {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success) {
+            return {
+                success: false,
+                message: authResult.message || "Authentication required"
+            };
+        }
+
+        const user = authResult.user!;
+
+        // Check if user has permission to update staff
+        if (user.role !== "ADMIN" && user.id !== id) {
+            return {
+                success: false,
+                message: "Insufficient permissions to update this staff member"
+            };
+        }
+
+        // Check if staff exists
+        const existingStaff = await prisma.staff.findUnique({
+            where: { id }
+        });
+
+        if (!existingStaff) {
+            return {
+                success: false,
+                message: "Staff member not found"
+            };
+        }
+
+        // Check if email is being changed and if it already exists
+        if (data.email && data.email !== existingStaff.email) {
+            const emailExists = await prisma.staff.findUnique({
+                where: { email: data.email }
+            });
+
+            if (emailExists) {
+                return {
+                    success: false,
+                    message: "A staff member with this email already exists"
+                };
+            }
+        }
+
+        const updateData: any = {};
+        
+        if (data.firstName) updateData.firstName = data.firstName;
+        if (data.lastName) updateData.lastName = data.lastName;
+        if (data.firstName || data.lastName) {
+            updateData.name = `${data.firstName || existingStaff.firstName} ${data.lastName || existingStaff.lastName}`;
+        }
+        if (data.email) updateData.email = data.email;
+        if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+        if (data.role && user.role === "ADMIN") updateData.role = data.role;
+        if (data.isActive !== undefined && user.role === "ADMIN") updateData.isActive = data.isActive;
+
+        const staff = await prisma.staff.update({
+            where: { id },
+            data: updateData
+        });
+
+        return {
+            success: true,
+            data: staff,
+            message: "Staff member updated successfully"
+        };
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to update staff member"
+        };
+    }
+};
+
+export const deleteStaff = async (id: string) => {
+    try {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success) {
+            return {
+                success: false,
+                message: authResult.message || "Authentication required"
+            };
+        }
+
+        const user = authResult.user!;
+
+        // Check if user has permission to delete staff
+        if (user.role !== "ADMIN") {
+            return {
+                success: false,
+                message: "Only administrators can delete staff"
+            };
+        }
+
+        // Check if staff exists
+        const existingStaff = await prisma.staff.findUnique({
+            where: { id }
+        });
+
+        if (!existingStaff) {
+            return {
+                success: false,
+                message: "Staff member not found"
+            };
+        }
+
+        // Prevent self-deletion
+        if (user.id === id) {
+            return {
+                success: false,
+                message: "You cannot delete your own account"
+            };
+        }
+
+        await prisma.staff.delete({
+            where: { id }
+        });
+
+        return {
+            success: true,
+            message: "Staff member deleted successfully"
+        };
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to delete staff member"
         };
     }
 };
@@ -140,46 +381,30 @@ export const getStaffById = async (id: string) => {
             };
         }
 
-        const currentUser = authResult.user as any;
+        const user = authResult.user!;
         
-        // Check permissions - admin can view anyone, staff can view themselves
-        if (currentUser.id !== id && currentUser.role !== "ADMIN") {
+        // Check if user has permission to view this staff member
+        if (user.role !== "ADMIN" && user.role !== "VETERINARIAN" && user.id !== id) {
             return {
                 success: false,
-                message: "Insufficient permissions"
+                message: "Insufficient permissions to view this staff member"
             };
         }
 
         const staff = await prisma.staff.findUnique({
             where: { id },
-            include: {
-                sessions: {
                     select: {
                         id: true,
+                firstName: true,
+                lastName: true,
+                name: true,
+                email: true,
+                phoneNumber: true,
+                role: true,
+                isActive: true,
                         createdAt: true,
-                        expiresAt: true,
-                        ipAddress: true,
-                        userAgent: true,
-                    },
-                    orderBy: {
-                        createdAt: "desc",
-                    },
-                    take: 3, // Last 3 sessions
-                },
-                treatments: {
-                    select: {
-                        id: true,
-                        disease: true,
-                        medication: true,
-                        response: true,
-                        createdAt: true,
-                    },
-                    orderBy: {
-                        createdAt: "desc",
-                    },
-                    take: 5, // Last 5 treatments
-                },
-            },
+                updatedAt: true,
+            }
         });
 
         if (!staff) {
@@ -202,113 +427,13 @@ export const getStaffById = async (id: string) => {
     }
 };
 
-export const updateStaff = async (
-    id: string,
-    data: {
-        firstName: string;
-        lastName: string;
-        phoneNumber?: string;
-        role?: string;
-        isActive?: boolean;
-        image?: string;
-    }
-) => {
-    try {
-        const authResult = await getAuthenticatedUser();
-        if (!authResult.success) {
-            return {
-                success: false,
-                message: authResult.message || "Authentication required"
-            };
-        }
-
-        const currentUser = authResult.user as any;
-
-        // Check permissions - admin can update anyone, staff can update themselves
-        if (currentUser.role !== "ADMIN" && currentUser.id !== id) {
-            return {
-                success: false,
-                message: "Insufficient permissions"
-            };
-        }
-
-        // Validate required fields
-        if (!data.firstName || !data.lastName) {
-            return {
-                success: false,
-                message: "First name and last name are required"
-            };
-        }
-
-        // Prepare update data
-        let updateData: any = {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            name: `${data.firstName} ${data.lastName}`,
-            phoneNumber: data.phoneNumber,
-        };
-
-        // Include image if provided
-        if (data.image !== undefined) {
-            updateData.image = data.image;
-        }
-
-        // Only admins can change role and active status
-        if (currentUser.role === "ADMIN") {
-            if (data.role && ["ADMIN", "VETERINARIAN", "WORKER"].includes(data.role)) {
-                updateData.role = data.role;
-            }
-            if (typeof data.isActive === "boolean") {
-                updateData.isActive = data.isActive;
-            }
-        }
-
-        const updatedStaff = await prisma.staff.update({
-            where: { id },
-            data: updateData,
-        });
-
-        return {
-            success: true,
-            data: updatedStaff,
-            message: "Staff member updated successfully"
-        };
-    } catch (error) {
-        const e = error as Error;
-        return {
-            success: false,
-            message: e.message || "Failed to update staff member"
-        };
-    }
-};
-
-// Note: Staff invitation logic has been moved to staff-invites.ts
-// This function is kept for backward compatibility but delegates to the centralized service
-export const inviteStaff = async (email: string, role: string) => {
-    // Import the centralized invitation function
-    const { createInvite } = await import('./staff-invites');
-    
-    // Get current user for createdById
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.success || !authResult.user) {
-        return {
-            success: false,
-            message: authResult.message || "Authentication required"
-        };
-    }
-
-    return createInvite({
-        email,
-        role: role as any,
-        createdById: authResult.user.id
-    });
-};
+// ===================
+// Staff Invite Management
+// ===================
 
 export const getPendingInvites = async () => {
     try {
-        const session = await auth.api.getSession({
-            headers: new Headers()
-        });
+        const session = await getServerSession();
 
         if (!session?.user) {
             return {
@@ -317,36 +442,45 @@ export const getPendingInvites = async () => {
             };
         }
 
-        const currentUser = session.user as any;
-        if (currentUser.role !== "ADMIN") {
+        const user = session.user;
+
+        // Check if user has permission to view invites
+        if (user.role !== "ADMIN") {
             return {
                 success: false,
-                message: "Admin access required"
+                message: "Only administrators can view pending invites"
             };
         }
 
-        const pendingInvites = await prisma.invite.findMany({
+        const invites = await prisma.invite.findMany({
             where: {
                 isUsed: false,
                 expiresAt: {
-                    gt: new Date(),
-                },
+                    gt: new Date()
+                }
             },
             orderBy: {
-                createdAt: "desc",
+                createdAt: 'desc'
             },
             select: {
                 id: true,
                 email: true,
                 role: true,
-                expiresAt: true,
                 createdAt: true,
-            },
+                expiresAt: true,
+                createdBy: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        name: true
+                    }
+                }
+            }
         });
 
         return {
             success: true,
-            data: pendingInvites
+            data: invites
         };
     } catch (error) {
         const e = error as Error;
@@ -357,220 +491,194 @@ export const getPendingInvites = async () => {
     }
 };
 
-// ===================
-// Invite Completion Actions
-// ===================
-
-export const validateInvite = async (token: string, email: string) => {
-    try {
-        const invite = await prisma.invite.findUnique({
-            where: { email }
-        });
-
-        if (!invite) {
-            return {
-                success: false,
-                message: "Invitation not found"
-            };
-        }
-
-        if (invite.token !== token) {
-            return {
-                success: false,
-                message: "Invalid invitation token"
-            };
-        }
-
-        if (invite.isUsed) {
-            return {
-                success: false,
-                message: "Invitation has already been used"
-            };
-        }
-
-        if (invite.expiresAt < new Date()) {
-            return {
-                success: false,
-                message: "Invitation has expired"
-            };
-        }
-
-        return {
-            success: true,
-            data: {
-                email: invite.email,
-                role: invite.role,
-                expiresAt: invite.expiresAt,
-            }
-        };
-    } catch (error) {
-        const e = error as Error;
-        return {
-            success: false,
-            message: e.message || "Failed to validate invitation"
-        };
-    }
-};
-
-export const completeStaffRegistration = async (
-    token: string,
-    email: string,
-    staffData: {
-        firstName: string;
-        lastName: string;
-        password: string;
-        phoneNumber?: string;
-        image?: string;
-    }
-) => {
-    try {
-        // First validate the invite
-        const inviteValidation = await validateInvite(token, email);
-        if (!inviteValidation.success) {
-            return inviteValidation;
-        }
-
-        const invite = await prisma.invite.findUnique({
-            where: { email }
-        });
-
-        if (!invite) {
-            return {
-                success: false,
-                message: "Invitation not found"
-            };
-        }
-
-        const name = `${staffData.firstName} ${staffData.lastName}`;
-
-        // Create the staff account using Better Auth
-        try {
-              const result = await auth.api.signUpEmail({
-                body: {
-                  name: name,
-                  email: email,
-                  password: staffData.password,
-                  firstName: staffData.firstName,
-                  lastName: staffData.lastName,
-                  phoneNumber: staffData.phoneNumber,
-                  role: invite.role,
-                  isActive: true,
-
-                },
-              });
-            //   change the role to ADMIN
-              if (result && result.user) {
-                const user = await prisma.staff.update({
-                  where: { id: result.user.id },
-                  data: {
-                    image: staffData.image,
-                    },
-                });
-                console.log("User updated with role:", user);
-              }
-            
-              if (!result) {
-                // log error
-                console.error("Error during sign up:", result);
-              }
-              console.log("Sign up result:", result);
-
-
-
-
-            // Mark invite as used
-            await prisma.invite.update({
-                where: { id: invite.id },
-                data: { isUsed: true }
-            });
-
-            // Sign in the user automatically
-            const signInResult = await signIn(email, staffData.password);
-            
-            return {
-                success: true,
-                message: "Registration completed successfully",
-                data: {
-                    email,
-                    role: invite.role,
-                    signedIn: signInResult.success
-                }
-            };
-
-
-        } catch (authError) {
-            console.error("Failed to create staff account:", authError);
-            return {
-                success: false,
-                message: "Failed to create staff account"
-            };
-        }
-
-    } catch (error) {
-        const e = error as Error;
-        return {
-            success: false,
-            message: e.message || "Failed to complete registration"
-        };
-    }
-};
-
-// Delete staff member
-export const deleteStaff = async (id: string): Promise<ApiResponse> => {
+export const createInvite = async (data: { email: string; role: string }) => {
     try {
         const authResult = await getAuthenticatedUser();
-        if (!authResult.success || !authResult.user) {
+        if (!authResult.success) {
             return {
                 success: false,
                 message: authResult.message || "Authentication required"
             };
         }
 
-        const currentUser = authResult.user as any;
+        const user = authResult.user!;
 
-        // Check permissions - only admin can delete staff
-        if (currentUser.role !== "ADMIN") {
+        // Check if user has permission to create invites
+        if (user.role !== "ADMIN") {
             return {
                 success: false,
-                message: "Insufficient permissions to delete staff"
+                message: "Only administrators can create invites"
             };
         }
 
-        // Check if staff member exists
-        const staff = await prisma.staff.findUnique({
-            where: { id }
+        // Check if email already exists in staff
+        const existingStaff = await prisma.staff.findUnique({
+            where: { email: data.email }
         });
 
-        if (!staff) {
+        if (existingStaff) {
             return {
                 success: false,
-                message: "Staff member not found"
+                message: "A staff member with this email already exists"
             };
         }
 
-        // Prevent deleting self
-        if (currentUser.id === id) {
+        // Check if there's already a pending invite for this email
+        const existingInvite = await prisma.invite.findFirst({
+            where: {
+                email: data.email,
+                isUsed: false,
+                expiresAt: {
+                    gt: new Date()
+                }
+            }
+        });
+
+        if (existingInvite) {
             return {
                 success: false,
-                message: "Cannot delete your own account"
+                message: "A pending invite already exists for this email"
             };
         }
 
-        // Delete staff member
-        await prisma.staff.delete({
-            where: { id }
+        // Create invite
+        const invite = await prisma.invite.create({
+            data: {
+                email: data.email,
+                role: data.role as any, // Cast to StaffRole
+                createdById: user.id,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+                token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+            }
         });
 
         return {
             success: true,
-            message: "Staff member deleted successfully"
+            data: invite,
+            message: "Invite created successfully"
         };
-
     } catch (error) {
         const e = error as Error;
         return {
             success: false,
-            message: e.message || "Failed to delete staff member"
+            message: e.message || "Failed to create invite"
+        };
+    }
+};
+
+export const cancelInvite = async (inviteId: string) => {
+    try {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success) {
+            return {
+                success: false,
+                message: authResult.message || "Authentication required"
+            };
+        }
+
+        const user = authResult.user!;
+
+        // Check if user has permission to cancel invites
+        if (user.role !== "ADMIN") {
+            return {
+                success: false,
+                message: "Only administrators can cancel invites"
+            };
+        }
+
+        // Check if invite exists
+        const existingInvite = await prisma.invite.findUnique({
+            where: { id: inviteId }
+        });
+
+        if (!existingInvite) {
+            return {
+                success: false,
+                message: "Invite not found"
+            };
+        }
+
+        if (existingInvite.isUsed) {
+            return {
+                success: false,
+                message: "Only unused invites can be cancelled"
+            };
+        }
+
+        // Cancel invite by marking as used
+        await prisma.invite.update({
+            where: { id: inviteId },
+            data: { isUsed: true }
+        });
+
+        return {
+            success: true,
+            message: "Invite cancelled successfully"
+        };
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to cancel invite"
+        };
+    }
+};
+
+// ===================
+// Staff Statistics
+// ===================
+
+export const getStaffStatistics = async () => {
+    try {
+        const authResult = await getAuthenticatedUser();
+        if (!authResult.success) {
+            return {
+                success: false,
+                message: authResult.message || "Authentication required"
+            };
+        }
+
+        const user = authResult.user!;
+
+        // Check if user has permission to view statistics
+        if (user.role !== "ADMIN" && user.role !== "VETERINARIAN") {
+            return {
+                success: false,
+                message: "Insufficient permissions to view statistics"
+            };
+        }
+
+        const [totalStaff, activeStaff, inactiveStaff, roleStats] = await Promise.all([
+            prisma.staff.count(),
+            prisma.staff.count({ where: { isActive: true } }),
+            prisma.staff.count({ where: { isActive: false } }),
+            prisma.staff.groupBy({
+                by: ['role'],
+                _count: {
+                    role: true
+                }
+            })
+        ]);
+
+        const roleBreakdown = roleStats.map(stat => ({
+            role: stat.role,
+            count: stat._count.role
+        }));
+
+        return {
+            success: true,
+            data: {
+                totalStaff,
+                activeStaff,
+                inactiveStaff,
+                roleBreakdown
+            }
+        };
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to fetch staff statistics"
         };
     }
 };
