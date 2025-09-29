@@ -107,34 +107,14 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Reports & Analytics
-          </h1>
-          <p className="text-muted-foreground">
-            Comprehensive reports and analytics for all aspects of your poultry
-            farm
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button
-            onClick={() => handleExport("csv")}
-            disabled={isExporting}
-            variant="outline"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-          <Button onClick={() => handleExport("pdf")} disabled={isExporting}>
-            <FileText className="mr-2 h-4 w-4" />
-            Export PDF
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Reports & Analytics
+        </h1>
+        <p className="text-muted-foreground">
+          Comprehensive reports and analytics for all aspects of your poultry
+          farm
+        </p>
       </div>
 
       {/* Main Content Tabs */}
@@ -143,17 +123,17 @@ export default function ReportsPage() {
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 h-auto">
           {reportTabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
               >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
+                <Icon className="h-4 w-4 hidden sm:inline" />
+                <span>{tab.label}</span>
               </TabsTrigger>
             );
           })}

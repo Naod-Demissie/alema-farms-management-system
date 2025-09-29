@@ -24,9 +24,9 @@ export default function FeedManagementPage() {
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="space-y-4"
+        className="space-y-4 sm:space-y-0"
       >
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 h-auto">
           <TabsTrigger value="usage">Feed Usage</TabsTrigger>
           <TabsTrigger value="planning">Feed Planning</TabsTrigger>
           <TabsTrigger value="inventory">Feed Inventory</TabsTrigger>
@@ -34,23 +34,23 @@ export default function FeedManagementPage() {
           <TabsTrigger value="program">Feed Program</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="usage" className="space-y-4">
+        <TabsContent value="usage" className="space-y-4 mt-4 sm:mt-0">
           <FeedUsage />
         </TabsContent>
 
-        <TabsContent value="planning" className="space-y-4">
+        <TabsContent value="planning" className="space-y-4 mt-4 sm:mt-0">
           <FeedPlanning />
         </TabsContent>
 
-        <TabsContent value="inventory" className="space-y-4">
+        <TabsContent value="inventory" className="space-y-4 mt-4 sm:mt-0">
           <FeedInventory />
         </TabsContent>
 
-        <TabsContent value="suppliers" className="space-y-4">
+        <TabsContent value="suppliers" className="space-y-4 mt-4 sm:mt-0">
           <FeedSuppliers />
         </TabsContent>
 
-        <TabsContent value="program" className="space-y-4">
+        <TabsContent value="program" className="space-y-4 mt-4 sm:mt-0">
           <FeedProgram />
         </TabsContent>
       </Tabs>

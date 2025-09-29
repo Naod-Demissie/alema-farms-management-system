@@ -327,216 +327,11 @@ export function MortalityManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Mortality Management</h2>
-          <p className="text-muted-foreground">
-            Track death causes, disposal methods, and post-mortem documentation
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Record
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingRecord ? "Edit Mortality Record" : "Add New Mortality Record"}
-                </DialogTitle>
-                <DialogDescription>
-                  Record mortality details including cause and description.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(editingRecord ? handleUpdate : handleSubmit)} className="space-y-4">
-                  {/* Row 1: Flock ID, Date, and Number of Deaths */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <FormField
-                      control={form.control}
-                      name="flockId"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Flock ID <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full h-10">
-                                <SelectValue placeholder="Select flock" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {flocks.map((flock: any) => (
-                                <SelectItem key={flock.id} value={flock.id}>
-                                  {flock.batchCode}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="date"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Date <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal h-10",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) =>
-                                  date > new Date() || date < new Date("1900-01-01")
-                                }
-                                captionLayout="dropdown"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="count"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1 whitespace-nowrap">
-                            Number of Deaths <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="1"
-                              className="h-10"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 2: Recorded By and Cause of Death - Full Width */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <FormField
-                      control={form.control}
-                      name="recordedBy"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Recorded By <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full h-10">
-                                <SelectValue placeholder="Select staff member" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {staff.map((person: any) => (
-                                <SelectItem key={person.id} value={person.id}>
-                                  {person.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="cause"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="flex items-center gap-1">
-                            Cause of Death <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full h-10">
-                                <SelectValue placeholder="Select cause" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="disease">Disease</SelectItem>
-                              <SelectItem value="injury">Injury</SelectItem>
-                              <SelectItem value="environmental">Environmental</SelectItem>
-                              <SelectItem value="unknown">Unknown</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 3: Cause Description */}
-                  <FormField
-                    control={form.control}
-                    name="causeDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1">
-                          Cause Description <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Detailed description of the cause of death..."
-                            rows={3}
-                            className="resize-none min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={loading}>
-                      {loading ? "Saving..." : editingRecord ? "Update Record" : "Add Record"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Mortality Management</h2>
+        <p className="text-muted-foreground">
+          Track death causes, disposal methods, and post-mortem documentation
+        </p>
       </div>
 
       {/* Mortality Statistics */}
@@ -592,14 +387,218 @@ export function MortalityManagement() {
         </Card>
       </div>
 
-
       {/* Mortality Records Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Mortality Records ({mortalityRecords.length})</CardTitle>
-          <CardDescription>
-            Manage and track mortality records for your poultry flocks
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Mortality Records ({mortalityRecords.length})</CardTitle>
+              <CardDescription>
+                Manage and track mortality records for your poultry flocks
+              </CardDescription>
+            </div>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Record
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh]">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingRecord ? "Edit Mortality Record" : "Add New Mortality Record"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Record mortality details including cause and description.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(editingRecord ? handleUpdate : handleSubmit)} className="space-y-4">
+                    {/* Row 1: Flock ID, Date, and Number of Deaths */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <FormField
+                        control={form.control}
+                        name="flockId"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Flock ID <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="w-full h-10">
+                                  <SelectValue placeholder="Select flock" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {flocks.map((flock: any) => (
+                                  <SelectItem key={flock.id} value={flock.id}>
+                                    {flock.batchCode}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="date"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Date <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal h-10",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                  }
+                                  captionLayout="dropdown"
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="count"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1 whitespace-nowrap">
+                              Number of Deaths <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="1"
+                                className="h-10"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Row 2: Recorded By and Cause of Death - Full Width */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <FormField
+                        control={form.control}
+                        name="recordedBy"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Recorded By <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="w-full h-10">
+                                  <SelectValue placeholder="Select staff member" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {staff.map((person: any) => (
+                                  <SelectItem key={person.id} value={person.id}>
+                                    {person.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="cause"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="flex items-center gap-1">
+                              Cause of Death <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="w-full h-10">
+                                  <SelectValue placeholder="Select cause" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="disease">Disease</SelectItem>
+                                <SelectItem value="injury">Injury</SelectItem>
+                                <SelectItem value="environmental">Environmental</SelectItem>
+                                <SelectItem value="unknown">Unknown</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Row 3: Cause Description */}
+                    <FormField
+                      control={form.control}
+                      name="causeDescription"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-1">
+                            Cause Description <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Detailed description of the cause of death..."
+                              rows={3}
+                              className="resize-none min-h-[80px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={loading}>
+                        {loading ? "Saving..." : editingRecord ? "Update Record" : "Add Record"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (

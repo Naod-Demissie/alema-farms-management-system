@@ -26,8 +26,8 @@ export function DataTableToolbar<TData>({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
         {filterColumnId && (
           <Input
             placeholder={filterPlaceholder || `Filter ${filterColumnId}...`}
@@ -37,10 +37,10 @@ export function DataTableToolbar<TData>({
             onChange={(event) =>
               table.getColumn(filterColumnId)?.setFilterValue(event.target.value)
             }
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-full sm:w-[150px] lg:w-[250px]"
           />
         )}
-        <div className="flex gap-x-2">
+        <div className="flex flex-wrap gap-2">
           {facetedFilters?.map((filter) =>
             table.getColumn(filter.columnId) && (
               <DataTableFacetedFilter

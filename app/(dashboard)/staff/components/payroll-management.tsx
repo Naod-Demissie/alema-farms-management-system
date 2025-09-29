@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -23,19 +22,15 @@ import {
 } from "@/components/ui/select";
 import { 
   Plus, 
-  Download,
-  Calculator,
   TrendingUp,
   Users,
-  Calendar,
-  FileText
+  Calendar
 } from "lucide-react";
 import { getPayroll, createPayroll, updatePayroll, deletePayroll } from "@/server/payroll";
 import { getStaff as getStaffList } from "@/server/staff";
 import { CreatePayrollData, UpdatePayrollData } from "@/server/types";
 import { PayrollTable } from "./payroll-table";
 import { createPayrollTableColumns, PayrollRecord } from "./payroll-table-columns";
-import { PayrollTableToolbar } from "./payroll-table-toolbar";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 
@@ -58,7 +53,6 @@ const statusColors = {
 };
 
 export function PayrollManagement() {
-  const [activeTab, setActiveTab] = useState("records");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState<PayrollRecord | null>(null);
@@ -293,23 +287,11 @@ export function PayrollManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Payroll Management</h2>
-          <p className="text-muted-foreground">
-            Manage staff salaries, bonuses, and payroll processing.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Payroll
-          </Button>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Payroll Management</h2>
+        <p className="text-muted-foreground">
+          Manage staff salaries, bonuses, and payroll processing.
+        </p>
       </div>
 
       {/* Stats Cards */}
@@ -367,201 +349,30 @@ export function PayrollManagement() {
         </Card>
       </div>
 
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="records">Payroll Records</TabsTrigger>
-          <TabsTrigger value="calculator">Salary Calculator</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-        </TabsList>
-
-        {/* Payroll Records Tab */}
-        <TabsContent value="records" className="space-y-6">
-          <Card>
-            <CardHeader>
+      {/* Payroll Records */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
               <CardTitle>Payroll Records</CardTitle>
               <CardDescription>
                 All payroll records for staff members with advanced filtering.
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PayrollTable 
-                columns={payrollColumns} 
-                data={payrollData}
-                staffList={staffList}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Salary Calculator Tab */}
-        <TabsContent value="calculator" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calculator className="mr-2 h-5 w-5" />
-                Salary Calculator
-              </CardTitle>
-              <CardDescription>
-                Calculate salary, bonuses, and deductions for staff members.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium">Staff Member</label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select staff member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {staffList.map((staff) => (
-                        <SelectItem key={staff.id} value={staff.id}>
-                          {staff.name} ({staff.role})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Pay Period</label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="jan-2024">January 2024</SelectItem>
-                      <SelectItem value="feb-2024">February 2024</SelectItem>
-                      <SelectItem value="mar-2024">March 2024</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <label className="text-sm font-medium">Base Salary</label>
-                  <Input type="number" placeholder="5000" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Bonus</label>
-                  <Input type="number" placeholder="500" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Deductions</label>
-                  <Input type="number" placeholder="200" />
-                </div>
-              </div>
-
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium">Net Salary:</span>
-                  <span className="text-2xl font-bold">5,300.00 ETB</span>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button>
-                  <Calculator className="mr-2 h-4 w-4" />
-                  Calculate
-                </Button>
-                <Button variant="outline">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Generate Payslip
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Reports Tab */}
-        <TabsContent value="reports" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Payroll Summary</CardTitle>
-                <CardDescription>
-                  Monthly payroll breakdown
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>Total Base Salary</span>
-                    <span className="font-medium">15,000 ETB</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Bonuses</span>
-                    <span className="font-medium">1,000 ETB</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Deductions</span>
-                    <span className="font-medium">570 ETB</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="font-medium">Net Payroll</span>
-                    <span className="font-bold">15,430 ETB</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Earners</CardTitle>
-                <CardDescription>
-                  Staff with highest salaries
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>John Doe</span>
-                    <Badge className="bg-green-100 text-green-800">5,300 ETB</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Jane Smith</span>
-                    <Badge className="bg-green-100 text-green-800">4,150 ETB</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Sarah Wilson</span>
-                    <Badge className="bg-green-100 text-green-800">3,080 ETB</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            </div>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Payroll
+            </Button>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Export Reports</CardTitle>
-              <CardDescription>
-                Generate and download payroll reports
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Monthly Report
-                </Button>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Payslips
-                </Button>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Tax Report
-                </Button>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Custom Report
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        </CardHeader>
+        <CardContent>
+          <PayrollTable 
+            columns={payrollColumns} 
+            data={payrollData}
+            staffList={staffList}
+          />
+        </CardContent>
+      </Card>
 
       {/* Create Payroll Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

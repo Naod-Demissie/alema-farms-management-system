@@ -475,24 +475,6 @@ export function FeedReports({ filters }: FeedReportsProps) {
             <TabsTrigger value="flocks">Flock Usage</TabsTrigger>
             <TabsTrigger value="trends">Trends</TabsTrigger>
           </TabsList>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("csv")}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("pdf")}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              PDF
-            </Button>
-          </div>
         </div>
 
         {/* Overview Tab */}

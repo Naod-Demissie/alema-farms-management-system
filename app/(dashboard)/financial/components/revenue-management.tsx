@@ -233,18 +233,20 @@ export function RevenueManagement() {
 
       {/* Revenue Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Revenue</CardTitle>
-            <CardDescription>Track and manage all farm revenue</CardDescription>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Revenue</CardTitle>
+              <CardDescription>Track and manage all farm revenue</CardDescription>
+            </div>
+            <Button onClick={() => {
+              setEditingRevenue(null);
+              setIsDialogOpen(true);
+            }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Revenue
+            </Button>
           </div>
-          <Button onClick={() => {
-            setEditingRevenue(null);
-            setIsDialogOpen(true);
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Revenue
-          </Button>
         </CardHeader>
                <CardContent>
                  <RevenueTable

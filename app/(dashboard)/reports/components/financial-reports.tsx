@@ -418,28 +418,6 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Export Controls */}
-      <div className="flex items-center justify-end">
-        <div className="flex gap-2">
-          <Button
-            onClick={() => handleExport("csv")}
-            variant="outline"
-            size="sm"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            CSV
-          </Button>
-          <Button
-            onClick={() => handleExport("pdf")}
-            variant="outline"
-            size="sm"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            PDF
-          </Button>
-        </div>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>

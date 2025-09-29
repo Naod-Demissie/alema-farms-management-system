@@ -134,7 +134,6 @@ export function DiseaseTreatment() {
         toast.success("Treatment created successfully");
         await loadData();
         setIsAddDialogOpen(false);
-        form.reset();
       } else {
         toast.error(result.error || "Failed to create treatment");
       }
@@ -170,7 +169,6 @@ export function DiseaseTreatment() {
         await loadData();
         setIsAddDialogOpen(false);
         setEditingTreatment(null);
-        form.reset();
       } else {
         toast.error(result.error || "Failed to update treatment");
       }
@@ -256,87 +254,87 @@ export function DiseaseTreatment() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Disease Treatment</h2>
-          <p className="text-muted-foreground">
-            Track disease classification, medication, and treatment response monitoring
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Treatment
-              </Button>
-            </DialogTrigger>
-          </Dialog>
-          
-          <ReusableDialog
-            open={isAddDialogOpen}
-            onOpenChange={(open) => {
-              console.log("Dialog onOpenChange called with:", open, "editingTreatment:", editingTreatment);
-              setIsAddDialogOpen(open);
-              if (!open) {
-                setEditingTreatment(null);
-              }
-            }}
-            config={{
-              schema: treatmentSchema,
-              defaultValues: editingTreatment ? {
-                flockId: editingTreatment.flockId,
-                disease: editingTreatment.disease,
-                diseaseName: editingTreatment.diseaseName,
-                medication: editingTreatment.medication,
-                dosage: editingTreatment.dosage,
-                frequency: editingTreatment.frequency,
-                duration: editingTreatment.duration,
-                treatedBy: editingTreatment.treatedBy?.id || editingTreatment.treatedById,
-                startDate: new Date(editingTreatment.startDate),
-                endDate: editingTreatment.endDate ? new Date(editingTreatment.endDate) : undefined,
-                notes: editingTreatment.notes || "",
-                symptoms: editingTreatment.symptoms || "",
-              } : {
-                flockId: "",
-                disease: "respiratory",
-                diseaseName: "",
-                medication: "",
-                dosage: "",
-                frequency: "",
-                duration: "",
-                treatedBy: "",
-                startDate: new Date(),
-                endDate: undefined,
-                notes: "",
-                symptoms: "",
-              },
-              title: editingTreatment ? "Edit Treatment" : "Add New Treatment",
-              description: editingTreatment 
-                ? "Update the treatment information below."
-                : "Fill in the details below to add a new treatment record.",
-              submitText: editingTreatment ? "Update Treatment" : "Add Treatment",
-              onSubmit: editingTreatment ? handleUpdate : handleSubmit,
-              children: (form) => (
-                <TreatmentForm 
-                  form={form} 
-                  flocks={flocks}
-                  veterinarians={veterinarians}
-                />
-              ),
-            }}
-            loading={actionLoading === "create" || actionLoading === "update"}
-          />
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Disease Treatment</h2>
+        <p className="text-muted-foreground">
+          Track disease classification, medication, and treatment response monitoring
+        </p>
       </div>
 
       {/* Treatment Records Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Treatment Records</CardTitle>
-          <CardDescription>
-            {treatments.length} treatment records found
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Treatment Records</CardTitle>
+              <CardDescription>
+                {treatments.length} treatment records found
+              </CardDescription>
+            </div>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Treatment
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+            
+            <ReusableDialog
+              open={isAddDialogOpen}
+              onOpenChange={(open) => {
+                console.log("Dialog onOpenChange called with:", open, "editingTreatment:", editingTreatment);
+                setIsAddDialogOpen(open);
+                if (!open) {
+                  setEditingTreatment(null);
+                }
+              }}
+              config={{
+                schema: treatmentSchema,
+                defaultValues: editingTreatment ? {
+                  flockId: editingTreatment.flockId,
+                  disease: editingTreatment.disease,
+                  diseaseName: editingTreatment.diseaseName,
+                  medication: editingTreatment.medication,
+                  dosage: editingTreatment.dosage,
+                  frequency: editingTreatment.frequency,
+                  duration: editingTreatment.duration,
+                  treatedBy: editingTreatment.treatedBy?.id || editingTreatment.treatedById,
+                  startDate: new Date(editingTreatment.startDate),
+                  endDate: editingTreatment.endDate ? new Date(editingTreatment.endDate) : undefined,
+                  notes: editingTreatment.notes || "",
+                  symptoms: editingTreatment.symptoms || "",
+                } : {
+                  flockId: "",
+                  disease: "respiratory",
+                  diseaseName: "",
+                  medication: "",
+                  dosage: "",
+                  frequency: "",
+                  duration: "",
+                  treatedBy: "",
+                  startDate: new Date(),
+                  endDate: undefined,
+                  notes: "",
+                  symptoms: "",
+                },
+                title: editingTreatment ? "Edit Treatment" : "Add New Treatment",
+                description: editingTreatment  
+                  ? "Update the treatment information below."
+                  : "Fill in the details below to add a new treatment record.",
+                submitText: editingTreatment ? "Update Treatment" : "Add Treatment",
+                onSubmit: editingTreatment ? handleUpdate : handleSubmit,
+                children: (form) => (
+                  <TreatmentForm 
+                    form={form} 
+                    flocks={flocks}
+                    veterinarians={veterinarians}
+                  />
+                ),
+              }}
+              loading={actionLoading === "create" || actionLoading === "update"}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (

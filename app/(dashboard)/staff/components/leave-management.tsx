@@ -561,23 +561,11 @@ export function LeaveManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Leave Management</h2>
-          <p className="text-muted-foreground">
-            Manage staff leave requests and approvals.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Request Leave
-          </Button>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Leave Management</h2>
+        <p className="text-muted-foreground">
+          Manage staff leave requests and approvals.
+        </p>
       </div>
 
       {/* Stats Cards */}
@@ -650,10 +638,18 @@ export function LeaveManagement() {
           {/* Leave Requests Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Leave Requests</CardTitle>
-              <CardDescription>
-                All leave requests from staff members. ({leaveRequests.length} requests)
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <CardTitle>Leave Requests</CardTitle>
+                  <CardDescription>
+                    All leave requests from staff members. ({leaveRequests.length} requests)
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Request Leave
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -695,23 +691,20 @@ export function LeaveManagement() {
         <TabsContent value="balance" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Leave Balance</CardTitle>
-              <CardDescription>
-                Current leave balance for all staff members. ({leaveBalances.length} balances)
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <CardTitle>Leave Balance</CardTitle>
+                  <CardDescription>
+                    Current leave balance for all staff members. ({leaveBalances.length} balances)
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setIsCreateBalanceDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Leave Balance
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    onClick={() => setIsCreateBalanceDialogOpen(true)}
-                    className="flex items-center space-x-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Leave Balance</span>
-                  </Button>
-                </div>
-              </div>
               {balanceLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">

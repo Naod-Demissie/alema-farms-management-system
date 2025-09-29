@@ -70,16 +70,11 @@ export function InventoryAnalytics() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Inventory Analytics</CardTitle>
-              <CardDescription>
-                Track consumption patterns and forecast inventory needs.
-              </CardDescription>
-            </div>
-            <Button onClick={fetchData} variant="outline" size="sm">
-              Refresh
-            </Button>
+          <div>
+            <CardTitle>Inventory Analytics</CardTitle>
+            <CardDescription>
+              Track consumption patterns and forecast inventory needs.
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>

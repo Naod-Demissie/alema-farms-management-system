@@ -12,14 +12,12 @@ export default function FinancialManagementPage() {
   const [activeTab, setActiveTab] = useState("expenses");
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Financial Management</h1>
-          <p className="text-muted-foreground">
-            Track expenses, manage revenue, and generate financial reports for your poultry operation.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Financial Management</h1>
+        <p className="text-muted-foreground">
+          Track expenses, manage revenue, and generate financial reports for your poultry operation.
+        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

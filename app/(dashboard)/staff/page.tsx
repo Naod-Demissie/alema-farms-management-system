@@ -15,17 +15,15 @@ export default function StaffManagementPage() {
 
   return (
     <StaffProvider>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Staff Management
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your staff members, attendance, payroll, and more.
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Staff Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your staff members, attendance, payroll, and more.
+          </p>
         </div>
 
         {/* Main Content with Tabs */}
@@ -34,11 +32,31 @@ export default function StaffManagementPage() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="directory">Staffs</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="payroll">Payroll</TabsTrigger>
-            <TabsTrigger value="leave">Leave</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 h-auto">
+            <TabsTrigger 
+              value="directory"
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            >
+              Staffs
+            </TabsTrigger>
+            <TabsTrigger 
+              value="attendance"
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            >
+              Attendance
+            </TabsTrigger>
+            <TabsTrigger 
+              value="payroll"
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            >
+              Payroll
+            </TabsTrigger>
+            <TabsTrigger 
+              value="leave"
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            >
+              Leave
+            </TabsTrigger>
           </TabsList>
 
           {/* Staff Directory Tab */}

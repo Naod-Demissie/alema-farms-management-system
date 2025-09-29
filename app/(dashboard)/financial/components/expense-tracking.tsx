@@ -239,18 +239,20 @@ export function ExpenseTracking() {
 
       {/* Expenses Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Expenses</CardTitle>
-            <CardDescription>Track and manage all farm expenses</CardDescription>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Expenses</CardTitle>
+              <CardDescription>Track and manage all farm expenses</CardDescription>
+            </div>
+            <Button onClick={() => {
+              setEditingExpense(null);
+              setIsDialogOpen(true);
+            }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Expense
+            </Button>
           </div>
-          <Button onClick={() => {
-            setEditingExpense(null);
-            setIsDialogOpen(true);
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Expense
-          </Button>
         </CardHeader>
                <CardContent>
                  <ExpenseTable

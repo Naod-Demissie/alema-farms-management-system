@@ -288,75 +288,74 @@ export function VaccinationRecords() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Vaccination Records</h2>
-          <p className="text-muted-foreground">
-            Track vaccine administration with lot numbers and detailed records
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Vaccination
-              </Button>
-            </DialogTrigger>
-          </Dialog>
-          
-          <ReusableDialog
-            open={isAddDialogOpen}
-            onOpenChange={(open) => {
-              setIsAddDialogOpen(open);
-              if (!open) {
-                setEditingVaccination(null);
-              }
-            }}
-            config={{
-              schema: vaccinationSchema,
-              defaultValues: editingVaccination ? {
-                vaccineName: editingVaccination.vaccineName,
-                flockId: editingVaccination.flockId,
-                administeredDate: new Date(editingVaccination.administeredDate),
-                administeredBy: editingVaccination.administeredBy,
-                quantity: editingVaccination.quantity,
-                dosage: editingVaccination.dosage,
-                notes: editingVaccination.notes || "",
-              } : {
-                vaccineName: "",
-                flockId: "",
-                administeredDate: new Date(),
-                administeredBy: "",
-                quantity: 0,
-                dosage: "",
-                notes: "",
-              },
-              title: editingVaccination ? "Edit Vaccination Record" : "Add New Vaccination Record",
-              description: "Record vaccine administration details including dosage and administration information.",
-              submitText: editingVaccination ? "Update Record" : "Add Record",
-              onSubmit: editingVaccination ? handleUpdate : handleSubmit,
-              children: (form) => (
-                <VaccinationForm 
-                  form={form} 
-                  flocks={flocks}
-                  veterinarians={veterinarians}
-                />
-              ),
-            }}
-            loading={loading}
-          />
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Vaccination Records</h2>
+        <p className="text-muted-foreground">
+          Track vaccine administration with lot numbers and detailed records
+        </p>
       </div>
-
 
       {/* Vaccination Records Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Vaccination Records ({vaccinations.length})</CardTitle>
-          <CardDescription>
-            Manage and track vaccination records for your poultry flocks
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Vaccination Records ({vaccinations.length})</CardTitle>
+              <CardDescription>
+                Manage and track vaccination records for your poultry flocks
+              </CardDescription>
+            </div>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Vaccination
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+            
+            <ReusableDialog
+              open={isAddDialogOpen}
+              onOpenChange={(open) => {
+                setIsAddDialogOpen(open);
+                if (!open) {
+                  setEditingVaccination(null);
+                }
+              }}
+              config={{
+                schema: vaccinationSchema,
+                defaultValues: editingVaccination ? {
+                  vaccineName: editingVaccination.vaccineName,
+                  flockId: editingVaccination.flockId,
+                  administeredDate: new Date(editingVaccination.administeredDate),
+                  administeredBy: editingVaccination.administeredBy,
+                  quantity: editingVaccination.quantity,
+                  dosage: editingVaccination.dosage,
+                  notes: editingVaccination.notes || "",
+                } : {
+                  vaccineName: "",
+                  flockId: "",
+                  administeredDate: new Date(),
+                  administeredBy: "",
+                  quantity: 0,
+                  dosage: "",
+                  notes: "",
+                },
+                title: editingVaccination ? "Edit Vaccination Record" : "Add New Vaccination Record",
+                description: "Record vaccine administration details including dosage and administration information.",
+                submitText: editingVaccination ? "Update Record" : "Add Record",
+                onSubmit: editingVaccination ? handleUpdate : handleSubmit,
+                children: (form) => (
+                  <VaccinationForm 
+                    form={form} 
+                    flocks={flocks}
+                    veterinarians={veterinarians}
+                  />
+                ),
+              }}
+              loading={loading}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (

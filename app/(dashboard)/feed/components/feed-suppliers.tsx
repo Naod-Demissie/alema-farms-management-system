@@ -255,7 +255,7 @@ export function FeedSuppliers() {
       {/* Main Content */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <CardTitle>Feed Suppliers</CardTitle>
               <CardDescription>

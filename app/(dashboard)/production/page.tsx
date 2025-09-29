@@ -234,16 +234,25 @@ export default function ProductionManagementPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="eggs" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-1 h-auto">
+          <TabsTrigger 
+            value="eggs" 
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+          >
             <Egg className="h-4 w-4" />
             Egg Production
           </TabsTrigger>
-          <TabsTrigger value="broiler" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="broiler" 
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+          >
             <Bird className="h-4 w-4" />
             Broiler Production
           </TabsTrigger>
-          <TabsTrigger value="manure" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="manure" 
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+          >
             <Droplets className="h-4 w-4" />
             Manure Production
           </TabsTrigger>
@@ -397,17 +406,17 @@ export default function ProductionManagementPage() {
           </div>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  {getTabIcon()}
-                  {getTabTitle()}
-                </CardTitle>
-                <CardDescription>
-                  Manage and track {activeTab} records
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    {getTabIcon()}
+                    {getTabTitle()}
+                  </CardTitle>
+                  <CardDescription>
+                    Manage and track {activeTab} records
+                  </CardDescription>
+                </div>
                 <Button onClick={() => setIsFormOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Record

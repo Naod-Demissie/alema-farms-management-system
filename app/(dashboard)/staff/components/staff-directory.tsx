@@ -451,31 +451,11 @@ export function StaffDirectory() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
-          <p className="text-muted-foreground">
-            Manage your staff members and their information.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading || isInviteLoading}>
-            {(isLoading || isInviteLoading) ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Refresh
-          </Button>
-          <Button variant="outline" onClick={() => setIsAddStaffDialogOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add Staff
-          </Button>
-          <Button onClick={() => setIsInviteDialogOpen(true)}>
-            <Mail className="mr-2 h-4 w-4" />
-            Invite Staff
-          </Button>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
+        <p className="text-muted-foreground">
+          Manage your staff members and their information.
+        </p>
       </div>
 
       {/* Main Content Tabs */}
@@ -511,10 +491,18 @@ export function StaffDirectory() {
           ) : (
       <Card>
         <CardHeader>
-          <CardTitle>Staff Members ({staffData.length})</CardTitle>
-          <CardDescription>
-            A list of all staff members in your organization.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Staff Members ({staffData.length})</CardTitle>
+              <CardDescription>
+                A list of all staff members in your organization.
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsAddStaffDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Staff
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <StaffTable 
@@ -607,10 +595,18 @@ export function StaffDirectory() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Invitations Sent ({inviteData.length})</CardTitle>
-                <CardDescription>
-                  All staff invitations sent and their current status.
-                </CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <CardTitle>Invitations Sent ({inviteData.length})</CardTitle>
+                    <CardDescription>
+                      All staff invitations sent and their current status.
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setIsInviteDialogOpen(true)}>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Invite Staff
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <InviteTable 
