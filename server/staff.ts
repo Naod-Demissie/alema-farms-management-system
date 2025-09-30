@@ -624,6 +624,128 @@ export const cancelInvite = async (inviteId: string) => {
     }
 };
 
+export const validateInvite = async (token: string, email: string) => {
+    try {
+        // Find the invite by token and email
+        const invite = await prisma.invite.findFirst({
+            where: {
+                token,
+                email,
+                isUsed: false,
+                expiresAt: {
+                    gt: new Date()
+                }
+            },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                expiresAt: true,
+                createdAt: true
+            }
+        });
+
+        if (!invite) {
+            return {
+                success: false,
+                message: "Invalid or expired invitation"
+            };
+        }
+
+        return {
+            success: true,
+            data: invite
+        };
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to validate invitation"
+        };
+    }
+};
+
+export const completeStaffRegistration = async (
+    token: string, 
+    email: string, 
+    registrationData: {
+        firstName: string;
+        lastName: string;
+        password: string;
+        phoneNumber?: string;
+        image?: string;
+    }
+) => {
+    try {
+        // First validate the invite
+        const inviteValidation = await validateInvite(token, email);
+        if (!inviteValidation.success) {
+            return inviteValidation;
+        }
+
+        const invite = inviteValidation.data!;
+
+        // Check if staff member already exists
+        const existingStaff = await prisma.staff.findUnique({
+            where: { email }
+        });
+
+        if (existingStaff) {
+            return {
+                success: false,
+                message: "A staff member with this email already exists"
+            };
+        }
+
+        // Create staff account using better-auth
+        const authResult = await auth.api.signUpEmail({
+            body: {
+                email: email,
+                password: registrationData.password,
+                name: `${registrationData.firstName} ${registrationData.lastName}`,
+                firstName: registrationData.firstName,
+                lastName: registrationData.lastName,
+                phoneNumber: registrationData.phoneNumber,
+                role: invite.role
+            },
+            headers: await headers()
+        });
+
+        if (!authResult) {
+            return {
+                success: false,
+                message: "Failed to create staff account"
+            };
+        }
+
+        // Update the staff record with image if provided
+        if (registrationData.image) {
+            await prisma.staff.update({
+                where: { id: authResult.user.id },
+                data: { image: registrationData.image }
+            });
+        }
+
+        // Mark the invite as used
+        await prisma.invite.update({
+            where: { id: invite.id },
+            data: { isUsed: true }
+        });
+
+        return {
+            success: true,
+            data: authResult.user,
+            message: "Registration completed successfully"
+        };
+    } catch (error) {
+        const e = error as Error;
+        return {
+            success: false,
+            message: e.message || "Failed to complete registration"
+        };
+    }
+};
+
 // ===================
 // Staff Statistics
 // ===================
