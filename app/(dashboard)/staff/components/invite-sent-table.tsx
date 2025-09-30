@@ -310,9 +310,9 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8">
-                    <div className="flex items-center justify-center space-x-2">
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Loading staff members...</span>
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                      <p className="mt-2 text-sm text-muted-foreground">Loading staff members...</p>
                     </div>
                   </TableCell>
                 </TableRow>

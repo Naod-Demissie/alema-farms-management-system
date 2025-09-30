@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus,
   Users,
@@ -35,16 +36,18 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuickActionDialog } from "@/components/home/quick-action-dialog";
-import { QuickStats } from "@/components/home/quick-stats";
 import { ReusableDialog } from "@/components/ui/reusable-dialog";
 import { FlockForm, flockSchema } from "@/components/forms/dialog-forms";
+import { FeedUsageDialog } from "@/app/(dashboard)/feed/components/feed-usage-dialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useState as useStateReact } from "react";
 import { toast } from "sonner";
 import { InventoryCounts } from "@/server/inventory-alerts";
 import { getStaff } from "@/server/staff";
-import { checkIn, checkOut, getAttendance } from "@/server/attendance";
+import { checkIn, checkOut, getAttendance, isStaffOnLeave } from "@/server/attendance";
+import { getKPIData } from "@/server/kpi-data";
+import { createFeedUsageAction } from "@/app/actions/feed-usage";
 
 type DashboardSummary = {
   eggsToday: number;
@@ -77,16 +80,33 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
   const [isFlockDialogOpen, setIsFlockDialogOpen] = useState(false);
+  const [isFeedUsageDialogOpen, setIsFeedUsageDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [staffLoading, setStaffLoading] = useState(true);
+  const [buttonStates, setButtonStates] = useState<Record<string, 'checkin' | 'checkout' | 'checkedout' | 'onleave'>>({});
+  const [leaveStatus, setLeaveStatus] = useState<Record<string, boolean>>({});
+  const [pageLoading, setPageLoading] = useState(true);
+  
+  // Time period states for KPI cards
+  const [productionPeriod, setProductionPeriod] = useState("today");
+  const [expensePeriod, setExpensePeriod] = useState("today");
+  const [revenuePeriod, setRevenuePeriod] = useState("today");
+  
+  // Dynamic data states
+  const [dynamicData, setDynamicData] = useState({
+    production: summary.eggsToday || 0,
+    expenses: summary.expensesToday || 0,
+    revenue: summary.salesToday || 0
+  });
 
   // Load staff and attendance data
   useEffect(() => {
     const loadStaffAndAttendance = async () => {
       try {
         setStaffLoading(true);
+        setPageLoading(true);
         
         // Load staff members
         const staffResult = await getStaff();
@@ -111,22 +131,131 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
         if (attendanceResult.success && attendanceResult.data) {
           setAttendanceRecords(attendanceResult.data);
+          
+          // Initialize button states and leave status based on existing records and leave status
+          const initialButtonStates: Record<string, 'checkin' | 'checkout' | 'checkedout' | 'onleave'> = {};
+          const initialLeaveStatus: Record<string, boolean> = {};
+          
+          // Check leave status for each staff member
+          for (const member of staffResult.data || []) {
+            const isOnLeave = await isStaffOnLeave(member.id);
+            initialLeaveStatus[member.id] = isOnLeave;
+            
+            if (isOnLeave) {
+              initialButtonStates[member.id] = 'onleave';
+            } else {
+              const todayRecord = attendanceResult.data.find((record: AttendanceRecord) => {
+                const recordDate = new Date(record.date);
+                recordDate.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return record.staffId === member.id && recordDate.getTime() === today.getTime();
+              });
+              
+              if (todayRecord?.status === 'PRESENT') {
+                initialButtonStates[member.id] = 'checkedout';
+              } else if (todayRecord?.status === 'CHECKED_IN' && !todayRecord.checkOut) {
+                initialButtonStates[member.id] = 'checkout';
+              } else {
+                initialButtonStates[member.id] = 'checkin';
+              }
+            }
+          }
+          
+          setButtonStates(initialButtonStates);
+          setLeaveStatus(initialLeaveStatus);
         }
       } catch (error) {
         console.error('Error loading staff and attendance:', error);
         toast.error("Failed to load staff and attendance data");
       } finally {
         setStaffLoading(false);
+        setPageLoading(false);
       }
     };
 
     loadStaffAndAttendance();
   }, []);
 
+  // Effect to update data when period changes
+  useEffect(() => {
+    const updateData = async () => {
+      try {
+        const [productionResult, expensesResult, revenueResult] = await Promise.all([
+          getKPIData(productionPeriod),
+          getKPIData(expensePeriod),
+          getKPIData(revenuePeriod)
+        ]);
+        
+        setDynamicData({ 
+          production: productionResult.success && productionResult.data ? productionResult.data.production : 0, 
+          expenses: expensesResult.success && expensesResult.data ? expensesResult.data.expenses : 0, 
+          revenue: revenueResult.success && revenueResult.data ? revenueResult.data.revenue : 0
+        });
+      } catch (error) {
+        console.error("Error updating KPI data:", error);
+        toast.error("Failed to load data");
+      }
+    };
+    
+    updateData();
+  }, [productionPeriod, expensePeriod, revenuePeriod]);
+
+  // Time period options for each card type
+  const getTimePeriodOptions = (cardType: 'production' | 'expenses' | 'revenue') => {
+    const baseLabels = {
+      production: 'Production',
+      expenses: 'Expenses', 
+      revenue: 'Revenue'
+    };
+    
+    return [
+      { value: "today", label: `Today's ${baseLabels[cardType]}` },
+      { value: "week", label: `This Week's ${baseLabels[cardType]}` },
+      { value: "month", label: `This Month's ${baseLabels[cardType]}` },
+      { value: "3months", label: `3 Months' ${baseLabels[cardType]}` },
+      { value: "6months", label: `6 Months' ${baseLabels[cardType]}` },
+      { value: "year", label: `This Year's ${baseLabels[cardType]}` }
+    ];
+  };
+
+  const getPeriodLabel = (period: string, cardType: 'production' | 'expenses' | 'revenue') => {
+    const options = getTimePeriodOptions(cardType);
+    const option = options.find(opt => opt.value === period);
+    return option ? option.label : `Today's ${cardType === 'production' ? 'Production' : cardType === 'expenses' ? 'Expenses' : 'Revenue'}`;
+  };
+
   const kpiStats = [
-    { title: "Today's Egg Production", value: (summary.eggsToday || 0).toLocaleString(), icon: Egg, color: "bg-yellow-500" },
-    { title: "Today's Expenses", value: `$${(summary.expensesToday || 0).toLocaleString()}`, icon: Minus, color: "bg-rose-500" },
-    { title: "Today's Sales", value: `$${(summary.salesToday || 0).toLocaleString()}`, icon: DollarSign, color: "bg-purple-500" },
+    { 
+      title: "Egg Production", 
+      value: dynamicData.production.toLocaleString(), 
+      icon: Egg, 
+      color: "bg-yellow-500",
+      hasDropdown: true,
+      dropdownValue: productionPeriod,
+      onDropdownChange: setProductionPeriod,
+      cardType: 'production' as const
+    },
+    { 
+      title: "Expenses", 
+      value: `ETB ${dynamicData.expenses.toLocaleString()}`, 
+      icon: Minus, 
+      color: "bg-rose-500",
+      hasDropdown: true,
+      dropdownValue: expensePeriod,
+      onDropdownChange: setExpensePeriod,
+      cardType: 'expenses' as const
+    },
+    { 
+      title: "Revenue", 
+      value: `ETB ${dynamicData.revenue.toLocaleString()}`, 
+      icon: DollarSign, 
+      color: "bg-purple-500",
+      hasDropdown: true,
+      dropdownValue: revenuePeriod,
+      onDropdownChange: setRevenuePeriod,
+      cardType: 'revenue' as const
+    },
     { title: "Feed Left in Stock", value: `${(summary.feedLeft || 0).toLocaleString()} kg`, icon: Zap, color: "bg-green-500" },
   ];
 
@@ -135,6 +264,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       router.push(action.href);
     } else if (action.id === "add-flock") {
       setIsFlockDialogOpen(true);
+    } else if (action.id === "record-feed-usage") {
+      setIsFeedUsageDialogOpen(true);
     } else {
       setSelectedQuickAction(action.id);
       setIsQuickActionOpen(true);
@@ -146,12 +277,33 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     setSelectedQuickAction(null);
   };
 
+  const handleFeedUsageSubmit = async (data: any) => {
+    try {
+      const result = await createFeedUsageAction(data);
+      if (result.success) {
+        toast.success("Feed usage recorded successfully!");
+        setIsFeedUsageDialogOpen(false);
+      } else {
+        toast.error("Failed to record feed usage", {
+          description: result.error || "An unexpected error occurred",
+        });
+      }
+    } catch (error) {
+      console.error("Error recording feed usage:", error);
+      toast.error("Failed to record feed usage", {
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    }
+  };
+
   // Attendance functions
   const handleCheckIn = async (staffId: string) => {
     try {
       const result = await checkIn(staffId);
       if (result.success) {
         toast.success("Checked in successfully");
+        // Update button state to checkout
+        setButtonStates(prev => ({ ...prev, [staffId]: 'checkout' }));
         // Reload attendance data
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -184,6 +336,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       const result = await checkOut(staffId);
       if (result.success) {
         toast.success("Checked out successfully");
+        // Update button state to checkedout
+        setButtonStates(prev => ({ ...prev, [staffId]: 'checkedout' }));
         // Reload attendance data
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -224,11 +378,11 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     
     if (!todayRecord) return { status: 'not-checked', buttonText: 'Check In', action: 'checkin' };
     
-    if (todayRecord.status === 'Present' && !todayRecord.checkOut) {
+    if (todayRecord.status === 'CHECKED_IN' && !todayRecord.checkOut) {
       return { status: 'checked-in', buttonText: 'Check Out', action: 'checkout' };
     }
     
-    if (todayRecord.status === 'Checked Out') {
+    if (todayRecord.status === 'PRESENT') {
       return { status: 'completed', buttonText: 'Completed', action: 'completed' };
     }
     
@@ -347,6 +501,17 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
   const alerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [...inventoryAlerts];
 
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -359,8 +524,45 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       </div>
 
       {/* KPI Cards */}
-      {/* @ts-ignore QuickStats accepts this shape */}
-      <QuickStats stats={kpiStats} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpiStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={index} className="hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                {stat.hasDropdown ? (
+                  <Select value={stat.dropdownValue} onValueChange={stat.onDropdownChange}>
+                    <SelectTrigger className="w-52 h-8 text-sm font-medium bg-background border-border hover:bg-accent transition-colors">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[224px]">
+                      {getTimePeriodOptions(stat.cardType).map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="text-xs">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                )}
+                <div className={cn("p-2 rounded-lg", stat.color || "bg-muted")}>
+                  <Icon className={cn("h-4 w-4", stat.color ? "text-white" : "text-muted-foreground")} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stat.title === "Egg Production" && "eggs"}
+                  {stat.title === "Expenses" && "total spent"}
+                  {stat.title === "Revenue" && "total earned"}
+                  {stat.title === "Feed Left in Stock" && "remaining"}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Quick Actions and Alerts in the same row */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -371,9 +573,9 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
             <CardDescription>Common tasks across the system</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
               {[
-                { id: "record-feed-usage", title: "Record Feed Usage", icon: Calculator, color: "bg-yellow-600", href: "/feed?tab=usage" },
+                { id: "record-feed-usage", title: "Record Feed Usage", icon: Calculator, color: "bg-yellow-600" },
                 { id: "record-production", title: "Record Egg Production", icon: Egg, color: "bg-green-500" },
                 { id: "record-broiler-production", title: "Record Broiler Production", icon: Bird, color: "bg-orange-500" },
                 { id: "record-manure-production", title: "Record Manure Production", icon: Droplets, color: "bg-green-700" },
@@ -418,7 +620,15 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
               </TabsList>
               <TabsContent value="alerts" className="mt-4 space-y-2">
                 {alerts.length === 0 && (
-                  <div className="text-sm text-muted-foreground">No alerts yet.</div>
+                  <div className="flex flex-col items-center justify-center py-12 px-4">
+                    <div className="rounded-full bg-muted/50 p-6 mb-4">
+                      <Bell className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-base font-medium text-muted-foreground mb-2">No alerts yet</h3>
+                    <p className="text-sm text-muted-foreground text-center max-w-sm">
+                      New alerts will appear here when they're available.
+                    </p>
+                  </div>
                 )}
                 {alerts.map((alert) => (
                   <div key={alert.id} className={cn("flex items-center p-3 rounded-lg border", getAlertColor(alert.priority))}>
@@ -431,12 +641,17 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
               </TabsContent>
               <TabsContent value="attendance" className="mt-4">
                 {staffLoading ? (
-                  <div className="text-sm text-muted-foreground">Loading staff attendance...</div>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                      <p className="mt-2 text-sm text-muted-foreground">Loading staff attendance...</p>
+                    </div>
+                  </div>
                 ) : staff.length === 0 ? (
                   <div className="text-sm text-muted-foreground">No staff members found.</div>
                 ) : (
                   <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
-                    {staff.filter(member => member.isActive).map((member) => {
+                    {staff.filter(member => member.isActive && member.role === 'WORKER').map((member) => {
                       const attendanceStatus = getStaffAttendanceStatus(member.id);
                       const todayRecord = attendanceRecords.find(record => {
                         const recordDate = new Date(record.date);
@@ -478,33 +693,52 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            {attendanceStatus.status === 'not-checked' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCheckIn(member.id)}
-                                className="text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950/20"
-                              >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Check In
-                              </Button>
-                            )}
-                            {attendanceStatus.status === 'checked-in' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCheckOut(member.id)}
-                                className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20"
-                              >
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Check Out
-                              </Button>
-                            )}
-                            {attendanceStatus.status === 'completed' && (
-                              <Badge variant="outline" className="text-green-600 border-green-200 dark:text-green-400 dark:border-green-800">
-                                Completed
-                              </Badge>
-                            )}
+                            {(() => {
+                              const buttonState = buttonStates[member.id];
+                              
+                              if (buttonState === 'onleave') {
+                                return (
+                                  <Badge className="bg-blue-100 text-blue-800">
+                                    On Leave
+                                  </Badge>
+                                );
+                              }
+
+                              if (buttonState === 'checkout') {
+                                return (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleCheckOut(member.id)}
+                                    className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20"
+                                  >
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Check Out
+                                  </Button>
+                                );
+                              }
+
+                              if (buttonState === 'checkedout') {
+                                return (
+                                  <Badge className="bg-purple-100 text-purple-800">
+                                    Checked Out
+                                  </Badge>
+                                );
+                              }
+
+                              // Default to check in button
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCheckIn(member.id)}
+                                  className="text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950/20"
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Check In
+                                </Button>
+                              );
+                            })()}
                           </div>
                         </div>
                       );
@@ -553,6 +787,16 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
           ),
         }}
         loading={isLoading}
+      />
+
+      {/* Feed Usage Dialog */}
+      <FeedUsageDialog
+        isOpen={isFeedUsageDialogOpen}
+        onClose={() => setIsFeedUsageDialogOpen(false)}
+        onSubmit={handleFeedUsageSubmit}
+        title="Record Feed Usage"
+        description="Quickly record feed usage for any flock from the home page."
+        submitButtonText="Record Usage"
       />
     </div>
   );

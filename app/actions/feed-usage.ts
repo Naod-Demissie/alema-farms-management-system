@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from "@/server/auth-middleware";
 
 export async function getFeedUsageAction() {
   try {
+    console.log("[Feed Usage] getFeedUsageAction called");
     const usage = await prisma.feedUsage.findMany({
       include: {
         flock: true,

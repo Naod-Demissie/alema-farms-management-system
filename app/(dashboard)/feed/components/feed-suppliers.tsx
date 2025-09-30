@@ -272,7 +272,7 @@ export function FeedSuppliers() {
                   Add Supplier
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-xl">
                 <DialogHeader>
                   <DialogTitle>
                     {editingSupplier ? "Edit Supplier" : "Add New Supplier"}
@@ -292,7 +292,9 @@ export function FeedSuppliers() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Supplier Name *</FormLabel>
+                            <FormLabel className="flex items-center gap-1">
+                              Supplier Name <span className="text-red-500">*</span>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Enter supplier name" {...field} />
                             </FormControl>
@@ -401,7 +403,7 @@ export function FeedSuppliers() {
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Supplier Details</DialogTitle>
             <DialogDescription>

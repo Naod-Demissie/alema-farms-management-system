@@ -28,7 +28,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
@@ -42,6 +42,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
@@ -53,21 +54,33 @@ export function LoginForm({
   });
 
   const signInWithGoogle = async () => {
+    // Get callback URL from query params or default to home
+    const urlParams = new URLSearchParams(window.location.search);
+    const callbackUrl = urlParams.get('callbackUrl') || '/home';
+    
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/home",
+      callbackURL: callbackUrl,
     });
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
+    console.log('[LoginForm] Attempting to sign in with email:', values.email);
     const { success, message } = await signIn(values.email, values.password);
 
     if (success) {
+      console.log('[LoginForm] Sign in successful, redirecting...');
       toast.success(message as string);
-      router.push("/home");
+      // Get callback URL from query params or default to home
+      const urlParams = new URLSearchParams(window.location.search);
+      const callbackUrl = urlParams.get('callbackUrl') || '/home';
+      console.log('[LoginForm] Redirecting to:', callbackUrl);
+      // Use window.location.href for a full page reload to ensure session is properly set
+      window.location.href = callbackUrl;
     } else {
+      console.log('[LoginForm] Sign in failed:', message);
       toast.error(message as string);
     }
 
@@ -131,11 +144,26 @@ export function LoginForm({
                           <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="********"
-                                {...field}
-                                type="password"
-                              />
+                              <div className="relative">
+                                <Input
+                                  placeholder="********"
+                                  {...field}
+                                  type={showPassword ? "text" : "password"}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>

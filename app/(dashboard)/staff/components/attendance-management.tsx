@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { checkIn, checkOut, getAttendance, getStaffAttendance, deleteAttendance } from "@/server/attendance";
+import { checkIn, checkOut, getAttendance, getStaffAttendance, deleteAttendance, isStaffOnLeave } from "@/server/attendance";
 import { getStaff } from "@/server/staff";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
@@ -66,11 +66,19 @@ interface AttendanceStats {
 }
 
 const statusColors = {
-  Present: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  Absent: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-  Late: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  "On Leave": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  "Checked Out": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+  PRESENT: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  ABSENT: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+  CHECKED_IN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+  ON_LEAVE: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+  CHECKED_OUT: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
+};
+
+const statusLabels = {
+  PRESENT: "Present",
+  ABSENT: "Absent", 
+  CHECKED_IN: "Checked In",
+  ON_LEAVE: "On Leave",
+  CHECKED_OUT: "Checked Out",
 };
 
 // Check-in/out table columns
@@ -79,11 +87,15 @@ const createCheckInOutTableColumns = ({
   onCheckOut,
   onUndo,
   attendanceRecords,
+  buttonStates,
+  leaveStatus,
 }: {
   onCheckIn: (staffId: string) => void;
   onCheckOut: (staffId: string) => void;
   onUndo: (staffId: string) => void;
   attendanceRecords: AttendanceRecord[];
+  buttonStates: Record<string, 'checkin' | 'checkout' | 'checkedout' | 'onleave'>;
+  leaveStatus: Record<string, boolean>;
 }): ColumnDef<any>[] => [
   {
     accessorKey: "name",
@@ -177,9 +189,19 @@ const createCheckInOutTableColumns = ({
         return record.staffId === staffId && recordDate.getTime() === today.getTime();
       });
 
+      // Check if staff is on leave
+      const isOnLeave = leaveStatus[staffId];
+      if (isOnLeave) {
+        return (
+          <Badge className={statusColors["ON_LEAVE"]}>
+            {statusLabels["ON_LEAVE"]}
+          </Badge>
+        );
+      }
+
       return (
         <Badge className={statusColors[todayRecord?.status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"}>
-          {todayRecord?.status || "Not Checked"}
+          {todayRecord?.status ? statusLabels[todayRecord.status as keyof typeof statusLabels] || todayRecord.status : "Not Checked"}
         </Badge>
       );
     },
@@ -198,48 +220,47 @@ const createCheckInOutTableColumns = ({
       });
 
       const getActionButton = () => {
-        if (!todayRecord) {
+        const buttonState = buttonStates[staffId];
+        
+        if (buttonState === 'onleave') {
           return (
-            <Button
-              size="sm"
-              onClick={() => onCheckIn(staffId)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle className="mr-1 h-3 w-3" />
-              Check In
-            </Button>
+            <Badge className="bg-blue-100 text-blue-800">
+              On Leave
+            </Badge>
           );
         }
 
-        if (todayRecord.status === 'Present' && !todayRecord.checkOut) {
+        if (buttonState === 'checkout') {
           return (
             <Button
               size="sm"
               variant="outline"
               onClick={() => onCheckOut(staffId)}
-              className="border-red-300 text-red-600 hover:bg-red-50"
+              className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20"
             >
-              <XCircle className="mr-1 h-3 w-3" />
+              <XCircle className="h-3 w-3 mr-1" />
               Check Out
             </Button>
           );
         }
 
-        if (todayRecord.status === 'Checked Out') {
+        if (buttonState === 'checkedout') {
           return (
             <Badge className="bg-purple-100 text-purple-800">
-              Completed
+              Checked Out
             </Badge>
           );
         }
 
+        // Default to check in button
         return (
           <Button
             size="sm"
+            variant="outline"
             onClick={() => onCheckIn(staffId)}
-            className="bg-green-600 hover:bg-green-700"
+            className="text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950/20"
           >
-            <CheckCircle className="mr-1 h-3 w-3" />
+            <CheckCircle className="h-3 w-3 mr-1" />
             Check In
           </Button>
         );
@@ -330,7 +351,7 @@ const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
       const status = row.getValue("status") as string;
       return (
         <Badge className={statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"}>
-          {status}
+          {statusLabels[status as keyof typeof statusLabels] || status}
         </Badge>
       );
     },
@@ -359,12 +380,10 @@ const reportsColumns: ColumnDef<any>[] = [
     header: "This Week",
     cell: ({ row }) => {
       const weekAttendance = row.getValue("weekAttendance") as number;
-      const weekPercentage = row.original.weekPercentage;
       return (
         <div className="flex items-center gap-2">
-          <span className="font-medium">{weekAttendance} days</span>
-          <Badge variant="outline" className={weekPercentage >= 80 ? "bg-green-100 text-green-800" : weekPercentage >= 60 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
-            {weekPercentage}%
+          <Badge variant="outline" className="bg-blue-100 text-blue-800">
+            {weekAttendance} days
           </Badge>
         </div>
       );
@@ -375,12 +394,10 @@ const reportsColumns: ColumnDef<any>[] = [
     header: "This Month",
     cell: ({ row }) => {
       const monthAttendance = row.getValue("monthAttendance") as number;
-      const monthPercentage = row.original.monthPercentage;
       return (
         <div className="flex items-center gap-2">
-          <span className="font-medium">{monthAttendance} days</span>
-          <Badge variant="outline" className={monthPercentage >= 80 ? "bg-green-100 text-green-800" : monthPercentage >= 60 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
-            {monthPercentage}%
+          <Badge variant="outline" className="bg-green-100 text-green-800">
+            {monthAttendance} days
           </Badge>
         </div>
       );
@@ -391,12 +408,10 @@ const reportsColumns: ColumnDef<any>[] = [
     header: "This Year",
     cell: ({ row }) => {
       const yearAttendance = row.getValue("yearAttendance") as number;
-      const yearPercentage = row.original.yearPercentage;
       return (
         <div className="flex items-center gap-2">
-          <span className="font-medium">{yearAttendance} days</span>
-          <Badge variant="outline" className={yearPercentage >= 80 ? "bg-green-100 text-green-800" : yearPercentage >= 60 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
-            {yearPercentage}%
+          <Badge variant="outline" className="bg-purple-100 text-purple-800">
+            {yearAttendance} days
           </Badge>
         </div>
       );
@@ -419,8 +434,12 @@ export function AttendanceManagement() {
     averageHours: 0
   });
   const [loading, setLoading] = useState(false);
+  const [checkInOutLoading, setCheckInOutLoading] = useState(false);
+  const [reportsLoading, setReportsLoading] = useState(false);
   const [reportsData, setReportsData] = useState<any>(null);
   const [reportsTableData, setReportsTableData] = useState<any[]>([]);
+  const [buttonStates, setButtonStates] = useState<Record<string, 'checkin' | 'checkout' | 'checkedout' | 'onleave'>>({});
+  const [leaveStatus, setLeaveStatus] = useState<Record<string, boolean>>({});
 
   // Load initial data
   useEffect(() => {
@@ -472,7 +491,7 @@ export function AttendanceManagement() {
       if (result.success && result.data) {
         const records = result.data;
         const totalStaff = staffMembers.length;
-        const present = records.filter((r: any) => r.status === "Present" || r.status === "Checked Out").length;
+        const present = records.filter((r: any) => r.status === "PRESENT" || r.status === "CHECKED_IN").length;
         const absent = totalStaff - present;
         const totalHours = records.reduce((sum: number, r: any) => sum + (r.hours || 0), 0);
         const averageHours = present > 0 ? totalHours / present : 0;
@@ -492,6 +511,7 @@ export function AttendanceManagement() {
 
   const loadTodayAttendanceRecords = async () => {
     try {
+      setCheckInOutLoading(true);
       const today = new Date();
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
@@ -505,9 +525,42 @@ export function AttendanceManagement() {
       
       if (result.success && result.data) {
         setAttendanceRecords(result.data);
+        
+        // Initialize button states and leave status based on existing records and leave status
+        const initialButtonStates: Record<string, 'checkin' | 'checkout' | 'checkedout' | 'onleave'> = {};
+        const initialLeaveStatus: Record<string, boolean> = {};
+        
+        // Check leave status for each staff member
+        for (const staff of staffMembers) {
+          const isOnLeave = await isStaffOnLeave(staff.id);
+          initialLeaveStatus[staff.id] = isOnLeave;
+          
+          if (isOnLeave) {
+            initialButtonStates[staff.id] = 'onleave';
+          } else {
+            const todayRecord = result.data.find((record: AttendanceRecord) => {
+              const recordDate = new Date(record.date);
+              recordDate.setHours(0, 0, 0, 0);
+              return record.staffId === staff.id && recordDate.getTime() === startOfDay.getTime();
+            });
+            
+            if (todayRecord?.status === 'PRESENT') {
+              initialButtonStates[staff.id] = 'checkedout';
+            } else if (todayRecord?.status === 'CHECKED_IN' && !todayRecord.checkOut) {
+              initialButtonStates[staff.id] = 'checkout';
+            } else {
+              initialButtonStates[staff.id] = 'checkin';
+            }
+          }
+        }
+        
+        setButtonStates(initialButtonStates);
+        setLeaveStatus(initialLeaveStatus);
       }
     } catch (error) {
       console.error("Error loading today's attendance records:", error);
+    } finally {
+      setCheckInOutLoading(false);
     }
   };
 
@@ -552,6 +605,7 @@ export function AttendanceManagement() {
 
   const loadReportsData = async () => {
     try {
+      setReportsLoading(true);
       // Load attendance data for reports
       const now = new Date();
       const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
@@ -592,15 +646,14 @@ export function AttendanceManagement() {
           weekAttendance: weekCount,
           monthAttendance: monthCount,
           yearAttendance: yearCount,
-          weekPercentage: Math.round((weekCount / 7) * 100),
-          monthPercentage: Math.round((monthCount / 30) * 100),
-          yearPercentage: Math.round((yearCount / 365) * 100)
         };
       });
 
       setReportsTableData(tableData);
     } catch (error) {
       console.error("Error loading reports data:", error);
+    } finally {
+      setReportsLoading(false);
     }
   };
 
@@ -609,6 +662,8 @@ export function AttendanceManagement() {
       const result = await checkIn(staffId);
       if (result.success) {
         toast.success("Checked in successfully");
+        // Update button state to checkout
+        setButtonStates(prev => ({ ...prev, [staffId]: 'checkout' }));
         loadAttendanceStats();
         loadTodayAttendanceRecords();
         if (activeTab === "records") {
@@ -628,6 +683,8 @@ export function AttendanceManagement() {
       const result = await checkOut(staffId);
       if (result.success) {
         toast.success("Checked out successfully");
+        // Update button state to checkedout
+        setButtonStates(prev => ({ ...prev, [staffId]: 'checkedout' }));
         loadAttendanceStats();
         loadTodayAttendanceRecords();
         if (activeTab === "records") {
@@ -657,6 +714,8 @@ export function AttendanceManagement() {
         
         if (deleteResult.success) {
           toast.success("Attendance record reset");
+          // Reset button state to checkin
+          setButtonStates(prev => ({ ...prev, [staffId]: 'checkin' }));
           loadAttendanceStats();
           loadTodayAttendanceRecords();
           if (activeTab === "records") {
@@ -782,9 +841,12 @@ export function AttendanceManagement() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {checkInOutLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="text-muted-foreground">Loading...</div>
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Loading attendance data...</p>
+                  </div>
                 </div>
               ) : (
                 <DataTable
@@ -793,6 +855,8 @@ export function AttendanceManagement() {
                     onCheckOut: handleCheckOut,
                     onUndo: handleUndoAttendance,
                     attendanceRecords,
+                    buttonStates,
+                    leaveStatus,
                   })}
                   data={staffMembers}
                 />
@@ -830,11 +894,11 @@ export function AttendanceManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Present">Present</SelectItem>
-                    <SelectItem value="Checked Out">Checked Out</SelectItem>
-                    <SelectItem value="Absent">Absent</SelectItem>
-                    <SelectItem value="Late">Late</SelectItem>
-                    <SelectItem value="On Leave">On Leave</SelectItem>
+                    <SelectItem value="PRESENT">Present</SelectItem>
+                    <SelectItem value="CHECKED_IN">Checked In</SelectItem>
+                    <SelectItem value="CHECKED_OUT">Checked Out</SelectItem>
+                    <SelectItem value="ABSENT">Absent</SelectItem>
+                    <SelectItem value="ON_LEAVE">On Leave</SelectItem>
                   </SelectContent>
                 </Select>
                 <Popover>
@@ -884,7 +948,10 @@ export function AttendanceManagement() {
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="text-muted-foreground">Loading...</div>
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Loading attendance records...</p>
+                  </div>
                 </div>
               ) : (
                 <DataTable
@@ -906,9 +973,12 @@ export function AttendanceManagement() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {reportsTableData.length === 0 ? (
+              {reportsLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="text-muted-foreground">Loading attendance reports...</div>
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Loading attendance reports...</p>
+                  </div>
                 </div>
               ) : (
                 <DataTable

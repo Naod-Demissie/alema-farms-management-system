@@ -101,9 +101,9 @@ export const createLeaveBalanceTableColumns = ({
     cell: ({ row }) => {
       const days = row.getValue("totalLeaveDays") as number;
       return (
-        <div className="text-sm font-medium">
+        <Badge variant="outline" className="bg-blue-100 text-blue-800">
           {days} days
-        </div>
+        </Badge>
       );
     },
   },
@@ -115,9 +115,9 @@ export const createLeaveBalanceTableColumns = ({
     cell: ({ row }) => {
       const days = row.getValue("usedLeaveDays") as number;
       return (
-        <div className="text-sm font-medium text-orange-600">
+        <Badge variant="outline" className="bg-orange-100 text-orange-800">
           {days} days
-        </div>
+        </Badge>
       );
     },
   },
@@ -130,42 +130,9 @@ export const createLeaveBalanceTableColumns = ({
       const days = row.getValue("remainingLeaveDays") as number;
       const isLow = days <= 5;
       return (
-        <div className={`text-sm font-medium ${isLow ? 'text-red-600' : 'text-green-600'}`}>
+        <Badge variant="outline" className={isLow ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
           {days} days
-        </div>
-      );
-    },
-  },
-  {
-    id: "utilization",
-    accessorFn: (row) => {
-      const used = row.usedLeaveDays;
-      const total = row.totalLeaveDays;
-      return total > 0 ? Math.round((used / total) * 100) : 0;
-    },
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Utilization" />
-    ),
-    cell: ({ row }) => {
-      const used = row.original.usedLeaveDays;
-      const total = row.original.totalLeaveDays;
-      const percentage = total > 0 ? Math.round((used / total) * 100) : 0;
-      
-      return (
-        <div className="flex items-center space-x-2">
-          <div className="w-16 bg-gray-200 rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full ${
-                percentage >= 80 ? 'bg-red-500' : 
-                percentage >= 60 ? 'bg-yellow-500' : 'bg-green-500'
-              }`}
-              style={{ width: `${Math.min(percentage, 100)}%` }}
-            />
-          </div>
-          <span className="text-sm text-muted-foreground">
-            {percentage}%
-          </span>
-        </div>
+        </Badge>
       );
     },
   },

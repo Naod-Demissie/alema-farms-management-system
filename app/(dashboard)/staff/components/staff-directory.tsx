@@ -470,9 +470,9 @@ export function StaffDirectory() {
           {isLoading ? (
             <Card>
               <CardContent className="flex items-center justify-center py-8">
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Loading staff members...</span>
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-sm text-muted-foreground">Loading staff members...</p>
                 </div>
               </CardContent>
             </Card>
@@ -574,9 +574,9 @@ export function StaffDirectory() {
           {isInviteLoading ? (
             <Card>
               <CardContent className="flex items-center justify-center py-8">
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Loading invites...</span>
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-sm text-muted-foreground">Loading invites...</p>
                 </div>
               </CardContent>
             </Card>

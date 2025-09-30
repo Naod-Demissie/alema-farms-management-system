@@ -107,14 +107,14 @@ model Payroll {
 }
 
 model Attendance {
-  id       String   @id @default(uuid())
+  id       String           @id @default(uuid())
   staffId  String
   date     DateTime
-  status   String
+  status   AttendanceStatus @default(ABSENT)
   checkIn  DateTime?
   checkOut DateTime?
   hours    Float?
-  staff    Staff    @relation(fields: [staffId], references: [id])
+  staff    Staff            @relation(fields: [staffId], references: [id])
 
   @@unique([staffId, date])
 }
@@ -310,10 +310,9 @@ model FeedInventory {
   feedType    FeedType
   supplierId  String?
   quantity    Float
-  unit        String        @default("kg")
+  unit        FeedUnit      @default(KG)
   costPerUnit Float?
   totalCost   Float?
-  minStock    Float?
   notes       String?
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
@@ -345,7 +344,7 @@ model FeedUsage {
   feedId       String
   date         DateTime
   amountUsed   Float
-  unit         String        @default("kg")
+  unit         FeedUnit      @default(KG)
   notes        String?
   recordedById String?
   createdAt    DateTime      @default(now())
@@ -420,6 +419,14 @@ enum DeathCause {
   unknown
 }
 
+enum AttendanceStatus {
+  ABSENT
+  PRESENT
+  CHECKED_IN
+  CHECKED_OUT
+  ON_LEAVE
+}
+
 enum FeedType {
   LAYER_STARTER
   REARING
@@ -468,6 +475,11 @@ enum InventoryType {
   BROILER
   EGG
   OTHER
+}
+
+enum FeedUnit {
+  KG
+  QUINTAL
 }
 
 enum BankName {

@@ -40,16 +40,16 @@ export default function StaffManagementPage() {
               Staffs
             </TabsTrigger>
             <TabsTrigger 
-              value="attendance"
-              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
-            >
-              Attendance
-            </TabsTrigger>
-            <TabsTrigger 
               value="payroll"
               className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
             >
               Payroll
+            </TabsTrigger>
+            <TabsTrigger 
+              value="attendance"
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            >
+              Attendance
             </TabsTrigger>
             <TabsTrigger 
               value="leave"
@@ -64,14 +64,14 @@ export default function StaffManagementPage() {
             <StaffDirectory />
           </TabsContent>
 
-          {/* Attendance Tab */}
-          <TabsContent value="attendance">
-            <AttendanceManagement />
-          </TabsContent>
-
           {/* Payroll Tab */}
           <TabsContent value="payroll">
             <PayrollManagement />
+          </TabsContent>
+
+          {/* Attendance Tab */}
+          <TabsContent value="attendance">
+            <AttendanceManagement />
           </TabsContent>
 
           {/* Leave Management Tab */}

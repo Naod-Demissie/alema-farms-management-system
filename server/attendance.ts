@@ -6,6 +6,28 @@ import { headers } from "next/headers";
 import { AttendanceFilters, CreateAttendanceData, UpdateAttendanceData, ApiResponse, PaginatedResponse } from "./types";
 import { getServerSession } from "@/lib/auth";
 
+// Check if staff member is currently on approved leave
+export const isStaffOnLeave = async (staffId: string, date?: Date): Promise<boolean> => {
+  try {
+    const checkDate = date || new Date();
+    checkDate.setHours(0, 0, 0, 0);
+    
+    const activeLeave = await prisma.leaveRequest.findFirst({
+      where: {
+        staffId,
+        status: 'APPROVED',
+        startDate: { lte: checkDate },
+        endDate: { gte: checkDate }
+      }
+    });
+
+    return !!activeLeave;
+  } catch (error) {
+    console.error("Error checking leave status:", error);
+    return false;
+  }
+};
+
 // Check in staff member
 export const checkIn = async (staffId: string, location?: string): Promise<ApiResponse> => {
   try {
@@ -47,6 +69,15 @@ export const checkIn = async (staffId: string, location?: string): Promise<ApiRe
       };
     }
 
+    // Check if staff is currently on approved leave
+    const isOnLeave = await isStaffOnLeave(staffId);
+    if (isOnLeave) {
+      return {
+        success: false,
+        message: "Cannot check in while on approved leave"
+      };
+    }
+
     // Check if already checked in today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -77,7 +108,7 @@ export const checkIn = async (staffId: string, location?: string): Promise<ApiRe
         staffId,
         date: new Date(),
         checkIn: new Date(),
-        status: "PRESENT"
+        status: "CHECKED_IN"
       }
     });
 
@@ -164,7 +195,7 @@ export const checkOut = async (staffId: string, location?: string): Promise<ApiR
       data: {
         checkOut: checkOutTime,
         hours: hoursWorked,
-        status: "COMPLETED"
+        status: "PRESENT"
       }
     });
 

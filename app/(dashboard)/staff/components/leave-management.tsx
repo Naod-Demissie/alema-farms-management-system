@@ -725,6 +725,34 @@ export function LeaveManagement() {
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-6">
+          {/* Leave Balance Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Leave Balance Report</CardTitle>
+              <CardDescription>
+                Current leave balances and remaining days for all staff members
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {balanceLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Loading leave balances...</p>
+                  </div>
+                </div>
+              ) : (
+                <LeaveBalanceTable
+                  data={leaveBalances}
+                  columns={createLeaveBalanceTableColumns({
+                    onEdit: handleEditBalance,
+                    onDelete: handleDeleteBalance,
+                  })}
+                />
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>

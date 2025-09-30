@@ -12,7 +12,7 @@ interface CachedSession {
 
 class SessionCache {
   private cache = new Map<string, CachedSession>();
-  private readonly TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly TTL = 7 * 24 * 60 * 60 * 1000; // 1 week
 
   set(token: string, session: CachedSession) {
     this.cache.set(token, {

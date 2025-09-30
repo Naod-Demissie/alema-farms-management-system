@@ -213,89 +213,106 @@ export function FeedProgram() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="ageInWeeks"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age in Weeks</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        placeholder="Enter age in weeks"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="ageInDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age Range (Days)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., 1-7, 8-14"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="feedType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Feed Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              {/* First Row - 2 fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="ageInWeeks"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1">
+                        Age in Weeks <span className="text-red-500">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select feed type" />
-                        </SelectTrigger>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="Enter age in weeks"
+                          className="w-full"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="LAYER_STARTER">Layer Starter</SelectItem>
-                        <SelectItem value="REARING">Rearing</SelectItem>
-                        <SelectItem value="PULLET_FEED">Pullet Feed</SelectItem>
-                        <SelectItem value="LAYER">Layer</SelectItem>
-                        <SelectItem value="LAYER_PHASE_1">Layer Phase 1</SelectItem>
-                        <SelectItem value="CUSTOM">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="gramPerHen"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Grams per Hen</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0.1"
-                        placeholder="Enter grams per hen"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0.1)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="ageInDays"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1">
+                        Age Range (Days) <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., 1-7, 8-14"
+                          className="w-full"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Second Row - 2 fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="feedType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1">
+                        Feed Type <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select feed type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="LAYER_STARTER">Layer Starter</SelectItem>
+                          <SelectItem value="REARING">Rearing</SelectItem>
+                          <SelectItem value="PULLET_FEED">Pullet Feed</SelectItem>
+                          <SelectItem value="LAYER">Layer</SelectItem>
+                          <SelectItem value="LAYER_PHASE_1">Layer Phase 1</SelectItem>
+                          <SelectItem value="CUSTOM">Custom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="gramPerHen"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1">
+                        Grams per Hen <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0.1"
+                          placeholder="Enter grams per hen"
+                          className="w-full"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0.1)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>

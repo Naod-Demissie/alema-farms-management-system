@@ -30,13 +30,24 @@ export async function createFeedInventory(data: {
   quantity: number;
   unit: string;
   costPerUnit?: number;
-  minStock?: number;
   notes?: string;
 }) {
   try {
+    // Convert quantity to kg if unit is quintal
+    const quantityInKg = data.unit === 'QUINTAL' ? data.quantity * 100 : data.quantity;
+    
+    // Calculate total cost based on kg quantity
+    const totalCost = data.costPerUnit ? quantityInKg * data.costPerUnit : null;
+    
     const feed = await prisma.feedInventory.create({
       data: {
-        ...data,
+        feedType: data.feedType,
+        supplierId: data.supplierId && data.supplierId !== "none" ? data.supplierId : null,
+        quantity: quantityInKg,
+        unit: data.unit as any,
+        costPerUnit: data.costPerUnit,
+        totalCost,
+        notes: data.notes,
         isActive: true,
       },
       include: {
@@ -56,7 +67,6 @@ export async function updateFeedInventory(id: string, data: {
   quantity?: number;
   unit?: string;
   costPerUnit?: number;
-  minStock?: number;
   notes?: string;
   isActive?: boolean;
 }) {
@@ -373,33 +383,11 @@ export async function getFeedAnalytics(filters?: {
   }
 }
 
-// Low Stock Alerts
+// Low Stock Alerts (removed - no longer using minStock)
 export async function getLowStockAlerts() {
   try {
-    const lowStockItems = await prisma.feedInventory.findMany({
-      where: {
-        AND: [
-          { isActive: true },
-          {
-            OR: [
-              {
-                AND: [
-                  { minStock: { not: null } },
-                  { quantity: { lte: prisma.feedInventory.fields.minStock } },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      include: {
-        supplier: true,
-      },
-      orderBy: {
-        quantity: "asc",
-      },
-    });
-    return { success: true, data: lowStockItems };
+    // Return empty array since we no longer track minStock
+    return { success: true, data: [] };
   } catch (error) {
     console.error("Error fetching low stock alerts:", error);
     return { success: false, error: "Failed to fetch low stock alerts" };

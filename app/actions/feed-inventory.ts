@@ -6,6 +6,7 @@ import { FeedType } from "@/lib/generated/prisma";
 
 export async function getFeedInventoryAction() {
   try {
+    console.log("[Feed Inventory] getFeedInventoryAction called");
     const inventory = await prisma.feedInventory.findMany({
       include: {
         supplier: true,
@@ -32,17 +33,24 @@ export async function createFeedInventoryAction(data: {
   quantity: number;
   unit: string;
   costPerUnit?: number;
-  minStock?: number;
   notes?: string;
 }) {
   try {
-    const totalCost = data.costPerUnit ? data.quantity * data.costPerUnit : null;
+    // Convert quantity to kg if unit is quintal
+    const quantityInKg = data.unit === 'QUINTAL' ? data.quantity * 100 : data.quantity;
+    
+    // Calculate total cost based on kg quantity
+    const totalCost = data.costPerUnit ? quantityInKg * data.costPerUnit : null;
     
     const feed = await prisma.feedInventory.create({
       data: {
-        ...data,
-        totalCost,
+        feedType: data.feedType,
         supplierId: data.supplierId && data.supplierId !== "none" ? data.supplierId : null,
+        quantity: quantityInKg,
+        unit: data.unit as any,
+        costPerUnit: data.costPerUnit,
+        totalCost,
+        notes: data.notes,
         isActive: true,
       },
       include: {
@@ -63,7 +71,6 @@ export async function updateFeedInventoryAction(id: string, data: {
   quantity?: number;
   unit?: string;
   costPerUnit?: number;
-  minStock?: number;
   notes?: string;
   isActive?: boolean;
 }) {
@@ -75,8 +82,14 @@ export async function updateFeedInventoryAction(id: string, data: {
     }
     
     // Calculate total cost if quantity or costPerUnit changed
-    const quantity = data.quantity ?? currentRecord.quantity;
+    let quantity = data.quantity ?? currentRecord.quantity;
     const costPerUnit = data.costPerUnit ?? currentRecord.costPerUnit;
+    
+    // Convert quantity to kg if unit is quintal
+    if (data.unit === 'QUINTAL' && data.quantity) {
+      quantity = data.quantity * 100;
+    }
+    
     const totalCost = costPerUnit ? quantity * costPerUnit : null;
     
     const feed = await prisma.feedInventory.update({
@@ -159,9 +172,9 @@ export async function getInventoryWithUsageAction() {
         // Calculate days remaining at current usage rate
         const daysRemaining = averageDailyUsage > 0 ? item.quantity / averageDailyUsage : null;
 
-        // Get low stock status
-        const isLowStock = item.minStock ? item.quantity <= item.minStock : false;
-        const isCriticalStock = item.minStock ? item.quantity <= (item.minStock * 0.5) : false;
+        // Get low stock status (removed minStock logic)
+        const isLowStock = false;
+        const isCriticalStock = false;
 
         return {
           ...item,
@@ -232,7 +245,7 @@ export async function getInventoryProjectionAction(feedType?: string, days: numb
             date,
             projectedStock: Math.max(0, currentStock),
             dailyUsage: averageDailyUsage,
-            isLowStock: item.minStock ? currentStock <= item.minStock : false,
+            isLowStock: false,
             isOutOfStock: currentStock <= 0,
           });
         }

@@ -388,7 +388,7 @@ export const getSecuritySettings = async (): Promise<ApiResponse> => {
       passwordRequireSpecialChars: true,
       passwordRequireNumbers: true,
       passwordRequireUppercase: true,
-      sessionTimeout: 30, // minutes
+      sessionTimeout: 10080, // minutes (1 week)
       maxLoginAttempts: 5,
       lockoutDuration: 15, // minutes
       twoFactorEnabled: false,

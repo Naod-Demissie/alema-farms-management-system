@@ -52,6 +52,7 @@ export const auth = betterAuth({
     // Configure session model
     session: {
         modelName: "sessions",
+        expiresIn: 60 * 60 * 24 * 7, // 1 week in seconds
         fields: {
             userId: "userId", // References Staff.id
             expiresAt: "expiresAt",

@@ -39,9 +39,8 @@ const feedInventorySchema = z.object({
   feedType: z.enum(["LAYER_STARTER", "REARING", "PULLET_FEED", "LAYER", "LAYER_PHASE_1", "CUSTOM"]),
   supplierId: z.string().optional(),
   quantity: z.number().min(0, "Quantity must be positive"),
-  unit: z.string().min(1, "Unit is required"),
+  unit: z.enum(["KG", "QUINTAL"]),
   costPerUnit: z.number().min(0, "Cost must be positive").optional(),
-  minStock: z.number().min(0, "Minimum stock must be positive").optional(),
   notes: z.string().optional(),
 });
 
@@ -72,9 +71,8 @@ export function FeedInventory() {
       feedType: "LAYER_STARTER",
       supplierId: "none",
       quantity: 0,
-      unit: "kg",
+      unit: "KG",
       costPerUnit: 0,
-      minStock: 0,
       notes: "",
     },
   });
@@ -237,15 +235,7 @@ export function FeedInventory() {
     );
   };
 
-  const getStockStatus = (quantity: number, minStock: number) => {
-    if (minStock && quantity <= minStock) {
-      return (
-        <Badge variant="destructive" className="bg-red-100 text-red-800">
-          <AlertTriangle className="w-3 h-3 mr-1" />
-          Low Stock
-        </Badge>
-      );
-    }
+  const getStockStatus = (quantity: number) => {
     return (
       <Badge variant="outline" className="bg-green-100 text-green-800">
         <CheckCircle className="w-3 h-3 mr-1" />
@@ -254,9 +244,7 @@ export function FeedInventory() {
     );
   };
 
-  const lowStockItems = inventory.filter(item => 
-    item.minStock && item.quantity <= item.minStock
-  );
+  const lowStockItems = []; // No longer tracking low stock
 
 
   return (
@@ -338,68 +326,77 @@ export function FeedInventory() {
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="feedType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Feed Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select feed type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(feedTypeLabels).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* First row: Feed Type and Supplier */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="feedType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-1">
+                              Feed Type <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select feed type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.entries(feedTypeLabels).map(([value, label]) => (
+                                  <SelectItem key={value} value={value}>
+                                    {label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="supplierId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Supplier (Optional)</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a supplier" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">No supplier</SelectItem>
-                              {suppliers.map((supplier) => (
-                                <SelectItem key={supplier.id} value={supplier.id}>
-                                  {supplier.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="supplierId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Supplier (Optional)</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select a supplier" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">No supplier</SelectItem>
+                                {suppliers.map((supplier) => (
+                                  <SelectItem key={supplier.id} value={supplier.id}>
+                                    {supplier.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
+                    {/* Second row: Quantity, Unit, and Cost per Unit */}
                     <div className="grid grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="quantity"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Quantity</FormLabel>
+                            <FormLabel className="flex items-center gap-1">
+                              Quantity <span className="text-red-500">*</span>
+                            </FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
                                 placeholder="0" 
+                                className="w-full"
                                 {...field}
                                 onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                               />
@@ -413,10 +410,20 @@ export function FeedInventory() {
                         name="unit"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Unit</FormLabel>
-                            <FormControl>
-                              <Input placeholder="kg" {...field} />
-                            </FormControl>
+                            <FormLabel className="flex items-center gap-1">
+                              Unit <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select unit" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="KG">KG</SelectItem>
+                                <SelectItem value="QUINTAL">Quintal</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -426,12 +433,15 @@ export function FeedInventory() {
                         name="costPerUnit"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cost per Unit</FormLabel>
+                            <FormLabel className="flex items-center gap-1">
+                              Cost per {form.watch('unit') === 'QUINTAL' ? 'Quintal' : 'KG'} (ETB) <span className="text-red-500">*</span>
+                            </FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
                                 step="0.01"
                                 placeholder="0.00" 
+                                className="w-full"
                                 {...field}
                                 onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                               />
@@ -442,25 +452,25 @@ export function FeedInventory() {
                       />
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="minStock"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Minimum Stock</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="0" 
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
+                    {/* Total Amount Display */}
+                    <div className="grid gap-2">
+                      <div className="bg-muted/50 p-3 rounded-lg text-center">
+                        <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
+                        <div className="text-xl font-semibold">
+                          {form.watch('quantity') && form.watch('costPerUnit') 
+                            ? new Intl.NumberFormat("en-ET", {
+                                style: "currency",
+                                currency: "ETB",
+                              }).format(
+                                // Calculate total cost: quantity * costPerUnit
+                                // The costPerUnit is already per the selected unit (KG or Quintal)
+                                form.watch('quantity') * form.watch('costPerUnit')
+                              )
+                            : "0.00 ETB"
+                          }
+                        </div>
+                      </div>
+                    </div>
 
                     <FormField
                       control={form.control}
@@ -471,6 +481,7 @@ export function FeedInventory() {
                           <FormControl>
                             <Textarea 
                               placeholder="Additional notes about this feed item..."
+                              className="w-full"
                               {...field}
                             />
                           </FormControl>
@@ -554,11 +565,7 @@ export function FeedInventory() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Stock Status</Label>
-                  <div className="mt-1">{getStockStatus(viewingItem.quantity, viewingItem.minStock || 0)}</div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Minimum Stock</Label>
-                  <p className="text-sm font-medium">{viewingItem.minStock || "Not set"}</p>
+                  <div className="mt-1">{getStockStatus(viewingItem.quantity)}</div>
                 </div>
               </div>
               <div>
