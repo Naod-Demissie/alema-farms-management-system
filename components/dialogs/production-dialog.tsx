@@ -210,7 +210,7 @@ export function ProductionDialog({
         description: dialogConfig.description,
         submitText: dialogConfig.submitText,
         onSubmit: handleSubmit,
-        maxWidth: productionType === 'eggs' ? "max-w-2xl" : "max-w-lg",
+        maxWidth: productionType === 'eggs' ? "max-w-2xl" : "sm:max-w-[425px]",
         children: (form) => (
           <ProductionForm 
             form={form} 

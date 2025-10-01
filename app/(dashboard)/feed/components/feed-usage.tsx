@@ -23,10 +23,8 @@ import { useSession } from "@/lib/auth-client";
 
 type FeedUsageFormData = {
   flockId: string;
-  feedId: string;
   date: Date;
   amountUsed: number;
-  unit: string;
   notes?: string;
 };
 
@@ -50,7 +48,6 @@ export function FeedUsage() {
     item: null,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -76,14 +73,7 @@ export function FeedUsage() {
   };
 
   const onSubmit = async (data: FeedUsageFormData) => {
-    // Prevent duplicate submissions
-    if (isSubmitting) {
-      console.log("Request already in progress, ignoring duplicate submission");
-      return;
-    }
-
     try {
-      setIsSubmitting(true);
       setLoading(true);
       let result;
       
@@ -121,7 +111,6 @@ export function FeedUsage() {
       });
     } finally {
       setLoading(false);
-      setIsSubmitting(false);
     }
   };
 
@@ -196,20 +185,6 @@ export function FeedUsage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Feed Usage Tracking</h2>
-          <p className="text-muted-foreground">
-            Track daily feed consumption per flock and monitor feeding patterns.
-          </p>
-        </div>
-        <Button onClick={handleAdd}>
-          <Plus className="h-4 w-4 mr-2" />
-          Record Usage
-        </Button>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -275,6 +250,10 @@ export function FeedUsage() {
                 Track daily feed consumption per flock and monitor feeding patterns.
               </CardDescription>
             </div>
+            <Button onClick={handleAdd}>
+              <Plus className="h-4 w-4 mr-2" />
+              Record Usage
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -307,10 +286,8 @@ export function FeedUsage() {
         onSubmit={onSubmit}
         initialData={editingItem ? {
           flockId: editingItem.flockId,
-          feedId: editingItem.feedId,
           date: new Date(editingItem.date),
           amountUsed: editingItem.amountUsed,
-          unit: editingItem.unit,
           notes: editingItem.notes || "",
         } : undefined}
         title={editingItem ? "Edit Feed Usage" : "Record Feed Usage"}

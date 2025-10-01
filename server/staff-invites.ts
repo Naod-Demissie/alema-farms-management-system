@@ -63,6 +63,7 @@ export const createNonSystemStaff = async (data: any): Promise<ApiResponse> => {
         name: `${validatedData.firstName} ${validatedData.lastName}`,
         email: validatedData.email || null,
         emailVerified: false,
+        image: validatedData.image || null,
         phoneNumber: validatedData.phoneNumber || null,
         role: validatedData.role,
         isSystemUser: false, // Non-system user
@@ -152,7 +153,7 @@ export const createInvite = async (data: CreateInviteData): Promise<ApiResponse>
         role: data.role,
         token,
         expiresAt,
-        createdById: data.createdById,
+        createdById: currentUser.id,
       }
     });
 

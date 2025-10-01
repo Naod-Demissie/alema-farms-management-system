@@ -32,7 +32,6 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  Download,
   Edit,
   Trash2,
   User,
@@ -628,7 +627,6 @@ export function LeaveManagement() {
         <TabsList>
           <TabsTrigger value="requests">Leave Requests</TabsTrigger>
           <TabsTrigger value="balance">Leave Balance</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         {/* Leave Requests Tab */}
@@ -719,122 +717,6 @@ export function LeaveManagement() {
                   staffList={staffList}
                 />
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Reports Tab */}
-        <TabsContent value="reports" className="space-y-6">
-          {/* Leave Balance Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Leave Balance Report</CardTitle>
-              <CardDescription>
-                Current leave balances and remaining days for all staff members
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {balanceLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading leave balances...</p>
-                  </div>
-                </div>
-              ) : (
-                <LeaveBalanceTable
-                  data={leaveBalances}
-                  columns={createLeaveBalanceTableColumns({
-                    onEdit: handleEditBalance,
-                    onDelete: handleDeleteBalance,
-                  })}
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Leave Summary</CardTitle>
-                <CardDescription>
-                  Monthly leave statistics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>Total Requests</span>
-                    <span className="font-medium">{leaveStats.totalRequests}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Approved</span>
-                    <span className="font-medium text-green-600">{leaveStats.approvedRequests}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Pending</span>
-                    <span className="font-medium text-yellow-600">{leaveStats.pendingRequests}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Rejected</span>
-                    <span className="font-medium text-red-600">{leaveStats.rejectedRequests}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Leave Types</CardTitle>
-                <CardDescription>
-                  Breakdown by leave type
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>Annual Leave</span>
-                    <Badge variant="outline">12</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Sick Leave</span>
-                    <Badge variant="outline">5</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Casual Leave</span>
-                    <Badge variant="outline">3</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Maternity/Paternity</span>
-                    <Badge variant="outline">1</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Export Reports</CardTitle>
-              <CardDescription>
-                Generate and download leave reports
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Monthly Report
-                </Button>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Leave Balance
-                </Button>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Custom Report
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

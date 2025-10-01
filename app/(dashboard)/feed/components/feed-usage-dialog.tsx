@@ -8,12 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { feedTypeLabels, feedTypeColors } from "@/lib/feed-program";
 import { 
   createFeedUsageAction, 
@@ -25,10 +33,8 @@ import { getFeedRecommendationsAction } from "@/app/actions/feed-program";
 
 const feedUsageSchema = z.object({
   flockId: z.string().min(1, "Flock is required"),
-  feedId: z.string().min(1, "Feed is required"),
   date: z.date(),
   amountUsed: z.number().min(0.1, "Amount must be greater than 0"),
-  unit: z.enum(["KG", "QUINTAL"]),
   notes: z.string().optional(),
 });
 
@@ -58,15 +64,16 @@ export function FeedUsageDialog({
   const [feedRecommendations, setFeedRecommendations] = useState<any[]>([]);
   const [recommendation, setRecommendation] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    initialData?.date ? new Date(initialData.date) : new Date()
+  );
 
   const form = useForm<FeedUsageFormData>({
     resolver: zodResolver(feedUsageSchema),
     defaultValues: initialData || {
       flockId: "",
-      feedId: "",
       date: new Date(),
       amountUsed: 0,
-      unit: "KG",
       notes: "",
     },
   });
@@ -82,15 +89,15 @@ export function FeedUsageDialog({
   useEffect(() => {
     if (initialData) {
       form.reset(initialData);
+      setSelectedDate(new Date(initialData.date));
     } else {
       form.reset({
         flockId: "",
-        feedId: "",
         date: new Date(),
         amountUsed: 0,
-        unit: "KG",
         notes: "",
       });
+      setSelectedDate(new Date());
     }
   }, [initialData, form]);
 
@@ -123,17 +130,17 @@ export function FeedUsageDialog({
     if (flockRecommendation) {
       setRecommendation(flockRecommendation.recommendation);
       
-      // Auto-select matching feed
-      const matchingFeed = feedInventory.find(feed => 
-        feed.feedType === flockRecommendation.recommendation.feedType && feed.isActive
-      );
-      
-      if (matchingFeed) {
-        form.setValue('feedId', matchingFeed.id);
-        form.setValue('amountUsed', flockRecommendation.recommendation.totalAmountKg);
-      }
+      // Auto-set the recommended amount
+      form.setValue('amountUsed', flockRecommendation.recommendation.totalAmountKg);
     } else {
       setRecommendation(null);
+    }
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      form.setValue('date', date);
     }
   };
 
@@ -151,7 +158,7 @@ export function FeedUsageDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-lg font-semibold">
             {title}
@@ -164,20 +171,18 @@ export function FeedUsageDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             {/* Flock Selection */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <FormField
+            <FormField
                   control={form.control}
                   name="flockId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Flock</FormLabel>
+                      <FormLabel className="text-sm font-medium">Flock<span className="text-red-500">*</span></FormLabel>
                       <Select onValueChange={(value) => {
                         field.onChange(value);
                         handleFlockChange(value);
                       }} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-9">
+                          <SelectTrigger className="h-9 w-full">
                             <SelectValue placeholder="Select flock" />
                           </SelectTrigger>
                         </FormControl>
@@ -202,31 +207,29 @@ export function FeedUsageDialog({
                       <FormMessage />
                     </FormItem>
                   )}
-                />
-              </div>
-            </div>
+            />
 
             {/* Feed Program Recommendation */}
             {recommendation && (
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="p-3 bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm">Feed Program Recommendation</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">Feed Program Recommendation</h4>
                   <Badge className={`${feedTypeColors[recommendation.feedType as keyof typeof feedTypeColors]} text-xs`}>
                     {feedTypeLabels[recommendation.feedType as keyof typeof feedTypeColors]}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-2">
                   <div>
-                    <span className="text-blue-700 dark:text-blue-300 font-medium">Age:</span>
-                    <div className="text-blue-900 dark:text-blue-100">{recommendation.ageInWeeks} weeks ({recommendation.ageInDays} days)</div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Age:</span>
+                    <div className="text-gray-900 dark:text-gray-100">{recommendation.ageInWeeks} weeks ({recommendation.ageInDays} days)</div>
                   </div>
                   <div>
-                    <span className="text-blue-700 dark:text-blue-300 font-medium">Per hen:</span>
-                    <div className="text-blue-900 dark:text-blue-100">{recommendation.gramPerHen}g</div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Per hen:</span>
+                    <div className="text-gray-900 dark:text-gray-100">{recommendation.gramPerHen}g</div>
                   </div>
                   <div>
-                    <span className="text-blue-700 dark:text-blue-300 font-medium">Total:</span>
-                    <div className="text-blue-900 dark:text-blue-100 font-semibold">{recommendation.totalAmountKg.toFixed(1)}kg</div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Total:</span>
+                    <div className="text-gray-900 dark:text-gray-100 font-semibold">{recommendation.totalAmountKg.toFixed(1)}kg</div>
                   </div>
                 </div>
                 {recommendation.isTransitionWeek && (
@@ -248,56 +251,45 @@ export function FeedUsageDialog({
               </div>
             )}
 
-            {/* Feed Selection */}
-            <FormField
-              control={form.control}
-              name="feedId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">Feed</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select feed" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {feedInventory
-                        .filter(feed => feed.isActive)
-                        .map((feed) => (
-                          <SelectItem key={feed.id} value={feed.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span className="truncate">{feed.name}</span>
-                              <Badge className={`ml-2 ${feedTypeColors[feed.feedType as keyof typeof feedTypeColors]}`}>
-                                {feedTypeLabels[feed.feedType as keyof typeof feedTypeColors]}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* Usage Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="date"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-sm font-medium">Date</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="date"
-                        className="h-9"
-                        {...field}
-                        value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : new Date())}
-                      />
-                    </FormControl>
+                    <FormLabel className="text-sm font-medium">Date<span className="text-red-500">*</span></FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal h-9",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "MMM dd, yyyy")
+                            ) : (
+                              <span>Select date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={handleDateSelect}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -307,32 +299,15 @@ export function FeedUsageDialog({
                 name="amountUsed"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-sm font-medium">Amount Used</FormLabel>
+                    <FormLabel className="text-sm font-medium">Amount Used (kg)<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         step="0.1"
                         placeholder="0.0"
-                        className="h-9"
+                        className="h-9 w-full"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-sm font-medium">Unit</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="kg" 
-                        className="h-9"
-                        {...field} 
                       />
                     </FormControl>
                     <FormMessage />
@@ -351,7 +326,7 @@ export function FeedUsageDialog({
                   <FormControl>
                     <Textarea 
                       placeholder="Additional notes about this feeding..."
-                      className="min-h-[60px] resize-none"
+                      className="min-h-[60px] resize-none w-full"
                       {...field}
                     />
                   </FormControl>

@@ -30,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useStaff } from "../context/staff-context";
-import { createInvite } from "@/server/staff";
+import { createInvite } from "@/server/staff-invites";
 import { toast } from "sonner";
 
 const inviteFormSchema = z.object({
@@ -89,7 +89,7 @@ export function StaffInviteDialog() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address</FormLabel>
+                  <FormLabel>Email Address <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input
                       placeholder="staff@example.com"
@@ -106,7 +106,7 @@ export function StaffInviteDialog() {
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>Role <span className="text-red-500">*</span></FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>

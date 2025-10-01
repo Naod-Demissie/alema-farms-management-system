@@ -6,7 +6,6 @@ import { FeedType } from "@/lib/generated/prisma";
 
 export async function getFeedInventoryAction() {
   try {
-    console.log("[Feed Inventory] getFeedInventoryAction called");
     const inventory = await prisma.feedInventory.findMany({
       include: {
         supplier: true,

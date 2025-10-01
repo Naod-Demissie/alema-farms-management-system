@@ -391,7 +391,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">First Name *</label>
+                <label className="text-sm font-medium">First Name <span className="text-red-500">*</span></label>
                 <Input 
                   value={formData.firstName}
                   onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
@@ -399,7 +399,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Last Name *</label>
+                <label className="text-sm font-medium">Last Name <span className="text-red-500">*</span></label>
                 <Input 
                   value={formData.lastName}
                   onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
@@ -409,7 +409,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
             </div>
             
             <div>
-              <label className="text-sm font-medium">Staff Type *</label>
+              <label className="text-sm font-medium">Staff Type <span className="text-red-500">*</span></label>
               <Select value={formData.isSystemUser ? "SYSTEM_USER" : "NON_SYSTEM_USER"} onValueChange={(value) => handleStaffTypeChange(value === "SYSTEM_USER")}>
                 <SelectTrigger>
                   <SelectValue />
@@ -422,7 +422,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
             </div>
 
             <div>
-              <label className="text-sm font-medium">Role *</label>
+              <label className="text-sm font-medium">Role <span className="text-red-500">*</span></label>
               <Select 
                 value={formData.role} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
@@ -445,7 +445,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
 
             <div>
               <label className="text-sm font-medium">
-                Email {formData.isSystemUser ? "*" : "(Optional)"}
+                Email {formData.isSystemUser ? <span className="text-red-500">*</span> : "(Optional)"}
               </label>
               <Input 
                 type="email"

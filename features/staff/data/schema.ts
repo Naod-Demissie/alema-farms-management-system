@@ -26,6 +26,7 @@ export const createStaffSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email().optional(),
   phoneNumber: z.string().optional(),
+  image: z.string().optional(),
   role: staffRoleSchema,
   isSystemUser: z.boolean(),
 });

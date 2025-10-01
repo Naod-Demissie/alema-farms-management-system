@@ -6,7 +6,6 @@ import { getAuthenticatedUser } from "@/server/auth-middleware";
 
 export async function getFeedUsageAction() {
   try {
-    console.log("[Feed Usage] getFeedUsageAction called");
     const usage = await prisma.feedUsage.findMany({
       include: {
         flock: true,
@@ -27,10 +26,8 @@ export async function getFeedUsageAction() {
 
 export async function createFeedUsageAction(data: {
   flockId: string;
-  feedId: string;
   date: Date;
   amountUsed: number;
-  unit: string;
   notes?: string;
 }) {
   try {
@@ -41,19 +38,48 @@ export async function createFeedUsageAction(data: {
     }
     const currentUserId = authResult.user?.id;
 
-    // Check if there's enough inventory
-    const feed = await prisma.feedInventory.findUnique({
-      where: { id: data.feedId },
+    // Get flock to determine recommended feed type
+    const flock = await prisma.flocks.findUnique({
+      where: { id: data.flockId },
+    });
+
+    if (!flock) {
+      return { success: false, error: "Flock not found" };
+    }
+
+    // Get feed recommendation for this flock
+    const feedRecommendation = await prisma.feedProgram.findFirst({
+      where: {
+        ageInWeeks: flock.ageInWeeks,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!feedRecommendation) {
+      return { success: false, error: "No feed program found for this flock's age" };
+    }
+
+    // Find active feed inventory for the recommended feed type
+    const feed = await prisma.feedInventory.findFirst({
+      where: { 
+        feedType: feedRecommendation.feedType,
+        isActive: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     if (!feed) {
-      return { success: false, error: "Feed not found" };
+      return { success: false, error: `No active inventory found for ${feedRecommendation.feedType} feed` };
     }
 
     if (feed.quantity < data.amountUsed) {
       return { 
         success: false, 
-        error: `Insufficient inventory. Available: ${feed.quantity} ${feed.unit}, Required: ${data.amountUsed} ${data.unit}` 
+        error: `Insufficient inventory. Available: ${feed.quantity} kg, Required: ${data.amountUsed} kg` 
       };
     }
 
@@ -62,7 +88,12 @@ export async function createFeedUsageAction(data: {
       // Create the usage record with current user as recordedById
       const usage = await tx.feedUsage.create({
         data: {
-          ...data,
+          flockId: data.flockId,
+          feedId: feed.id,
+          date: data.date,
+          amountUsed: data.amountUsed,
+          unit: "KG",
+          notes: data.notes,
           recordedById: currentUserId || null,
         },
         include: {
@@ -74,7 +105,7 @@ export async function createFeedUsageAction(data: {
 
       // Update inventory quantity
       await tx.feedInventory.update({
-        where: { id: data.feedId },
+        where: { id: feed.id },
         data: {
           quantity: {
             decrement: data.amountUsed,
@@ -95,10 +126,8 @@ export async function createFeedUsageAction(data: {
 
 export async function updateFeedUsageAction(id: string, data: {
   flockId?: string;
-  feedId?: string;
   date?: Date;
   amountUsed?: number;
-  unit?: string;
   notes?: string;
   recordedById?: string;
 }) {
@@ -126,7 +155,7 @@ export async function updateFeedUsageAction(id: string, data: {
         if (!feed || feed.quantity < difference) {
           return { 
             success: false, 
-            error: `Insufficient inventory. Available: ${feed?.quantity || 0} ${feed?.unit || 'kg'}, Required increase: ${difference} ${originalUsage.unit}` 
+            error: `Insufficient inventory. Available: ${feed?.quantity || 0} kg, Required increase: ${difference} kg` 
           };
         }
       }

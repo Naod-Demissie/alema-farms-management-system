@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Package, AlertTriangle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -221,27 +221,13 @@ export function FeedInventory() {
     }
   };
 
-  const getStatusBadge = (isActive: boolean) => {
-    return isActive ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        Active
-      </Badge>
-    ) : (
-      <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-        <XCircle className="w-3 h-3 mr-1" />
-        Inactive
-      </Badge>
-    );
-  };
 
-  const getStockStatus = (quantity: number) => {
-    return (
-      <Badge variant="outline" className="bg-green-100 text-green-800">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        In Stock
-      </Badge>
-    );
+  // Utility function to format numbers with commas
+  const formatNumber = (num: number) => {
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   };
 
   const lowStockItems = []; // No longer tracking low stock
@@ -274,9 +260,9 @@ export function FeedInventory() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${inventory.reduce((sum, item) => 
+              {formatNumber(inventory.reduce((sum, item) => 
                 sum + (item.quantity * (item.costPerUnit || 0)), 0
-              ).toFixed(2)}
+              ))} ETB
             </div>
           </CardContent>
         </Card>
@@ -515,7 +501,7 @@ export function FeedInventory() {
             </div>
           ) : (
             <InventoryTable
-              columns={inventoryColumns(handleView, handleEdit, handleDeleteClick, getStatusBadge)}
+              columns={inventoryColumns(handleView, handleEdit, handleDeleteClick)}
               data={inventory}
               onView={handleView}
               onEdit={handleEdit}
@@ -556,16 +542,8 @@ export function FeedInventory() {
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Cost per Unit</Label>
                   <p className="text-sm font-medium">
-                    {viewingItem.costPerUnit ? `${viewingItem.costPerUnit.toFixed(2)} ETB` : "N/A"}
+                    {viewingItem.costPerUnit ? `${formatNumber(viewingItem.costPerUnit)} ETB` : "N/A"}
                   </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
-                  <div className="mt-1">{getStatusBadge(viewingItem.isActive)}</div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Stock Status</Label>
-                  <div className="mt-1">{getStockStatus(viewingItem.quantity)}</div>
                 </div>
               </div>
               <div>

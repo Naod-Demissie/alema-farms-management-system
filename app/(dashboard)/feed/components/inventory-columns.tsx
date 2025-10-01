@@ -11,8 +11,6 @@ import {
   Package,
   DollarSign,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
   Calendar,
   Building2
 } from "lucide-react";
@@ -43,11 +41,18 @@ const feedTypeColors = {
   CUSTOM: "bg-gray-100 text-gray-800"
 };
 
+// Utility function to format numbers with commas
+const formatNumber = (num: number) => {
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
 export const inventoryColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
-  onDelete: (record: any) => void,
-  getStatusBadge: (isActive: boolean) => React.ReactNode
+  onDelete: (record: any) => void
 ): ColumnDef<any>[] => [
   {
     accessorKey: "feedType",
@@ -101,7 +106,7 @@ export const inventoryColumns = (
       return record.costPerUnit ? (
         <div className="flex items-center space-x-1">
           <DollarSign className="h-3 w-3 text-muted-foreground" />
-          <span className="text-sm font-medium">{record.costPerUnit.toFixed(2)} ETB</span>
+          <span className="text-sm font-medium">{formatNumber(record.costPerUnit)} ETB</span>
         </div>
       ) : (
         <span className="text-muted-foreground text-sm">N/A</span>
@@ -117,7 +122,7 @@ export const inventoryColumns = (
       return totalCost > 0 ? (
         <div className="flex items-center space-x-1">
           <DollarSign className="h-3 w-3 text-muted-foreground" />
-          <span className="text-sm font-medium">{totalCost.toFixed(2)} ETB</span>
+          <span className="text-sm font-medium">{formatNumber(totalCost)} ETB</span>
         </div>
       ) : (
         <span className="text-muted-foreground text-sm">N/A</span>

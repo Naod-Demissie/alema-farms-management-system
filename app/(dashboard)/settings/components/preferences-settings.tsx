@@ -167,27 +167,6 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
         </CardContent>
       </Card>
 
-      {/* Save Button */}
-      {hasChanges && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-800">
-                  You have unsaved changes
-                </p>
-                <p className="text-sm text-blue-700">
-                  Don't forget to save your preferences
-                </p>
-              </div>
-              <Button onClick={handleSave} disabled={isLoading}>
-                <Settings className="h-4 w-4 mr-2" />
-                {isLoading ? "Saving..." : "Save Preferences"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

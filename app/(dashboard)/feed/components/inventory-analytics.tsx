@@ -10,6 +10,14 @@ import { toast } from "sonner";
 import { getInventoryProjectionAction, getFeedConsumptionAnalyticsAction } from "@/app/actions/feed-inventory";
 import { feedTypeLabels, feedTypeColors } from "@/lib/feed-program";
 
+// Utility function to format numbers with commas
+const formatNumber = (num: number) => {
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
 export function InventoryAnalytics() {
   const [projections, setProjections] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
@@ -244,9 +252,9 @@ export function InventoryAnalytics() {
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">${analytics.summary.totalCost.toFixed(2)}</div>
+                        <div className="text-2xl font-bold">{formatNumber(analytics.summary.totalCost)} ETB</div>
                         <p className="text-xs text-muted-foreground">
-                          ${analytics.summary.averageCostPerKg.toFixed(2)}/kg avg
+                          {formatNumber(analytics.summary.averageCostPerKg)} ETB/kg avg
                         </p>
                       </CardContent>
                     </Card>
@@ -302,9 +310,9 @@ export function InventoryAnalytics() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="font-medium">${feedType.totalCost.toFixed(2)}</div>
+                              <div className="font-medium">{formatNumber(feedType.totalCost)} ETB</div>
                               <div className="text-sm text-muted-foreground">
-                                ${feedType.averageCostPerKg.toFixed(2)}/kg
+                                {formatNumber(feedType.averageCostPerKg)} ETB/kg
                               </div>
                             </div>
                           </div>

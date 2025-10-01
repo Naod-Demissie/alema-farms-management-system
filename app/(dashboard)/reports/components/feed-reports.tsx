@@ -870,7 +870,7 @@ export function FeedReports({ filters }: FeedReportsProps) {
                       <div>
                         <h3 className="font-semibold">{item.name}</h3>
                         <p className="text-sm text-muted-foreground capitalize">
-                          {item.type} • ${item.costPerUnit}/kg
+                          {item.type} • {item.costPerUnit ? `${item.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB/kg` : 'N/A'}
                         </p>
                       </div>
                       <Badge className={getInventoryStatusColor(item.status)}>

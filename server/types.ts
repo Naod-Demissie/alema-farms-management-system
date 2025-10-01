@@ -29,7 +29,6 @@ export interface FilterParams {
 export interface CreateInviteData {
   email: string;
   role: 'ADMIN' | 'VETERINARIAN' | 'WORKER';
-  createdById: string;
 }
 
 export interface InviteVerificationData {

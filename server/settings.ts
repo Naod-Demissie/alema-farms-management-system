@@ -2,10 +2,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { headers as getHeaders } from "next/headers";
 import { ApiResponse } from "./types";
 import bcrypt from "bcryptjs";
 import { getServerSession } from "@/lib/auth";
+import { sessionCache } from "@/lib/session-cache";
 
 // Profile Settings Types
 export interface UpdateProfileData {
@@ -13,6 +14,7 @@ export interface UpdateProfileData {
   lastName?: string;
   email?: string;
   phoneNumber?: string;
+  profileImage?: string;
 }
 
 export interface ChangePasswordData {
@@ -121,6 +123,7 @@ export const updateProfile = async (data: UpdateProfileData): Promise<ApiRespons
     }
     if (data.email) updateData.email = data.email;
     if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+    if (data.profileImage !== undefined) updateData.image = data.profileImage;
 
     const updatedProfile = await prisma.staff.update({
       where: { id: user.id },
@@ -132,12 +135,18 @@ export const updateProfile = async (data: UpdateProfileData): Promise<ApiRespons
         name: true,
         email: true,
         phoneNumber: true,
+        image: true,
         role: true,
         isActive: true,
         createdAt: true,
         updatedAt: true
       }
     });
+
+    // Invalidate session cache to force refresh
+    if (session.session?.token) {
+      sessionCache.delete(session.session.token);
+    }
 
     return {
       success: true,
@@ -181,13 +190,28 @@ export const changePassword = async (data: ChangePasswordData): Promise<ApiRespo
       };
     }
 
-    // Note: Password management is handled by better-auth
-    // We can't directly access or update passwords through Prisma
-    // This would need to be implemented through better-auth's password change API
-    
+    // Use better-auth API to change password
+    const headersList = await getHeaders();
+    const result = await auth.api.changePassword({
+      body: {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+        revokeOtherSessions: false, // Keep other sessions active
+      },
+      headers: headersList,
+    });
+
+    // Check if the result indicates an error
+    if (!result || result === null) {
+      return {
+        success: false,
+        message: "Failed to change password"
+      };
+    }
+
     return {
-      success: false,
-      message: "Password change functionality needs to be implemented through better-auth API"
+      success: true,
+      message: "Password updated successfully"
     };
   } catch (error) {
     const e = error as Error;

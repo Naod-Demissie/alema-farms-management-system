@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/form";
 import { validateInvite, completeStaffRegistration } from "@/server/staff";
 import { toast } from "sonner";
-import { Upload, User, Mail, Phone, Lock } from "lucide-react";
+import { Upload, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
 
 const registrationSchema = z
   .object({
@@ -52,6 +52,8 @@ function CompleteRegistrationContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteData, setInviteData] = useState<any>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const token = searchParams.get("token");
   const email = searchParams.get("email");
@@ -102,8 +104,30 @@ function CompleteRegistrationContent() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setImagePreview(result);
-        form.setValue("image", result);
+        
+        // Create a new image to resize and compress
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas for resizing
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) return;
+          
+          // Set canvas size to 90x90
+          canvas.width = 90;
+          canvas.height = 90;
+          
+          // Draw and resize the image
+          ctx.drawImage(img, 0, 0, 90, 90);
+          
+          // Convert to base64 with compression
+          const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+          
+          setImagePreview(compressedImage);
+          form.setValue("image", compressedImage);
+        };
+        img.src = result;
       };
       reader.readAsDataURL(file);
     }
@@ -154,7 +178,7 @@ function CompleteRegistrationContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -167,10 +191,10 @@ function CompleteRegistrationContent() {
 
   if (!inviteData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-red-600">Invalid Invitation</CardTitle>
+            <CardTitle className="text-destructive">Invalid Invitation</CardTitle>
             <CardDescription>
               This invitation link is invalid or has expired.
             </CardDescription>
@@ -186,14 +210,14 @@ function CompleteRegistrationContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-foreground">
             Complete Your Registration
           </h1>
-          <p className="mt-2 text-gray-600">
-            You&apos;clearve been invited to join{" "}
+          <p className="mt-2 text-muted-foreground">
+            You&apos;ve been invited to join{" "}
             {process.env.NEXT_PUBLIC_FARM_NAME || "our clinic"} as a staff
             member
           </p>
@@ -273,7 +297,7 @@ function CompleteRegistrationContent() {
                       <FormItem>
                         <FormLabel className="flex items-center space-x-2">
                           <User className="h-4 w-4" />
-                          <span>First Name</span>
+                          <span>First Name <span className="text-red-500">*</span></span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -290,7 +314,7 @@ function CompleteRegistrationContent() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name</FormLabel>
+                        <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Enter your last name"
@@ -333,14 +357,29 @@ function CompleteRegistrationContent() {
                       <FormItem>
                         <FormLabel className="flex items-center space-x-2">
                           <Lock className="h-4 w-4" />
-                          <span>Password</span>
+                          <span>Password <span className="text-red-500">*</span></span>
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Create a secure password"
-                            {...field}
-                          />
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Create a secure password"
+                              {...field}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -351,13 +390,28 @@ function CompleteRegistrationContent() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>Confirm Password <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Confirm your password"
-                            {...field}
-                          />
+                          <div className="relative">
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="Confirm your password"
+                              {...field}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -387,7 +441,7 @@ export default function CompleteRegistrationPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-sm text-muted-foreground">

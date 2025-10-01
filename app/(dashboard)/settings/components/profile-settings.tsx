@@ -13,16 +13,19 @@ import {
   Camera,
   Save,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  X
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { updateProfile, getUserProfile } from "@/server/settings";
+import { authClient } from "@/lib/auth-client";
+import { refreshUserSession } from "@/lib/session-refresh";
 
 interface ProfileSettingsProps {}
 
 export function ProfileSettings({}: ProfileSettingsProps) {
-  const { data: session } = useSession();
+  const { data: session, refetch } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -70,18 +73,64 @@ export function ProfileSettings({}: ProfileSettingsProps) {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // In a real app, you'd upload to a service like Cloudinary or AWS S3
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+
+      // Validate file size (2MB limit)
+      const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+      if (file.size > maxSize) {
+        toast.error("Image size must be less than 2MB");
+        return;
+      }
+
+      // Convert to base64 and resize to 90x90 pixels
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setFormData(prev => ({
-          ...prev,
-          profileImage: result
-        }));
-        setHasChanges(true);
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        
+        // Create a new image to resize and compress
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas for resizing
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) return;
+          
+          // Set canvas size to 90x90
+          canvas.width = 90;
+          canvas.height = 90;
+          
+          // Draw and resize the image
+          ctx.drawImage(img, 0, 0, 90, 90);
+          
+          // Convert to base64 with compression
+          const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+          
+          setFormData(prev => ({
+            ...prev,
+            profileImage: compressedImage
+          }));
+          setHasChanges(true);
+        };
+        img.src = result;
+      };
+      reader.onerror = () => {
+        toast.error("Failed to read image file");
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      profileImage: ""
+    }));
+    setHasChanges(true);
   };
 
   const handleSave = async () => {
@@ -92,7 +141,15 @@ export function ProfileSettings({}: ProfileSettingsProps) {
       if (result.success) {
         setHasChanges(false);
         toast.success("Profile updated successfully");
-        // Note: Session will be updated on next page refresh or login
+        
+        // Refresh the session to get updated user data
+        try {
+          await refreshUserSession();
+          await refetch();
+        } catch (sessionError) {
+          console.warn("Failed to refresh session:", sessionError);
+          // Still show success since the profile was updated
+        }
       } else {
         toast.error(result.message || "Failed to update profile");
       }
@@ -129,13 +186,24 @@ export function ProfileSettings({}: ProfileSettingsProps) {
                 {getInitials(formData.firstName, formData.lastName)}
               </AvatarFallback>
             </Avatar>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Button variant="outline" size="sm" asChild>
                 <label htmlFor="profile-image" className="cursor-pointer">
                   <Camera className="mr-2 h-4 w-4" />
                   Change Picture
                 </label>
               </Button>
+              {formData.profileImage && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRemoveImage}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Remove Picture
+                </Button>
+              )}
               <input
                 id="profile-image"
                 type="file"
