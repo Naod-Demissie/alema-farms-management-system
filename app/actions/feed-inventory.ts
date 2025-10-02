@@ -94,11 +94,18 @@ export async function updateFeedInventoryAction(id: string, data: {
     const feed = await prisma.feedInventory.update({
       where: { id },
       data: {
-        ...data,
+        feedType: data.feedType,
+        quantity: data.quantity,
+        unit: data.unit as any,
+        costPerUnit: data.costPerUnit,
+        notes: data.notes,
+        isActive: data.isActive,
         totalCost,
-        supplierId: data.supplierId !== undefined 
-          ? (data.supplierId && data.supplierId !== "none" ? data.supplierId : null)
-          : undefined,
+        ...(data.supplierId !== undefined && {
+          supplier: data.supplierId && data.supplierId !== "none" 
+            ? { connect: { id: data.supplierId } }
+            : { disconnect: true }
+        }),
       },
       include: {
         supplier: true,
@@ -128,63 +135,70 @@ export async function deleteFeedInventoryAction(id: string) {
 // Enhanced inventory tracking functions
 export async function getInventoryWithUsageAction() {
   try {
-    const inventory = await prisma.feedInventory.findMany({
-      include: {
-        supplier: true,
-        feedUsage: {
-          include: {
-            flock: true,
-          },
-          orderBy: {
-            date: 'desc'
-          },
-          take: 10 // Last 10 usage records
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    // Calculate 30 days ago once
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Calculate additional metrics for each inventory item
-    const inventoryWithMetrics = await Promise.all(
-      inventory.map(async (item) => {
-        // Get total usage in the last 30 days
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const recentUsage = await prisma.feedUsage.aggregate({
-          where: {
-            feedId: item.id,
-            date: {
-              gte: thirtyDaysAgo,
+    // Execute all queries in parallel to avoid N+1 problem
+    const [inventory, usageAggregates] = await Promise.all([
+      // Get inventory with recent usage records
+      prisma.feedInventory.findMany({
+        include: {
+          supplier: true,
+          feedUsage: {
+            include: {
+              flock: true,
             },
+            orderBy: {
+              date: 'desc'
+            },
+            take: 10 // Last 10 usage records
           },
-          _sum: {
-            amountUsed: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      // Get usage aggregates for all feeds in a single query
+      prisma.feedUsage.groupBy({
+        by: ['feedId'],
+        where: {
+          date: {
+            gte: thirtyDaysAgo,
           },
-        });
-
-        const totalUsage30Days = recentUsage._sum.amountUsed || 0;
-        const averageDailyUsage = totalUsage30Days / 30;
-
-        // Calculate days remaining at current usage rate
-        const daysRemaining = averageDailyUsage > 0 ? item.quantity / averageDailyUsage : null;
-
-        // Get low stock status (removed minStock logic)
-        const isLowStock = false;
-        const isCriticalStock = false;
-
-        return {
-          ...item,
-          totalUsage30Days,
-          averageDailyUsage,
-          daysRemaining,
-          isLowStock,
-          isCriticalStock,
-        };
+        },
+        _sum: {
+          amountUsed: true,
+        },
       })
+    ]);
+
+    // Create a map for O(1) lookup of usage data
+    const usageMap = new Map(
+      usageAggregates.map(usage => [usage.feedId, usage._sum.amountUsed || 0])
     );
+
+    // Process inventory data without additional database queries
+    const inventoryWithMetrics = inventory.map(item => {
+      const totalUsage30Days = usageMap.get(item.id) || 0;
+      const averageDailyUsage = totalUsage30Days / 30;
+
+      // Calculate days remaining at current usage rate
+      const daysRemaining = averageDailyUsage > 0 ? item.quantity / averageDailyUsage : null;
+
+      // Get low stock status (removed minStock logic)
+      const isLowStock = false;
+      const isCriticalStock = false;
+
+      return {
+        ...item,
+        totalUsage30Days,
+        averageDailyUsage,
+        daysRemaining,
+        isLowStock,
+        isCriticalStock,
+      };
+    });
 
     return { success: true, data: inventoryWithMetrics };
   } catch (error) {
@@ -207,65 +221,84 @@ export async function getInventoryProjectionAction(feedType?: string, days: numb
       },
     });
 
-    const projections = await Promise.all(
-      inventory.map(async (item) => {
-        // Get usage data for the last 30 days to calculate average
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Calculate 30 days ago once
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const recentUsage = await prisma.feedUsage.findMany({
-          where: {
-            feedId: item.id,
-            date: {
-              gte: thirtyDaysAgo,
-            },
-          },
-          orderBy: {
-            date: 'asc',
-          },
-        });
-
-        // Calculate average daily usage
-        const totalUsage = recentUsage.reduce((sum, usage) => sum + usage.amountUsed, 0);
-        const averageDailyUsage = totalUsage / 30;
-
-        // Generate daily projections
-        const projections = [];
-        let currentStock = item.quantity;
-        const today = new Date();
-
-        for (let i = 0; i < days; i++) {
-          const date = new Date(today);
-          date.setDate(today.getDate() + i);
-          
-          currentStock -= averageDailyUsage;
-          
-          projections.push({
-            date,
-            projectedStock: Math.max(0, currentStock),
-            dailyUsage: averageDailyUsage,
-            isLowStock: false,
-            isOutOfStock: currentStock <= 0,
-          });
+    // Get all usage data for all feeds in a single query to avoid N+1 problem
+    const allUsageData = await prisma.feedUsage.findMany({
+      where: {
+        date: {
+          gte: thirtyDaysAgo,
+        },
+        feed: {
+          ...whereClause,
+          isActive: true,
         }
+      },
+      orderBy: {
+        date: 'asc',
+      },
+      select: {
+        feedId: true,
+        amountUsed: true,
+        date: true,
+      }
+    });
 
-        // Find when stock will run out
-        const outOfStockDate = projections.find(p => p.isOutOfStock)?.date || null;
-        const lowStockDate = projections.find(p => p.isLowStock && !p.isOutOfStock)?.date || null;
+    // Group usage data by feedId for O(1) lookup
+    const usageByFeedId = new Map<string, typeof allUsageData>();
+    allUsageData.forEach(usage => {
+      if (!usageByFeedId.has(usage.feedId)) {
+        usageByFeedId.set(usage.feedId, []);
+      }
+      usageByFeedId.get(usage.feedId)!.push(usage);
+    });
 
-        return {
-          ...item,
-          averageDailyUsage,
-          projections,
-          outOfStockDate,
-          lowStockDate,
-          daysUntilOutOfStock: outOfStockDate ? 
-            Math.ceil((outOfStockDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null,
-          daysUntilLowStock: lowStockDate ? 
-            Math.ceil((lowStockDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null,
-        };
-      })
-    );
+    // Process projections without additional database queries
+    const projections = inventory.map(item => {
+      const recentUsage = usageByFeedId.get(item.id) || [];
+      
+      // Calculate average daily usage
+      const totalUsage = recentUsage.reduce((sum, usage) => sum + usage.amountUsed, 0);
+      const averageDailyUsage = totalUsage / 30;
+
+      // Generate daily projections
+      const dailyProjections = [];
+      let currentStock = item.quantity;
+      const today = new Date();
+
+      for (let i = 0; i < days; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        
+        currentStock -= averageDailyUsage;
+        
+        dailyProjections.push({
+          date,
+          projectedStock: Math.max(0, currentStock),
+          dailyUsage: averageDailyUsage,
+          isLowStock: false,
+          isOutOfStock: currentStock <= 0,
+        });
+      }
+
+      // Find when stock will run out
+      const outOfStockDate = dailyProjections.find(p => p.isOutOfStock)?.date || null;
+      const lowStockDate = dailyProjections.find(p => p.isLowStock && !p.isOutOfStock)?.date || null;
+
+      return {
+        ...item,
+        averageDailyUsage,
+        projections: dailyProjections,
+        outOfStockDate,
+        lowStockDate,
+        daysUntilOutOfStock: outOfStockDate ? 
+          Math.ceil((outOfStockDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null,
+        daysUntilLowStock: lowStockDate ? 
+          Math.ceil((lowStockDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null,
+      };
+    });
 
     return { success: true, data: projections };
   } catch (error) {

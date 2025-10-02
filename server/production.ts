@@ -1401,16 +1401,23 @@ export async function createBulkEggProduction(
           message: `Invalid total count for flock ${record.flockId}: ${record.totalCount}`
         };
       }
+    }
 
-      // Check if flock exists
-      const flock = await prisma.flocks.findUnique({
-        where: { id: record.flockId }
-      });
+    // Get all unique flock IDs and validate them in a single query
+    const flockIds = [...new Set(records.map(record => record.flockId))];
+    const existingFlocks = await prisma.flocks.findMany({
+      where: { id: { in: flockIds } },
+      select: { id: true }
+    });
 
-      if (!flock) {
+    const existingFlockIds = new Set(existingFlocks.map(flock => flock.id));
+    
+    // Check if all flocks exist
+    for (const flockId of flockIds) {
+      if (!existingFlockIds.has(flockId)) {
         return {
           success: false,
-          message: `Flock not found: ${record.flockId}`
+          message: `Flock not found: ${flockId}`
         };
       }
     }

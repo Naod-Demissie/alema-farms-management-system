@@ -37,7 +37,7 @@ export function calculateFlockAge(flock: Flock): number {
  */
 export async function getFeedRecommendation(flockId: string): Promise<FeedRecommendation | null> {
   try {
-    const flock = await prisma.flocks.findUnique({ 
+    const flockData = await prisma.flocks.findUnique({ 
       where: { id: flockId },
       select: { 
         id: true,
@@ -48,9 +48,15 @@ export async function getFeedRecommendation(flockId: string): Promise<FeedRecomm
       }
     });
 
-    if (!flock) {
+    if (!flockData) {
       throw new Error('Flock not found');
     }
+
+    const flock: Flock = {
+      ...flockData,
+      ageInDays: flockData.ageInDays ?? undefined,
+    };
+
 
     const ageInWeeks = calculateFlockAge(flock);
     
@@ -107,7 +113,7 @@ export async function getFeedRecommendation(flockId: string): Promise<FeedRecomm
       totalAmountKg: (currentProgram.gramPerHen * flock.currentCount) / 1000, // Convert to kg
       ageInWeeks,
       ageInDays: currentProgram.ageInDays,
-      isTransitionWeek,
+      isTransitionWeek: !!isTransitionWeek,
       nextFeedType,
       nextTransitionWeek,
     };
@@ -119,29 +125,81 @@ export async function getFeedRecommendation(flockId: string): Promise<FeedRecomm
 
 /**
  * Get feed recommendations for all active flocks
+ * Optimized to avoid N+1 queries by fetching all feed programs at once
  */
 export async function getAllFeedRecommendations(): Promise<Array<{
   flock: Flock;
   recommendation: FeedRecommendation;
 }>> {
   try {
-    const flocks = await prisma.flocks.findMany({
-      where: { currentCount: { gt: 0 } },
-      select: {
-        id: true,
-        batchCode: true,
-        arrivalDate: true,
-        currentCount: true,
-        ageInDays: true,
-      }
+    // Fetch flocks and feed programs in parallel
+    const [flocksData, feedPrograms] = await Promise.all([
+      prisma.flocks.findMany({
+        where: { currentCount: { gt: 0 } },
+        select: {
+          id: true,
+          batchCode: true,
+          arrivalDate: true,
+          currentCount: true,
+          ageInDays: true,
+        }
+      }),
+      prisma.feedProgram.findMany({
+        where: { isActive: true },
+        orderBy: { ageInWeeks: 'asc' }
+      })
+    ]);
+
+    // Convert flocks data to proper interface
+    const flocks: Flock[] = flocksData.map(flockData => ({
+      ...flockData,
+      ageInDays: flockData.ageInDays ?? undefined,
+    }));
+
+    // Create a map for O(1) lookup of feed programs by age
+    const programMap = new Map<number, typeof feedPrograms[0]>();
+    feedPrograms.forEach(program => {
+      programMap.set(program.ageInWeeks, program);
     });
 
-    const recommendations = await Promise.all(
-      flocks.map(async (flock) => {
-        const recommendation = await getFeedRecommendation(flock.id);
-        return { flock, recommendation };
-      })
-    );
+    // Get the last program for flocks older than the program
+    const lastProgram = feedPrograms[feedPrograms.length - 1];
+
+    // Process all flocks without additional database queries
+    const recommendations = flocks.map(flock => {
+      const ageInWeeks = calculateFlockAge(flock);
+      
+      // Get current week's program
+      let currentProgram = programMap.get(ageInWeeks);
+      
+      if (!currentProgram) {
+        // For flocks older than the program, use the last available program
+        if (!lastProgram) {
+          console.warn(`No feed program found at ${ageInWeeks} weeks`);
+          return { flock, recommendation: null };
+        }
+        currentProgram = lastProgram;
+      }
+
+      // Get next week's program to check for transitions
+      const nextProgram = programMap.get(ageInWeeks + 1);
+      const isTransitionWeek = nextProgram && nextProgram.feedType !== currentProgram.feedType;
+      const nextFeedType = isTransitionWeek ? nextProgram?.feedType : undefined;
+      const nextTransitionWeek = isTransitionWeek ? ageInWeeks + 1 : undefined;
+
+      const recommendation: FeedRecommendation = {
+        feedType: currentProgram.feedType,
+        gramPerHen: currentProgram.gramPerHen,
+        totalAmountKg: (currentProgram.gramPerHen * flock.currentCount) / 1000, // Convert to kg
+        ageInWeeks,
+        ageInDays: currentProgram.ageInDays,
+        isTransitionWeek: !!isTransitionWeek,
+        nextFeedType,
+        nextTransitionWeek,
+      };
+
+      return { flock, recommendation };
+    });
 
     return recommendations.filter(item => item.recommendation !== null) as Array<{
       flock: Flock;
@@ -287,27 +345,42 @@ export async function getFeedCompliance(flockId: string, days: number = 7): Prom
   }>;
 }> {
   try {
-    const flock = await prisma.flocks.findUnique({ where: { id: flockId } });
-    if (!flock) throw new Error('Flock not found');
-
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - days);
 
-    // Get feed usage records for the period
-    const usageRecords = await prisma.feedUsage.findMany({
-      where: {
-        flockId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        }
-      },
-      include: {
-        feed: true
-      },
-      orderBy: { date: 'asc' }
+    // Execute queries in parallel to avoid N+1 problem
+    const [flock, usageRecords, feedPrograms] = await Promise.all([
+      prisma.flocks.findUnique({ where: { id: flockId } }),
+      prisma.feedUsage.findMany({
+        where: {
+          flockId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          }
+        },
+        include: {
+          feed: true
+        },
+        orderBy: { date: 'asc' }
+      }),
+      prisma.feedProgram.findMany({
+        where: { isActive: true },
+        orderBy: { ageInWeeks: 'asc' }
+      })
+    ]);
+
+    if (!flock) throw new Error('Flock not found');
+
+    // Create a map for O(1) lookup of feed programs by age
+    const programMap = new Map<number, typeof feedPrograms[0]>();
+    feedPrograms.forEach(program => {
+      programMap.set(program.ageInWeeks, program);
     });
+
+    // Get the last program for ages beyond the program
+    const lastProgram = feedPrograms[feedPrograms.length - 1];
 
     // Calculate recommended amounts for each day
     const records = [];
@@ -325,22 +398,12 @@ export async function getFeedCompliance(flockId: string, days: number = 7): Prom
       const totalAgeInDays = ageAtArrival + daysSinceArrival;
       const ageInWeeks = Math.floor(totalAgeInDays / 7);
 
-      // Get program for this age
-      let program = await prisma.feedProgram.findFirst({
-        where: {
-          ageInWeeks: ageInWeeks,
-          isActive: true
-        }
-      });
+      // Get program for this age from the map
+      let program = programMap.get(ageInWeeks);
 
-      // If no program found for this age, use the last available program (22 weeks)
+      // If no program found for this age, use the last available program
       if (!program) {
-        program = await prisma.feedProgram.findFirst({
-          where: {
-            isActive: true
-          },
-          orderBy: { ageInWeeks: 'desc' }
-        });
+        program = lastProgram;
       }
 
       const recommended = program ? (program.gramPerHen * flock.currentCount) / 1000 : 0;

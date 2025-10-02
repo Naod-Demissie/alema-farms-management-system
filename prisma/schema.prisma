@@ -36,6 +36,11 @@ model Staff {
   sessions         Sessions[]
   treatments       Treatments[]    @relation("TreatedByStaff")
 
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([name, role])
+  @@index([role, isActive])
   @@map("staff")
 }
 
@@ -50,6 +55,10 @@ model Sessions {
   userId    String
   staff     Staff    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@index([expiresAt, createdAt])
   @@map("sessions")
 }
 
@@ -69,6 +78,8 @@ model Accounts {
   updatedAt             DateTime  @updatedAt
   staff                 Staff     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([providerId])
   @@map("accounts")
 }
 
@@ -80,6 +91,8 @@ model Verifications {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  @@index([identifier])
+  @@index([expiresAt])
   @@map("verifications")
 }
 
@@ -94,6 +107,12 @@ model Invite {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   createdBy   Staff?    @relation("InviteCreatedByStaff", fields: [createdById], references: [id])
+
+  @@index([isUsed])
+  @@index([expiresAt])
+  @@index([createdById])
+  @@index([isUsed, expiresAt])
+  @@index([email, isUsed])
 }
 
 model Payroll {
@@ -104,6 +123,10 @@ model Payroll {
   deductions Float?   @default(0)
   paidOn     DateTime
   staff      Staff    @relation(fields: [staffId], references: [id])
+
+  @@index([staffId])
+  @@index([paidOn])
+  @@index([staffId, paidOn])
 }
 
 model Attendance {
@@ -117,6 +140,11 @@ model Attendance {
   staff    Staff            @relation(fields: [staffId], references: [id])
 
   @@unique([staffId, date])
+  @@index([staffId])
+  @@index([date])
+  @@index([status])
+  @@index([staffId, date])
+  @@index([date, status])
 }
 
 model LeaveRequest {
@@ -130,6 +158,14 @@ model LeaveRequest {
   approvedBy String?
   approver   Staff?      @relation("ApprovedLeaves", fields: [approvedBy], references: [id])
   staff      Staff       @relation("StaffLeave", fields: [staffId], references: [id])
+
+  @@index([staffId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([approvedBy])
+  @@index([staffId, status])
+  @@index([status, startDate, endDate])
 }
 
 model LeaveBalance {
@@ -140,6 +176,8 @@ model LeaveBalance {
   usedLeaveDays      Int    @default(0)
   remainingLeaveDays Int
   staff              Staff  @relation(fields: [staffId], references: [id])
+
+  @@index([year])
 }
 
 model Flocks {
@@ -161,6 +199,12 @@ model Flocks {
   treatments        Treatments[]
   vaccinations      Vaccinations[]
 
+  @@index([arrivalDate])
+  @@index([currentCount])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([arrivalDate, currentCount])
+  @@index([batchCode, createdAt])
   @@map("flocks")
 }
 
@@ -178,6 +222,11 @@ model Vaccinations {
   status           String   @default("completed")
   flock            Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
+  @@index([flockId])
+  @@index([administeredDate])
+  @@index([createdAt])
+  @@index([status])
+  @@index([flockId, administeredDate])
   @@map("vaccinations")
 }
 
@@ -201,6 +250,12 @@ model Treatments {
   flock       Flocks             @relation(fields: [flockId], references: [id], onDelete: Cascade)
   treatedBy   Staff?             @relation("TreatedByStaff", fields: [treatedById], references: [id])
 
+  @@index([flockId])
+  @@index([treatedById])
+  @@index([createdAt])
+  @@index([disease])
+  @@index([flockId, createdAt])
+  @@index([disease, response])
   @@map("treatments")
 }
 
@@ -217,6 +272,12 @@ model Mortality {
   flock            Flocks      @relation(fields: [flockId], references: [id], onDelete: Cascade)
   recordedBy       Staff?      @relation("RecordedByStaff", fields: [recordedById], references: [id])
 
+  @@index([flockId])
+  @@index([date])
+  @@index([cause])
+  @@index([recordedById])
+  @@index([flockId, date])
+  @@index([date, cause])
   @@map("mortality")
 }
 
@@ -231,6 +292,10 @@ model EggProduction {
   updatedAt   DateTime @updatedAt
   flock       Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
+  @@index([flockId])
+  @@index([date])
+  @@index([createdAt])
+  @@index([flockId, date])
   @@map("egg_production")
 }
 
@@ -244,6 +309,10 @@ model BroilerProduction {
   updatedAt DateTime @updatedAt
   flock     Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
+  @@index([flockId])
+  @@index([date])
+  @@index([createdAt])
+  @@index([flockId, date])
   @@map("broiler_production")
 }
 
@@ -257,6 +326,10 @@ model ManureProduction {
   updatedAt DateTime @updatedAt
   flock     Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
 
+  @@index([flockId])
+  @@index([date])
+  @@index([createdAt])
+  @@index([flockId, date])
   @@map("manure_production")
 }
 
@@ -271,6 +344,9 @@ model Expenses {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  @@index([category])
+  @@index([date])
+  @@index([createdAt])
   @@map("expenses")
 }
 
@@ -288,6 +364,9 @@ model Revenue {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
+  @@index([source])
+  @@index([date])
+  @@index([createdAt])
   @@map("revenue")
 }
 
@@ -302,6 +381,12 @@ model Notifications {
   flock     Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
   staff     Staff    @relation("StaffNotifications", fields: [staffId], references: [id], onDelete: Cascade)
 
+  @@index([staffId])
+  @@index([flockId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([staffId, isRead])
+  @@index([staffId, createdAt])
   @@map("notifications")
 }
 
@@ -320,6 +405,12 @@ model FeedInventory {
   supplier    FeedSupplier? @relation(fields: [supplierId], references: [id])
   feedUsage   FeedUsage[]
 
+  @@index([feedType])
+  @@index([supplierId])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([feedType, isActive])
+  @@index([supplierId, isActive])
   @@map("feed_inventory")
 }
 
@@ -335,6 +426,9 @@ model FeedSupplier {
   updatedAt     DateTime        @updatedAt
   feedInventory FeedInventory[]
 
+  @@index([name])
+  @@index([isActive])
+  @@index([createdAt])
   @@map("feed_suppliers")
 }
 
@@ -353,6 +447,13 @@ model FeedUsage {
   flock        Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
   recordedBy   Staff?        @relation("FeedUsageRecordedBy", fields: [recordedById], references: [id])
 
+  @@index([flockId])
+  @@index([feedId])
+  @@index([date])
+  @@index([recordedById])
+  @@index([createdAt])
+  @@index([flockId, date])
+  @@index([feedId, date])
   @@map("feed_usage")
 }
 
@@ -366,6 +467,9 @@ model FeedProgram {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  @@index([feedType])
+  @@index([isActive])
+  @@index([ageInWeeks, isActive])
   @@map("feed_program")
 }
 
@@ -389,6 +493,9 @@ model Inventory {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@index([type])
+  @@index([isActive])
+  @@index([createdAt])
   @@map("inventory")
 }
 
