@@ -29,6 +29,7 @@ import { ProductionFilters } from "../../production/components/production-types"
 import {
   getProductionSummary,
   getDailyProductionData,
+  DailyProductionData,
 } from "@/server/production";
 import { toast } from "sonner";
 
@@ -57,14 +58,6 @@ export function ProductionReports({
     }>;
   }
 
-  interface DailyProductionData {
-    date: string;
-    flockId: string;
-    flockCode: string;
-    breed: string;
-    totalEggs: number;
-    qualityScore: number;
-  }
 
   const [summary, setSummary] = useState<ProductionSummary | null>(null);
   const [dailyData, setDailyData] = useState<DailyProductionData[]>([]);
@@ -211,11 +204,21 @@ export function ProductionReports({
       },
       { normal: 0, cracked: 0, spoiled: 0 }
     );
+    
+    // If no trend data, use the grade breakdown directly
+    if (filtered.length === 0 && summary.gradeBreakdown) {
+      return [
+        { name: "Good", value: summary.gradeBreakdown.normal || 0 },
+        { name: "Cracked", value: summary.gradeBreakdown.cracked || 0 },
+        { name: "Spoiled", value: summary.gradeBreakdown.spoiled || 0 },
+      ].filter(item => item.value > 0);
+    }
+    
     return [
       { name: "Good", value: totals.normal },
       { name: "Cracked", value: totals.cracked },
       { name: "Spoiled", value: totals.spoiled },
-    ];
+    ].filter(item => item.value > 0);
   })();
 
   // Orange color palette
@@ -231,7 +234,75 @@ export function ProductionReports({
 
   return (
     <div className="space-y-6">
-      {/* First row: two graphs */}
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Eggs</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {summary?.totalEggs?.toLocaleString() || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              All time production
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {summary?.averageDailyProduction?.toFixed(1) || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Eggs per day
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Quality Rate</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {(() => {
+                if (!summary?.gradeBreakdown) return "0%";
+                const total = summary.gradeBreakdown.normal + summary.gradeBreakdown.cracked + summary.gradeBreakdown.spoiled;
+                const quality = total > 0 ? (summary.gradeBreakdown.normal / total) * 100 : 0;
+                return `${quality.toFixed(1)}%`;
+              })()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Good quality eggs
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Flocks</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {uniqueFlocks.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Producing flocks
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Egg Production Trend Area Chart */}
         <Card>
@@ -341,7 +412,7 @@ export function ProductionReports({
             </Select>
           </CardHeader>
           <CardContent>
-            {filteredQualityData.length > 0 ? (
+            {filteredQualityData.length > 0 && filteredQualityData.some(item => item.value > 0) ? (
               <div className="h-[300px]">
                 <ChartContainer
                   config={{
@@ -401,7 +472,7 @@ export function ProductionReports({
                     <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                   </PieChart>
                 </ChartContainer>
-                <div className="flex-col gap-2 text-sm px-2 pt-4">
+                <div className="flex flex-col items-center gap-2 text-sm px-2 pt-4">
                   {(() => {
                     const sorted = [...filteredQualityData].sort((a, b) => b.value - a.value);
                     const leader = sorted[0];
@@ -414,7 +485,7 @@ export function ProductionReports({
                       </div>
                     );
                   })()}
-                  <div className="text-muted-foreground leading-none">
+                  <div className="text-muted-foreground leading-none text-center">
                     Showing distribution across {filteredQualityData.length} categories
                   </div>
                 </div>

@@ -232,7 +232,7 @@ export function FlockReports({ filters }: FlockReportsProps) {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.averageMortalityRate}%</div>
+            <div className="text-2xl font-bold">{data.averageMortalityRate.toFixed(2)}%</div>
             <p className="text-xs text-muted-foreground">
               <TrendingDown className="inline h-3 w-3 mr-1" />
               -0.3% from last month
@@ -489,15 +489,15 @@ export function FlockReports({ filters }: FlockReportsProps) {
               </PieChart>
             </ChartContainer>
           </CardContent>
-          <CardFooter className="flex-col gap-2 text-sm">
+          <CardFooter className="flex flex-col items-center gap-2 text-sm">
             <div className="flex items-center gap-2 leading-none font-medium">
               <TrendingUp className="h-4 w-4" />
               Broiler flocks leading with {data.flocksByBreed[0]?.percentage}%
             </div>
-            <div className="text-muted-foreground leading-none">
+            <div className="text-muted-foreground leading-none text-center">
               Showing distribution across {data.flocksByBreed.length} breed types
             </div>
-          </CardFooter> leading with 
+          </CardFooter>
         </Card>
       </div>
     </div>

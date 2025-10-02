@@ -323,6 +323,10 @@ export function MortalityManagement() {
   const injuryMortality = mortalityRecords
     .filter(record => record.cause === "injury")
     .reduce((sum, record) => sum + record.count, 0);
+  
+  // Calculate overall mortality rate
+  const totalBirds = flocks.reduce((sum, flock) => sum + (flock.initialCount || 0), 0);
+  const mortalityRate = totalBirds > 0 ? (totalMortality / totalBirds) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -379,7 +383,7 @@ export function MortalityManagement() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2.3%</div>
+            <div className="text-2xl font-bold">{mortalityRate.toFixed(2)}%</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">-0.2%</span> from last month
             </p>

@@ -8,28 +8,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Utensils,
   TrendingUp,
-  TrendingDown,
   BarChart3,
   PieChart,
-  Calendar,
   Package,
-  AlertTriangle,
-  CheckCircle,
-  DollarSign,
-  Download,
-  FileText,
   Target,
-  Clock,
 } from "lucide-react";
-import { getFeedComplianceAction } from "@/app/actions/feed-program";
-import { feedTypeLabels, feedTypeColors } from "@/lib/feed-program";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Label,
+} from "recharts";
 
 interface ReportFilters {
   dateRange: {
@@ -63,12 +72,6 @@ interface FeedData {
     cost: number;
     percentage: number;
   }>;
-  dailyConsumption: Array<{
-    date: string;
-    totalUsed: number;
-    cost: number;
-    efficiency: number;
-  }>;
   flockFeedUsage: Array<{
     flockId: string;
     flockCode: string;
@@ -77,49 +80,42 @@ interface FeedData {
     cost: number;
     efficiency: number;
   }>;
-  inventoryStatus: Array<{
-    feedId: string;
-    name: string;
-    type: string;
-    currentStock: number;
-    minStock: number;
-    maxStock: number;
-    costPerUnit: number;
-    status: "low" | "adequate" | "high";
+  dailyFlockUsage: Array<{
+    date: string;
+    [flockCode: string]: number | string;
   }>;
-  monthlyTrends: Array<{
-    month: string;
-    totalUsed: number;
-    totalCost: number;
-    efficiency: number;
-  }>;
-  feedCompliance: Array<{
-    flockId: string;
-    flockCode: string;
-    breed: string;
-    compliance: number;
-    recommendedTotal: number;
-    actualTotal: number;
-    variance: number;
-    currentFeedType: string;
-    ageInWeeks: number;
-  }>;
-  programEfficiency: {
-    averageCompliance: number;
-    flocksOnProgram: number;
-    totalFlocks: number;
-    feedTypeDistribution: Array<{
-      feedType: string;
-      flocksCount: number;
-      percentage: number;
-    }>;
-  };
 }
 
 export function FeedReports({ filters }: FeedReportsProps) {
   const [data, setData] = useState<FeedData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  
+  // Time filter states for different charts
+  const [feedUsageTimeFilter, setFeedUsageTimeFilter] = useState<string>("3months");
+  const [feedTypeTimeFilter, setFeedTypeTimeFilter] = useState<string>("3months");
+  const [supplierTimeFilter, setSupplierTimeFilter] = useState<string>("3months");
+
+  // Helper: map time filter to date range
+  const getDateRangeForFilter = (timeFilter: string) => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeFilter) {
+      case "7days":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "month":
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case "3months":
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    }
+
+    return { startDate, endDate: now };
+  };
 
   useEffect(() => {
     fetchFeedData();
@@ -143,175 +139,27 @@ export function FeedReports({ filters }: FeedReportsProps) {
           { type: "layer", quantity: 2000, cost: 3000, percentage: 16.0 },
         ],
         feedBySupplier: [
-          {
-            supplier: "ABC Feeds",
-            quantity: 5000,
-            cost: 7500,
-            percentage: 40.0,
-          },
-          {
-            supplier: "XYZ Nutrition",
-            quantity: 4000,
-            cost: 6000,
-            percentage: 32.0,
-          },
-          {
-            supplier: "Premium Poultry",
-            quantity: 3500,
-            cost: 5250,
-            percentage: 28.0,
-          },
-        ],
-        dailyConsumption: [
-          { date: "2024-01-01", totalUsed: 420, cost: 630, efficiency: 80 },
-          { date: "2024-01-02", totalUsed: 410, cost: 615, efficiency: 78 },
-          { date: "2024-01-03", totalUsed: 430, cost: 645, efficiency: 82 },
-          { date: "2024-01-04", totalUsed: 415, cost: 622, efficiency: 79 },
-          { date: "2024-01-05", totalUsed: 425, cost: 637, efficiency: 81 },
-          { date: "2024-01-06", totalUsed: 400, cost: 600, efficiency: 76 },
-          { date: "2024-01-07", totalUsed: 435, cost: 652, efficiency: 83 },
+          { supplier: "ABC Feeds", quantity: 5000, cost: 7500, percentage: 40.0 },
+          { supplier: "XYZ Nutrition", quantity: 3500, cost: 5250, percentage: 28.0 },
+          { supplier: "Premium Poultry", quantity: 4000, cost: 6000, percentage: 32.0 },
         ],
         flockFeedUsage: [
-          {
-            flockId: "1",
-            flockCode: "A-001",
-            breed: "broiler",
-            totalUsed: 5000,
-            cost: 7500,
-            efficiency: 85,
-          },
-          {
-            flockId: "2",
-            flockCode: "B-002",
-            breed: "layer",
-            totalUsed: 4000,
-            cost: 6000,
-            efficiency: 75,
-          },
-          {
-            flockId: "3",
-            flockCode: "C-003",
-            breed: "dual_purpose",
-            totalUsed: 3500,
-            cost: 5250,
-            efficiency: 70,
-          },
+          { flockId: "1", flockCode: "A-001", breed: "broiler", totalUsed: 5000, cost: 7500, efficiency: 85 },
+          { flockId: "2", flockCode: "B-002", breed: "layer", totalUsed: 4000, cost: 6000, efficiency: 75 },
+          { flockId: "3", flockCode: "C-003", breed: "dual_purpose", totalUsed: 3500, cost: 5250, efficiency: 70 },
         ],
-        inventoryStatus: [
-          {
-            feedId: "1",
-            name: "Starter Feed A",
-            type: "starter",
-            currentStock: 500,
-            minStock: 200,
-            maxStock: 1000,
-            costPerUnit: 1.5,
-            status: "adequate",
-          },
-          {
-            feedId: "2",
-            name: "Grower Feed B",
-            type: "grower",
-            currentStock: 150,
-            minStock: 300,
-            maxStock: 800,
-            costPerUnit: 1.5,
-            status: "low",
-          },
-          {
-            feedId: "3",
-            name: "Layer Feed C",
-            type: "layer",
-            currentStock: 800,
-            minStock: 200,
-            maxStock: 600,
-            costPerUnit: 1.5,
-            status: "high",
-          },
+        dailyFlockUsage: [
+          { date: "2024-01-01", "A-001": 120, "B-002": 180, "C-003": 95 },
+          { date: "2024-01-02", "A-001": 125, "B-002": 175, "C-003": 100 },
+          { date: "2024-01-03", "A-001": 118, "B-002": 185, "C-003": 92 },
+          { date: "2024-01-04", "A-001": 130, "B-002": 190, "C-003": 105 },
+          { date: "2024-01-05", "A-001": 122, "B-002": 172, "C-003": 98 },
+          { date: "2024-01-06", "A-001": 128, "B-002": 188, "C-003": 102 },
+          { date: "2024-01-07", "A-001": 115, "B-002": 165, "C-003": 88 },
+          { date: "2024-01-08", "A-001": 132, "B-002": 195, "C-003": 108 },
+          { date: "2024-01-09", "A-001": 127, "B-002": 182, "C-003": 95 },
+          { date: "2024-01-10", "A-001": 120, "B-002": 178, "C-003": 90 },
         ],
-        monthlyTrends: [
-          {
-            month: "Jan",
-            totalUsed: 12500,
-            totalCost: 18750,
-            efficiency: 78.5,
-          },
-          {
-            month: "Feb",
-            totalUsed: 11800,
-            totalCost: 17700,
-            efficiency: 76.2,
-          },
-          {
-            month: "Mar",
-            totalUsed: 13200,
-            totalCost: 19800,
-            efficiency: 80.1,
-          },
-          {
-            month: "Apr",
-            totalUsed: 12800,
-            totalCost: 19200,
-            efficiency: 77.8,
-          },
-          {
-            month: "May",
-            totalUsed: 13500,
-            totalCost: 20250,
-            efficiency: 81.3,
-          },
-          {
-            month: "Jun",
-            totalUsed: 13000,
-            totalCost: 19500,
-            efficiency: 79.2,
-          },
-        ],
-        feedCompliance: [
-          {
-            flockId: "1",
-            flockCode: "A-001",
-            breed: "layer",
-            compliance: 95,
-            recommendedTotal: 420,
-            actualTotal: 400,
-            variance: -20,
-            currentFeedType: "LAYER_STARTER",
-            ageInWeeks: 2,
-          },
-          {
-            flockId: "2",
-            flockCode: "B-002",
-            breed: "layer",
-            compliance: 88,
-            recommendedTotal: 380,
-            actualTotal: 420,
-            variance: 40,
-            currentFeedType: "REARING",
-            ageInWeeks: 5,
-          },
-          {
-            flockId: "3",
-            flockCode: "C-003",
-            breed: "layer",
-            compliance: 92,
-            recommendedTotal: 350,
-            actualTotal: 320,
-            variance: -30,
-            currentFeedType: "PULLET_FEED",
-            ageInWeeks: 12,
-          },
-        ],
-        programEfficiency: {
-          averageCompliance: 91.7,
-          flocksOnProgram: 3,
-          totalFlocks: 3,
-          feedTypeDistribution: [
-            { feedType: "LAYER_STARTER", flocksCount: 1, percentage: 33.3 },
-            { feedType: "REARING", flocksCount: 1, percentage: 33.3 },
-            { feedType: "PULLET_FEED", flocksCount: 1, percentage: 33.3 },
-          ],
-        },
       };
 
       setData(mockData);
@@ -319,52 +167,6 @@ export function FeedReports({ filters }: FeedReportsProps) {
       console.error("Error fetching feed data:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleExport = (format: "csv" | "pdf") => {
-    console.log(`Exporting feed report as ${format}`);
-    // Implement export logic
-  };
-
-  const getFeedTypeColor = (type: string) => {
-    switch (type) {
-      case "starter":
-        return "bg-blue-500";
-      case "grower":
-        return "bg-green-500";
-      case "finisher":
-        return "bg-orange-500";
-      case "layer":
-        return "bg-purple-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const getSupplierColor = (supplier: string) => {
-    switch (supplier) {
-      case "ABC Feeds":
-        return "bg-red-500";
-      case "XYZ Nutrition":
-        return "bg-yellow-500";
-      case "Premium Poultry":
-        return "bg-teal-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const getInventoryStatusColor = (status: string) => {
-    switch (status) {
-      case "low":
-        return "text-red-600 bg-red-100";
-      case "adequate":
-        return "text-green-600 bg-green-100";
-      case "high":
-        return "text-yellow-600 bg-yellow-100";
-      default:
-        return "text-gray-600 bg-gray-100";
     }
   };
 
@@ -394,689 +196,407 @@ export function FeedReports({ filters }: FeedReportsProps) {
     );
   }
 
+  // Color palettes for charts
+  const flockColors = ["#f97316", "#fb923c", "#fdba74", "#fed7aa"];
+  const feedTypeColors = ["#10b981", "#34d399", "#6ee7b7", "#a7f3d0"];
+  const supplierColors = ["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"];
+
+  // Filter data based on time filters
+  const getFilteredFlockUsageData = () => {
+    const { startDate } = getDateRangeForFilter(feedUsageTimeFilter);
+    return data.dailyFlockUsage.filter(item => new Date(item.date) >= startDate);
+  };
+
+  const getFilteredFeedTypeData = () => {
+    return data.feedByType.filter(item => item.quantity > 0);
+  };
+
+  const getFilteredSupplierData = () => {
+    return data.feedBySupplier.filter(item => item.quantity > 0);
+  };
+
+  const filteredFlockUsageData = getFilteredFlockUsageData();
+  const filteredFeedTypeData = getFilteredFeedTypeData();
+  const filteredSupplierData = getFilteredSupplierData();
+
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Feed Used
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Total Feed Used</CardTitle>
             <Utensils className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {data.totalFeedUsed.toLocaleString()} kg
             </div>
-            <p className="text-xs text-muted-foreground">Total consumption</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Feed Cost
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${data.totalFeedCost.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">Total expenditure</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Feed Efficiency
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.feedEfficiency}%</div>
             <p className="text-xs text-muted-foreground">
-              Conversion efficiency
+              <TrendingUp className="inline h-3 w-3 mr-1" />
+              +12% from last month
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Inventory Value
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${data.inventoryValue.toLocaleString()}
+              ${data.totalFeedCost.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">Current stock value</p>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 mr-1" />
+              +8% from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Feed Efficiency</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.feedEfficiency}%</div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="inline h-3 w-3 mr-1" />
+              +2.3% from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Flocks</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.flockFeedUsage.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Consuming feed
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Detailed Reports */}
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="consumption">Consumption Analysis</TabsTrigger>
-            <TabsTrigger value="compliance">Program Compliance</TabsTrigger>
-            <TabsTrigger value="inventory">Inventory Status</TabsTrigger>
-            <TabsTrigger value="suppliers">Supplier Analysis</TabsTrigger>
-            <TabsTrigger value="flocks">Flock Usage</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5" />
-                  Feed by Type
-                </CardTitle>
-                <CardDescription>
-                  Distribution of feed consumption by type
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {data.feedByType.map((feed) => (
-                    <div key={feed.type} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className={`w-3 h-3 rounded-full ${getFeedTypeColor(
-                              feed.type
-                            )}`}
-                          />
-                          <span className="font-medium capitalize">
-                            {feed.type}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold">
-                            {feed.quantity.toLocaleString()} kg
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {feed.percentage}%
-                          </div>
-                        </div>
-                      </div>
-                      <Progress value={feed.percentage} className="h-2" />
-                      <div className="text-sm text-muted-foreground">
-                        ${feed.cost.toLocaleString()} cost
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Feed by Supplier
-                </CardTitle>
-                <CardDescription>
-                  Distribution of feed by supplier
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {data.feedBySupplier.map((supplier) => (
-                    <div key={supplier.supplier} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className={`w-3 h-3 rounded-full ${getSupplierColor(
-                              supplier.supplier
-                            )}`}
-                          />
-                          <span className="font-medium">
-                            {supplier.supplier}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold">
-                            {supplier.quantity.toLocaleString()} kg
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {supplier.percentage}%
-                          </div>
-                        </div>
-                      </div>
-                      <Progress value={supplier.percentage} className="h-2" />
-                      <div className="text-sm text-muted-foreground">
-                        ${supplier.cost.toLocaleString()} cost
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Consumption Analysis Tab */}
-        <TabsContent value="consumption" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Consumption (Last 7 Days)</CardTitle>
-              <CardDescription>
-                Daily feed consumption and efficiency
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+      {/* Charts Row 1: Feed Usage by Flock */}
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <div className="grid flex-1 gap-1">
+              <CardTitle>Feed Usage by Flock</CardTitle>
+              <CardDescription>Daily feed consumption across all flocks</CardDescription>
+            </div>
+            <Select value={feedUsageTimeFilter} onValueChange={setFeedUsageTimeFilter}>
+              <SelectTrigger
+                className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                aria-label="Select a time range"
+              >
+                <SelectValue placeholder="Last 3 months" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="3months" className="rounded-lg">Last 3 months</SelectItem>
+                <SelectItem value="month" className="rounded-lg">This month</SelectItem>
+                <SelectItem value="7days" className="rounded-lg">Last 7 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            {filteredFlockUsageData.length > 0 ? (
               <div className="space-y-4">
-                {data.dailyConsumption.map((day) => (
-                  <div key={day.date} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold">
-                        {new Date(day.date).toLocaleDateString()}
-                      </h3>
-                      <Badge
-                        variant={day.efficiency >= 80 ? "default" : "secondary"}
-                      >
-                        {day.efficiency}% efficiency
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Used
-                        </div>
-                        <div className="font-medium">{day.totalUsed} kg</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Cost
-                        </div>
-                        <div className="font-medium">${day.cost}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Efficiency
-                        </div>
-                        <div className="font-medium">{day.efficiency}%</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span>Efficiency</span>
-                        <span>{day.efficiency}%</span>
-                      </div>
-                      <Progress value={day.efficiency} className="h-2" />
-                    </div>
-                  </div>
-                ))}
+                <ChartContainer
+                  config={(() => {
+                    const cfg: any = {};
+                    data.flockFeedUsage.forEach((flock, idx) => {
+                      cfg[flock.flockCode] = { 
+                        label: flock.flockCode, 
+                        color: flockColors[idx % flockColors.length] 
+                      };
+                    });
+                    return cfg;
+                  })()}
+                  className="aspect-auto h-[250px] w-full"
+                >
+                  <AreaChart data={filteredFlockUsageData}>
+                    <defs>
+                      {data.flockFeedUsage.map((flock, idx) => {
+                        const color = flockColors[idx % flockColors.length];
+                        return (
+                          <linearGradient key={`fill${flock.flockCode}`} id={`fill${flock.flockCode}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={color} stopOpacity={0.8} />
+                            <stop offset="95%" stopColor={color} stopOpacity={0.1} />
+                          </linearGradient>
+                        );
+                      })}
+                    </defs>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      minTickGap={32}
+                      tickFormatter={(value) =>
+                        new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                      }
+                    />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                    {data.flockFeedUsage.map((flock, idx) => {
+                      const color = flockColors[idx % flockColors.length];
+                      return (
+                        <Area
+                          key={flock.flockCode}
+                          dataKey={flock.flockCode}
+                          type="linear"
+                          fill={`url(#fill${flock.flockCode})`}
+                          stroke={color}
+                        />
+                      );
+                    })}
+                  </AreaChart>
+                </ChartContainer>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            ) : (
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No feed usage data available</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Program Compliance Tab */}
-        <TabsContent value="compliance" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Average Compliance
-                </CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.programEfficiency.averageCompliance}%
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Overall program adherence
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Flocks on Program
-                </CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.programEfficiency.flocksOnProgram}/
-                  {data.programEfficiency.totalFlocks}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Following feed program
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Feed Types in Use
-                </CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {data.programEfficiency.feedTypeDistribution.length}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Active feed types
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Program Coverage
-                </CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {(
-                    (data.programEfficiency.flocksOnProgram /
-                      data.programEfficiency.totalFlocks) *
-                    100
-                  ).toFixed(0)}
-                  %
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Flocks following program
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Flock Compliance
-                </CardTitle>
-                <CardDescription>
-                  Individual flock compliance with feed program
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {data.feedCompliance.map((flock) => (
-                    <div key={flock.flockId} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <h3 className="font-semibold">{flock.flockCode}</h3>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {flock.breed} • Week {flock.ageInWeeks}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            className={
-                              feedTypeColors[
-                                flock.currentFeedType as keyof typeof feedTypeColors
-                              ]
-                            }
-                          >
-                            {
-                              feedTypeLabels[
-                                flock.currentFeedType as keyof typeof feedTypeLabels
-                              ]
-                            }
-                          </Badge>
-                          <Badge
-                            variant={
-                              flock.compliance >= 90
-                                ? "default"
-                                : flock.compliance >= 80
-                                ? "secondary"
-                                : "destructive"
-                            }
-                          >
-                            {flock.compliance}%
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center">
-                          <div className="text-sm text-muted-foreground">
-                            Recommended
-                          </div>
-                          <div className="font-medium">
-                            {flock.recommendedTotal} kg
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm text-muted-foreground">
-                            Actual
-                          </div>
-                          <div className="font-medium">
-                            {flock.actualTotal} kg
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm text-muted-foreground">
-                            Variance
-                          </div>
-                          <div
-                            className={`font-medium ${
-                              flock.variance >= 0
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            {flock.variance >= 0 ? "+" : ""}
-                            {flock.variance} kg
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-3">
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span>Compliance</span>
-                          <span>{flock.compliance}%</span>
-                        </div>
-                        <Progress value={flock.compliance} className="h-2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5" />
-                  Feed Type Distribution
-                </CardTitle>
-                <CardDescription>
-                  Current feed types in use across flocks
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {data.programEfficiency.feedTypeDistribution.map((feed) => (
-                    <div key={feed.feedType} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className={`w-3 h-3 rounded-full ${
-                              feedTypeColors[
-                                feed.feedType as keyof typeof feedTypeColors
-                              ]
-                            }`}
-                          />
-                          <span className="font-medium">
-                            {
-                              feedTypeLabels[
-                                feed.feedType as keyof typeof feedTypeLabels
-                              ]
-                            }
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold">
-                            {feed.flocksCount} flocks
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {feed.percentage}%
-                          </div>
-                        </div>
-                      </div>
-                      <Progress value={feed.percentage} className="h-2" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Inventory Status Tab */}
-        <TabsContent value="inventory" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inventory Status</CardTitle>
-              <CardDescription>
-                Current feed inventory and stock levels
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.inventoryStatus.map((item) => (
-                  <div key={item.feedId} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {item.type} • {item.costPerUnit ? `${item.costPerUnit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB/kg` : 'N/A'}
-                        </p>
-                      </div>
-                      <Badge className={getInventoryStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Current Stock
-                        </div>
-                        <div className="font-medium">
-                          {item.currentStock} kg
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Min Level
-                        </div>
-                        <div className="font-medium">{item.minStock} kg</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Max Level
-                        </div>
-                        <div className="font-medium">{item.maxStock} kg</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span>Stock Level</span>
-                        <span>
-                          {item.currentStock} / {item.maxStock} kg
-                        </span>
-                      </div>
-                      <Progress
-                        value={(item.currentStock / item.maxStock) * 100}
-                        className="h-2"
+      {/* Charts Row 2: Pie Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Feed by Type Pie Chart */}
+        <Card>
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <div className="grid flex-1 gap-1">
+              <CardTitle>Feed by Type</CardTitle>
+              <CardDescription>Distribution of feed consumption by type</CardDescription>
+            </div>
+            <Select value={feedTypeTimeFilter} onValueChange={setFeedTypeTimeFilter}>
+              <SelectTrigger
+                className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                aria-label="Select a time range"
+              >
+                <SelectValue placeholder="Last 3 months" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="3months" className="rounded-lg">Last 3 months</SelectItem>
+                <SelectItem value="month" className="rounded-lg">This month</SelectItem>
+                <SelectItem value="7days" className="rounded-lg">Last 7 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            {filteredFeedTypeData.length > 0 ? (
+              <div className="h-[300px]">
+                <ChartContainer
+                  config={{
+                    quantity: { label: "Quantity (kg)" },
+                    ...filteredFeedTypeData.reduce((acc: any, item, index) => {
+                      acc[item.type] = { 
+                        label: item.type.charAt(0).toUpperCase() + item.type.slice(1), 
+                        color: feedTypeColors[index % feedTypeColors.length] 
+                      };
+                      return acc;
+                    }, {} as any),
+                  }}
+                  className="mx-auto aspect-square max-h-[250px]"
+                >
+                  <RechartsPieChart>
+                    <Pie
+                      data={filteredFeedTypeData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="quantity"
+                    >
+                      {filteredFeedTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={feedTypeColors[index % feedTypeColors.length]} />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            const total = filteredFeedTypeData.reduce((acc, curr) => acc + curr.quantity, 0);
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground text-3xl font-bold"
+                                >
+                                  {total.toLocaleString()}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 24}
+                                  className="fill-muted-foreground"
+                                >
+                                  kg
+                                </tspan>
+                              </text>
+                            );
+                          }
+                          return null;
+                        }}
                       />
-                    </div>
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  </RechartsPieChart>
+                </ChartContainer>
+                <div className="flex flex-col items-center gap-2 text-sm px-2 pt-4">
+                  {(() => {
+                    const sorted = [...filteredFeedTypeData].sort((a, b) => b.quantity - a.quantity);
+                    const leader = sorted[0];
+                    const total = filteredFeedTypeData.reduce((acc, it) => acc + it.quantity, 0);
+                    const percentage = total > 0 && leader?.quantity ? (leader.quantity / total) * 100 : 0;
+                    return (
+                      <div className="flex items-center gap-2 leading-none font-medium">
+                        <TrendingUp className="h-4 w-4" />
+                        {leader?.type.charAt(0).toUpperCase() + leader?.type.slice(1)} leading with {percentage.toFixed(1)}%
+                      </div>
+                    );
+                  })()}
+                  <div className="text-muted-foreground leading-none text-center">
+                    Showing distribution across {filteredFeedTypeData.length} feed types
                   </div>
-                ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            ) : (
+              <div className="text-center py-8">
+                <PieChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No feed type data available</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Supplier Analysis Tab */}
-        <TabsContent value="suppliers" className="space-y-4">
-          <Card>
-            <CardHeader>
+        {/* Supplier Analysis Pie Chart */}
+        <Card>
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <div className="grid flex-1 gap-1">
               <CardTitle>Supplier Analysis</CardTitle>
-              <CardDescription>
-                Performance and cost analysis by supplier
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {data.feedBySupplier.map((supplier) => (
-                  <div
-                    key={supplier.supplier}
-                    className="p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold">{supplier.supplier}</h3>
-                      <Badge variant="outline">
-                        {supplier.quantity.toLocaleString()} kg
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                      <span>Market share</span>
-                      <span>{supplier.percentage}%</span>
-                    </div>
-                    <Progress value={supplier.percentage} className="h-2" />
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      Total cost: ${supplier.cost.toLocaleString()}
-                    </div>
+              <CardDescription>Distribution of feed by supplier</CardDescription>
+            </div>
+            <Select value={supplierTimeFilter} onValueChange={setSupplierTimeFilter}>
+              <SelectTrigger
+                className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                aria-label="Select a time range"
+              >
+                <SelectValue placeholder="Last 3 months" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="3months" className="rounded-lg">Last 3 months</SelectItem>
+                <SelectItem value="month" className="rounded-lg">This month</SelectItem>
+                <SelectItem value="7days" className="rounded-lg">Last 7 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            {filteredSupplierData.length > 0 ? (
+              <div className="h-[300px]">
+                <ChartContainer
+                  config={{
+                    quantity: { label: "Quantity (kg)" },
+                    ...filteredSupplierData.reduce((acc: any, item, index) => {
+                      acc[item.supplier] = { 
+                        label: item.supplier, 
+                        color: supplierColors[index % supplierColors.length] 
+                      };
+                      return acc;
+                    }, {} as any),
+                  }}
+                  className="mx-auto aspect-square max-h-[250px]"
+                >
+                  <RechartsPieChart>
+                    <Pie
+                      data={filteredSupplierData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="quantity"
+                    >
+                      {filteredSupplierData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={supplierColors[index % supplierColors.length]} />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            const total = filteredSupplierData.reduce((acc, curr) => acc + curr.quantity, 0);
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground text-3xl font-bold"
+                                >
+                                  {total.toLocaleString()}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 24}
+                                  className="fill-muted-foreground"
+                                >
+                                  kg
+                                </tspan>
+                              </text>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  </RechartsPieChart>
+                </ChartContainer>
+                <div className="flex flex-col items-center gap-2 text-sm px-2 pt-4">
+                  {(() => {
+                    const sorted = [...filteredSupplierData].sort((a, b) => b.quantity - a.quantity);
+                    const leader = sorted[0];
+                    const total = filteredSupplierData.reduce((acc, it) => acc + it.quantity, 0);
+                    const percentage = total > 0 && leader?.quantity ? (leader.quantity / total) * 100 : 0;
+                    return (
+                      <div className="flex items-center gap-2 leading-none font-medium">
+                        <TrendingUp className="h-4 w-4" />
+                        {leader?.supplier} leading with {percentage.toFixed(1)}%
+                      </div>
+                    );
+                  })()}
+                  <div className="text-muted-foreground leading-none text-center">
+                    Showing distribution across {filteredSupplierData.length} suppliers
                   </div>
-                ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Flock Usage Tab */}
-        <TabsContent value="flocks" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Flock Feed Usage</CardTitle>
-              <CardDescription>
-                Feed consumption and efficiency by flock
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.flockFeedUsage.map((flock) => (
-                  <div key={flock.flockId} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold">{flock.flockCode}</h3>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {flock.breed.replace("_", " ")} •{" "}
-                          {flock.totalUsed.toLocaleString()} kg used
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          flock.efficiency >= 80 ? "default" : "secondary"
-                        }
-                      >
-                        {flock.efficiency}% efficiency
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Total Used
-                        </div>
-                        <div className="font-medium">
-                          {flock.totalUsed.toLocaleString()} kg
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Total Cost
-                        </div>
-                        <div className="font-medium">
-                          ${flock.cost.toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Efficiency
-                        </div>
-                        <div className="font-medium">{flock.efficiency}%</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span>Efficiency</span>
-                        <span>{flock.efficiency}%</span>
-                      </div>
-                      <Progress value={flock.efficiency} className="h-2" />
-                    </div>
-                  </div>
-                ))}
+            ) : (
+              <div className="text-center py-8">
+                <PieChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No supplier data available</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Trends Tab */}
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Feed Trends</CardTitle>
-              <CardDescription>
-                Monthly consumption and cost trends
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.monthlyTrends.map((month) => (
-                  <div key={month.month} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold">{month.month}</h3>
-                      <Badge variant="outline">
-                        {month.totalUsed.toLocaleString()} kg
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Total Used
-                        </div>
-                        <div className="font-medium">
-                          {month.totalUsed.toLocaleString()} kg
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Total Cost
-                        </div>
-                        <div className="font-medium">
-                          ${month.totalCost.toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm text-muted-foreground">
-                          Efficiency
-                        </div>
-                        <div className="font-medium">{month.efficiency}%</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
