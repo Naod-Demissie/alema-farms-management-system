@@ -154,6 +154,43 @@ export function ExpenseTracking() {
   };
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
+  // Calculate expenses for different time periods
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay()); // Start of current week (Sunday)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+  const todayExpenses = expenses
+    .filter(e => {
+      const expenseDate = new Date(e.date);
+      return expenseDate >= today && expenseDate < new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    })
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const thisWeekExpenses = expenses
+    .filter(e => {
+      const expenseDate = new Date(e.date);
+      return expenseDate >= startOfWeek;
+    })
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const thisMonthExpenses = expenses
+    .filter(e => {
+      const expenseDate = new Date(e.date);
+      return expenseDate >= startOfMonth;
+    })
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const thisYearExpenses = expenses
+    .filter(e => {
+      const expenseDate = new Date(e.date);
+      return expenseDate >= startOfYear;
+    })
+    .reduce((sum, e) => sum + e.amount, 0);
+
   const categorySummary = EXPENSE_CATEGORIES.map(category => {
     const categoryExpenses = expenses.filter(e => e.category === category.value);
     const total = categoryExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -172,65 +209,61 @@ export function ExpenseTracking() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">Today's Expenses</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-                   <div className="text-2xl font-bold">
-                     {new Intl.NumberFormat("en-ET", {
-                       style: "currency",
-                       currency: "ETB",
-                     }).format(totalExpenses)}
-                   </div>
+            <div className="text-2xl font-bold text-red-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(todayExpenses)}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Records</CardTitle>
+            <CardTitle className="text-sm font-medium">This Week's Expenses</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{expenses.length}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(thisWeekExpenses)}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">This Month's Expenses</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-                   <div className="text-2xl font-bold">
-                     {new Intl.NumberFormat("en-ET", {
-                       style: "currency",
-                       currency: "ETB",
-                     }).format(
-                       expenses
-                         .filter(e => {
-                           const expenseDate = new Date(e.date);
-                           const now = new Date();
-                           return expenseDate.getMonth() === now.getMonth() &&
-                                  expenseDate.getFullYear() === now.getFullYear();
-                         })
-                         .reduce((sum, e) => sum + e.amount, 0)
-                     )}
-                   </div>
+            <div className="text-2xl font-bold text-red-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(thisMonthExpenses)}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg per Record</CardTitle>
+            <CardTitle className="text-sm font-medium">This Year's Expenses</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-                   <div className="text-2xl font-bold">
-                     {new Intl.NumberFormat("en-ET", {
-                       style: "currency",
-                       currency: "ETB",
-                     }).format(expenses.length > 0 ? totalExpenses / expenses.length : 0)}
-                   </div>
+            <div className="text-2xl font-bold text-red-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(thisYearExpenses)}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -23,8 +23,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Plus, 
   Search, 
   Filter, 
@@ -37,6 +39,8 @@ import {
   User,
   CalendarDays
 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { 
   getLeaveRequests, 
   createLeaveRequest, 
@@ -294,12 +298,42 @@ export function LeaveManagement() {
   };
 
   const handleCreateRequest = async () => {
+    // Validate required fields
+    if (!formData.staffId) {
+      toast.error("Please select a staff member");
+      return;
+    }
+    
+    if (!formData.startDate || !formData.endDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+    
+    if (!formData.reason || formData.reason.trim() === "") {
+      toast.error("Please provide a reason for the leave request");
+      return;
+    }
+    
+    // Validate dates
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+    
+    if (startDate >= endDate) {
+      toast.error("End date must be after start date");
+      return;
+    }
+    
+    if (startDate < new Date()) {
+      toast.error("Cannot request leave for past dates");
+      return;
+    }
+
     try {
       const createData: CreateLeaveRequestData = {
         staffId: formData.staffId,
         leaveType: formData.leaveType as any,
-        startDate: new Date(formData.startDate),
-        endDate: new Date(formData.endDate),
+        startDate: startDate,
+        endDate: endDate,
         reason: formData.reason || undefined
       };
 
@@ -572,7 +606,33 @@ export function LeaveManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-muted"
+                >
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={new Date()}
+                  onSelect={(date) => {
+                    if (date) {
+                      // Handle date selection - you can filter requests by this date
+                      console.log('Selected date:', date);
+                    }
+                  }}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("1900-01-01")
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{leaveStats.totalRequests}</div>
@@ -724,7 +784,7 @@ export function LeaveManagement() {
 
       {/* Create Leave Request Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Request Leave</DialogTitle>
             <DialogDescription>
@@ -734,12 +794,12 @@ export function LeaveManagement() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Leave Type</label>
+                <label className="text-sm font-medium">Leave Type <span className="text-red-500">*</span></label>
                 <Select 
                   value={formData.leaveType}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, leaveType: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select leave type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -753,12 +813,12 @@ export function LeaveManagement() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Staff Member</label>
+                <label className="text-sm font-medium">Staff Member <span className="text-red-500">*</span></label>
                 <Select 
                   value={formData.staffId}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, staffId: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
@@ -773,25 +833,83 @@ export function LeaveManagement() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Start Date</label>
-                <Input 
-                  type="date" 
-                  value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                />
+                <label className="text-sm font-medium">Start Date <span className="text-red-500">*</span></label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !formData.startDate && "text-muted-foreground"
+                      )}
+                    >
+                      {formData.startDate ? (
+                        format(new Date(formData.startDate), "MMM dd, yyyy")
+                      ) : (
+                        <span>Select start date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.startDate ? new Date(formData.startDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setFormData(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }));
+                        }
+                      }}
+                      disabled={(date) =>
+                        date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
-                <label className="text-sm font-medium">End Date</label>
-                <Input 
-                  type="date" 
-                  value={formData.endDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                />
+                <label className="text-sm font-medium">End Date <span className="text-red-500">*</span></label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !formData.endDate && "text-muted-foreground"
+                      )}
+                    >
+                      {formData.endDate ? (
+                        format(new Date(formData.endDate), "MMM dd, yyyy")
+                      ) : (
+                        <span>Select end date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.endDate ? new Date(formData.endDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setFormData(prev => ({ ...prev, endDate: date.toISOString().split('T')[0] }));
+                        }
+                      }}
+                      disabled={(date) =>
+                        date < new Date("1900-01-01") || 
+                        (formData.startDate && date < new Date(formData.startDate))
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Reason</label>
+              <label className="text-sm font-medium">Reason <span className="text-red-500">*</span></label>
               <Textarea 
+                className="w-full"
                 placeholder="Enter reason for leave..."
                 value={formData.reason}
                 onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
@@ -811,7 +929,7 @@ export function LeaveManagement() {
 
       {/* Edit Leave Request Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Leave Request</DialogTitle>
             <DialogDescription>
@@ -823,15 +941,15 @@ export function LeaveManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Staff Member</label>
-                  <Input value={selectedRequest?.staff.name || ''} disabled />
+                  <Input className="w-full" value={selectedRequest?.staff.name || ''} disabled />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Leave Type</label>
+                  <label className="text-sm font-medium">Leave Type <span className="text-red-500">*</span></label>
                   <Select 
                     value={formData.leaveType}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, leaveType: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -847,32 +965,90 @@ export function LeaveManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Start Date</label>
-                  <Input 
-                    type="date" 
-                    value={formData.startDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                  />
+                  <label className="text-sm font-medium">Start Date <span className="text-red-500">*</span></label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !formData.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        {formData.startDate ? (
+                          format(new Date(formData.startDate), "MMM dd, yyyy")
+                        ) : (
+                          <span>Select start date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.startDate ? new Date(formData.startDate) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            setFormData(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }));
+                          }
+                        }}
+                        disabled={(date) =>
+                          date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">End Date</label>
-                  <Input 
-                    type="date" 
-                    value={formData.endDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                  />
+                  <label className="text-sm font-medium">End Date <span className="text-red-500">*</span></label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !formData.endDate && "text-muted-foreground"
+                        )}
+                      >
+                        {formData.endDate ? (
+                          format(new Date(formData.endDate), "MMM dd, yyyy")
+                        ) : (
+                          <span>Select end date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.endDate ? new Date(formData.endDate) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            setFormData(prev => ({ ...prev, endDate: date.toISOString().split('T')[0] }));
+                          }
+                        }}
+                        disabled={(date) =>
+                          date < new Date("1900-01-01") || 
+                          (formData.startDate && date < new Date(formData.startDate))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium">Reason</label>
+                <label className="text-sm font-medium">Reason <span className="text-red-500">*</span></label>
                 <Textarea 
+                  className="w-full"
                   value={formData.reason}
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium">Status</label>
-                <Input value={selectedRequest?.status || ''} disabled />
+                <Input className="w-full" value={selectedRequest?.status || ''} disabled />
               </div>
             </div>
           )}
@@ -889,7 +1065,7 @@ export function LeaveManagement() {
 
       {/* Create Leave Balance Dialog */}
       <Dialog open={isCreateBalanceDialogOpen} onOpenChange={setIsCreateBalanceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Add Leave Balance</DialogTitle>
             <DialogDescription>
@@ -899,12 +1075,12 @@ export function LeaveManagement() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Staff Member</label>
+                <label className="text-sm font-medium">Staff Member <span className="text-red-500">*</span></label>
                 <Select 
                   value={balanceFormData.staffId}
                   onValueChange={(value) => setBalanceFormData(prev => ({ ...prev, staffId: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
@@ -917,8 +1093,9 @@ export function LeaveManagement() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Year</label>
+                <label className="text-sm font-medium">Year <span className="text-red-500">*</span></label>
                 <Input 
+                  className="w-full"
                   type="number"
                   value={balanceFormData.year}
                   onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
@@ -927,16 +1104,18 @@ export function LeaveManagement() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Total Leave Days</label>
+                <label className="text-sm font-medium">Total Leave Days <span className="text-red-500">*</span></label>
                 <Input 
+                  className="w-full"
                   type="number"
                   value={balanceFormData.totalLeaveDays}
                   onChange={(e) => setBalanceFormData(prev => ({ ...prev, totalLeaveDays: parseInt(e.target.value) || 0 }))}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Used Leave Days</label>
+                <label className="text-sm font-medium">Used Leave Days <span className="text-red-500">*</span></label>
                 <Input 
+                  className="w-full"
                   type="number"
                   value={balanceFormData.usedLeaveDays}
                   onChange={(e) => setBalanceFormData(prev => ({ ...prev, usedLeaveDays: parseInt(e.target.value) || 0 }))}
@@ -957,7 +1136,7 @@ export function LeaveManagement() {
 
       {/* Edit Leave Balance Dialog */}
       <Dialog open={isEditBalanceDialogOpen} onOpenChange={setIsEditBalanceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Leave Balance</DialogTitle>
             <DialogDescription>
@@ -969,11 +1148,12 @@ export function LeaveManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Staff Member</label>
-                  <Input value={selectedBalance.staff.name} disabled />
+                  <Input className="w-full" value={selectedBalance.staff.name} disabled />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Year</label>
+                  <label className="text-sm font-medium">Year <span className="text-red-500">*</span></label>
                   <Input 
+                    className="w-full"
                     type="number"
                     value={balanceFormData.year}
                     onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
@@ -982,16 +1162,18 @@ export function LeaveManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Total Leave Days</label>
+                  <label className="text-sm font-medium">Total Leave Days <span className="text-red-500">*</span></label>
                   <Input 
+                    className="w-full"
                     type="number"
                     value={balanceFormData.totalLeaveDays}
                     onChange={(e) => setBalanceFormData(prev => ({ ...prev, totalLeaveDays: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Used Leave Days</label>
+                  <label className="text-sm font-medium">Used Leave Days <span className="text-red-500">*</span></label>
                   <Input 
+                    className="w-full"
                     type="number"
                     value={balanceFormData.usedLeaveDays}
                     onChange={(e) => setBalanceFormData(prev => ({ ...prev, usedLeaveDays: parseInt(e.target.value) || 0 }))}

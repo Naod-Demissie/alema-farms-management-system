@@ -24,8 +24,14 @@ import {
   Plus, 
   TrendingUp,
   Users,
-  Calendar
+  Calendar,
+  CalendarIcon
 } from "lucide-react";
+import { MonthPicker } from "@/components/ui/monthpicker";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { getPayroll, createPayroll, updatePayroll, deletePayroll } from "@/server/payroll";
 import { getStaff as getStaffList } from "@/server/staff";
 import { CreatePayrollData, UpdatePayrollData } from "@/server/types";
@@ -45,12 +51,6 @@ interface StaffMember {
 
 // Mock data removed - now using real data from database
 
-const statusColors = {
-  Paid: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  Pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  Draft: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-  Failed: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-};
 
 export function PayrollManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -82,6 +82,29 @@ export function PayrollManagement() {
     paidOn: new Date().toISOString().split('T')[0],
     period: ""
   });
+  
+  // Additional state for date pickers
+  const [selectedPayPeriod, setSelectedPayPeriod] = useState<Date | undefined>(new Date());
+  const [selectedPaidDate, setSelectedPaidDate] = useState<Date | undefined>(new Date());
+
+  // Helper functions
+  const handlePayPeriodSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedPayPeriod(date);
+      setFormData({...formData, period: format(date, "MMMM yyyy")});
+    }
+  };
+
+  const handlePaidDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedPaidDate(date);
+      setFormData({...formData, paidOn: date.toISOString().split('T')[0]});
+    }
+  };
+
+  const calculateNetSalary = () => {
+    return formData.salary + formData.bonus - formData.deductions;
+  };
 
   // Data fetching functions
   const fetchPayrollData = async () => {
@@ -127,6 +150,8 @@ export function PayrollManagement() {
       paidOn: new Date(payroll.paidOn).toISOString().split('T')[0],
       period: ""
     });
+    setSelectedPaidDate(new Date(payroll.paidOn));
+    setSelectedPayPeriod(new Date(payroll.paidOn));
     setIsEditDialogOpen(true);
   };
 
@@ -369,14 +394,13 @@ export function PayrollManagement() {
           <PayrollTable 
             columns={payrollColumns} 
             data={payrollData}
-            staffList={staffList}
           />
         </CardContent>
       </Card>
 
       {/* Create Payroll Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[calc(32rem-80px)]">
           <DialogHeader>
             <DialogTitle>Create Payroll Record</DialogTitle>
             <DialogDescription>
@@ -385,10 +409,12 @@ export function PayrollManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Staff Member</label>
-                  <Select value={formData.staffId} onValueChange={(value) => setFormData({...formData, staffId: value})}>
-                  <SelectTrigger>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Staff Member <span className="text-red-500">*</span>
+                </label>
+                <Select value={formData.staffId} onValueChange={(value) => setFormData({...formData, staffId: value})}>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
@@ -400,66 +426,136 @@ export function PayrollManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <label className="text-sm font-medium">Pay Period</label>
-                  <Input 
-                    type="text" 
-                    placeholder="e.g., January 2024"
-                    value={formData.period}
-                    onChange={(e) => setFormData({...formData, period: e.target.value})}
-                  />
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Pay Period <span className="text-red-500">*</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !selectedPayPeriod && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedPayPeriod ? (
+                        format(selectedPayPeriod, "MMMM yyyy")
+                      ) : (
+                        <span>Select pay period</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <MonthPicker
+                      selectedMonth={selectedPayPeriod}
+                      onMonthSelect={handlePayPeriodSelect}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            {/* Second row: Paid Date and Payment Method */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Paid Date <span className="text-red-500">*</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !selectedPaidDate && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedPaidDate ? (
+                        format(selectedPaidDate, "MMM dd, yyyy")
+                      ) : (
+                        <span>Select paid date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedPaidDate}
+                      onSelect={handlePaidDateSelect}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Payment Method <span className="text-red-500">*</span>
+                </label>
+                <Select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="check">Check</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium">Base Salary</label>
-                  <Input 
-                    type="number" 
-                    placeholder="5000" 
-                    value={formData.salary}
-                    onChange={(e) => setFormData({...formData, salary: Number(e.target.value)})}
-                  />
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1">
+                  Base Salary <span className="text-red-500">*</span>
+                </label>
+                <Input 
+                  type="number" 
+                  placeholder="5000" 
+                  value={formData.salary}
+                  onChange={(e) => setFormData({...formData, salary: Number(e.target.value)})}
+                  className="w-full"
+                />
               </div>
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Bonus</label>
-                  <Input 
-                    type="number" 
-                    placeholder="500" 
-                    value={formData.bonus}
-                    onChange={(e) => setFormData({...formData, bonus: Number(e.target.value)})}
-                  />
+                <Input 
+                  type="number" 
+                  placeholder="500" 
+                  value={formData.bonus}
+                  onChange={(e) => setFormData({...formData, bonus: Number(e.target.value)})}
+                  className="w-full"
+                />
               </div>
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Deductions</label>
-                  <Input 
-                    type="number" 
-                    placeholder="200" 
-                    value={formData.deductions}
-                    onChange={(e) => setFormData({...formData, deductions: Number(e.target.value)})}
-                  />
+                <Input 
+                  type="number" 
+                  placeholder="200" 
+                  value={formData.deductions}
+                  onChange={(e) => setFormData({...formData, deductions: Number(e.target.value)})}
+                  className="w-full"
+                />
+              </div>
+            </div>
+              
+              {/* Net Salary Display */}
+              <div className="space-y-2">
+                <div className="bg-muted/50 p-3 rounded-lg text-center">
+                  <div className="text-sm text-muted-foreground mb-1">Net Salary</div>
+                  <div className="text-xl font-semibold">
+                    {new Intl.NumberFormat("en-ET", {
+                      style: "currency",
+                      currency: "ETB",
+                    }).format(calculateNetSalary())}
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium">Paid Date</label>
-                <Input 
-                  type="date" 
-                  value={formData.paidOn}
-                  onChange={(e) => setFormData({...formData, paidOn: e.target.value})}
-                />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Payment Method</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="check">Check</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -474,7 +570,7 @@ export function PayrollManagement() {
 
       {/* Edit Payroll Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[calc(32rem-80px)]">
           <DialogHeader>
             <DialogTitle>Edit Payroll Record</DialogTitle>
             <DialogDescription>
@@ -484,52 +580,124 @@ export function PayrollManagement() {
           {selectedPayroll && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Staff Member</label>
-                  <Input value={selectedPayroll.staff.name} disabled />
+                  <Input value={selectedPayroll.staff.name} disabled className="w-full" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-1">
+                    Pay Period <span className="text-red-500">*</span>
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !selectedPayPeriod && "text-muted-foreground"
+                        )}
+                      >
+                        {selectedPayPeriod ? (
+                          format(selectedPayPeriod, "MMMM yyyy")
+                        ) : (
+                          <span>Select pay period</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <MonthPicker
+                        selectedMonth={selectedPayPeriod}
+                        onMonthSelect={handlePayPeriodSelect}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              
+              {/* Second row: Paid Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-1">
+                    Paid Date <span className="text-red-500">*</span>
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !selectedPaidDate && "text-muted-foreground"
+                        )}
+                      >
+                        {selectedPaidDate ? (
+                          format(selectedPaidDate, "MMM dd, yyyy")
+                        ) : (
+                          <span>Select paid date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedPaidDate}
+                        onSelect={handlePaidDateSelect}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Pay Period</label>
-                  <Input 
-                    value={formData.period}
-                    onChange={(e) => setFormData({...formData, period: e.target.value})}
-                    placeholder="e.g., January 2024"
-                  />
+                  {/* Empty div for spacing */}
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Base Salary</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-1">
+                    Base Salary <span className="text-red-500">*</span>
+                  </label>
                   <Input 
                     type="number" 
                     value={formData.salary}
                     onChange={(e) => setFormData({...formData, salary: Number(e.target.value)})}
+                    className="w-full"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Bonus</label>
                   <Input 
                     type="number" 
                     value={formData.bonus}
                     onChange={(e) => setFormData({...formData, bonus: Number(e.target.value)})}
+                    className="w-full"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Deductions</label>
                   <Input 
                     type="number" 
                     value={formData.deductions}
                     onChange={(e) => setFormData({...formData, deductions: Number(e.target.value)})}
+                    className="w-full"
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium">Paid Date</label>
-                <Input 
-                  type="date" 
-                  value={formData.paidOn}
-                  onChange={(e) => setFormData({...formData, paidOn: e.target.value})}
-                />
+              
+              {/* Net Salary Display */}
+              <div className="space-y-2">
+                <div className="bg-muted/50 p-3 rounded-lg text-center">
+                  <div className="text-sm text-muted-foreground mb-1">Net Salary</div>
+                  <div className="text-xl font-semibold">
+                    {new Intl.NumberFormat("en-ET", {
+                      style: "currency",
+                      currency: "ETB",
+                    }).format(calculateNetSalary())}
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -35,8 +35,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get session token from cookies
-  const sessionToken = request.cookies.get('better-auth.session_token');
+  // Get session token from cookies - try multiple possible cookie names
+  const sessionToken = request.cookies.get('better-auth.session_token') || 
+                      request.cookies.get('session_token') ||
+                      request.cookies.get('better-auth.session');
 
   // Debug logging (remove in production)
   console.log(`[Middleware] Path: ${pathname}, Has Session: ${!!sessionToken}, Is Root: ${isRootRoute}, Is Protected: ${isProtectedRoute}, Is Auth: ${isAuthRoute}`);

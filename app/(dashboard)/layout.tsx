@@ -26,7 +26,7 @@ export default function DashboardLayout({
       // Redirect to signin with callback URL
       const currentPath = window.location.pathname;
       console.log('[DashboardLayout] No session found, redirecting to signin with callback:', currentPath);
-      router.push(`/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
+      router.replace(`/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
     }
   }, [session, isPending, router]);
 

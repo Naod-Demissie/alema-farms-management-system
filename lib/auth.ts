@@ -6,6 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { sessionCache } from './session-cache';
 
 export const auth = betterAuth({
+    // Configure base URL for proper session handling
+    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    
+    // Configure cookie prefix for consistent naming
+    cookiePrefix: "better-auth",
+    
     // Configure user model to use Staff
     user: {
         modelName: "staff", 

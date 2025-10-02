@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "@/components/table/data-table-faceted-filter";
 import { DataTableViewOptions } from "@/components/table/data-table-view-options";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { MonthPicker } from "@/components/ui/monthpicker";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { PayrollRecord } from "./payroll-table-columns";
 import { useState, useEffect } from "react";
 
@@ -30,31 +28,7 @@ export function PayrollTableToolbar({
   onYearFilterChange,
 }: PayrollTableToolbarProps) {
   const isFiltered = table.getState().columnFilters.length > 0;
-  const [selectedMonth, setSelectedMonth] = useState<string>("all");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
-
-  // Generate month options
-  const monthOptions = [
-    { label: "January", value: "0" },
-    { label: "February", value: "1" },
-    { label: "March", value: "2" },
-    { label: "April", value: "3" },
-    { label: "May", value: "4" },
-    { label: "June", value: "5" },
-    { label: "July", value: "6" },
-    { label: "August", value: "7" },
-    { label: "September", value: "8" },
-    { label: "October", value: "9" },
-    { label: "November", value: "10" },
-    { label: "December", value: "11" },
-  ];
-
-  // Generate year options (current year ± 5 years)
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 11 }, (_, i) => {
-    const year = currentYear - 5 + i;
-    return { label: year.toString(), value: year.toString() };
-  });
+  const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(undefined);
 
   // Staff member options for filtering
   const staffOptions = staffList.map((staff) => ({
@@ -62,44 +36,30 @@ export function PayrollTableToolbar({
     value: staff.id,
   }));
 
-  // Handle month filter
-  const handleMonthChange = (month: string) => {
-    setSelectedMonth(month);
-    if (month && month !== "all") {
-      const monthNum = parseInt(month);
-      table.getColumn("paidOn")?.setFilterValue((value: Date) => {
-        return new Date(value).getMonth() === monthNum;
-      });
+  // Handle month picker change
+  const handleMonthSelect = (date: Date | undefined) => {
+    setSelectedMonth(date);
+    if (date) {
+      // Set the filter value to the selected date - the column's filterFn will handle the comparison
+      table.getColumn("paidOn")?.setFilterValue(date);
+      onMonthFilterChange?.(date.getMonth().toString());
+      onYearFilterChange?.(date.getFullYear().toString());
     } else {
       table.getColumn("paidOn")?.setFilterValue(undefined);
+      onMonthFilterChange?.("all");
+      onYearFilterChange?.("all");
     }
-    onMonthFilterChange?.(month);
-  };
-
-  // Handle year filter
-  const handleYearChange = (year: string) => {
-    setSelectedYear(year);
-    if (year && year !== "all") {
-      const yearNum = parseInt(year);
-      table.getColumn("paidOn")?.setFilterValue((value: Date) => {
-        return new Date(value).getFullYear() === yearNum;
-      });
-    } else {
-      table.getColumn("paidOn")?.setFilterValue(undefined);
-    }
-    onYearFilterChange?.(year);
   };
 
   // Clear all filters
   const clearFilters = () => {
     table.resetColumnFilters();
-    setSelectedMonth("all");
-    setSelectedYear("all");
+    setSelectedMonth(undefined);
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center sm:space-x-2">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
         {/* Search Input */}
         <Input
           placeholder="Filter by staff member..."
@@ -107,41 +67,38 @@ export function PayrollTableToolbar({
           onChange={(event) =>
             table.getColumn("staffName")?.setFilterValue(event.target.value)
           }
-          className="h-8 w-[150px] lg:w-[250px]"
+          className="h-8 w-full sm:w-[150px] lg:w-[250px]"
         />
+        
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2">
+          {/* Month/Year Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-8 w-full sm:w-[180px] pl-3 text-left font-normal",
+                  !selectedMonth && "text-muted-foreground"
+                )}
+              >
+                {selectedMonth ? (
+                  format(selectedMonth, "MMMM yyyy")
+                ) : (
+                  <span>All months</span>
+                )}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <MonthPicker
+                selectedMonth={selectedMonth}
+                onMonthSelect={handleMonthSelect}
+              />
+            </PopoverContent>
+          </Popover>
 
-        {/* Month Filter */}
-        <Select value={selectedMonth} onValueChange={handleMonthChange}>
-          <SelectTrigger className="h-8 w-[140px]">
-            <SelectValue placeholder="All months" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All months</SelectItem>
-            {monthOptions.map((month) => (
-              <SelectItem key={month.value} value={month.value}>
-                {month.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Year Filter */}
-        <Select value={selectedYear} onValueChange={handleYearChange}>
-          <SelectTrigger className="h-8 w-[120px]">
-            <SelectValue placeholder="All years" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All years</SelectItem>
-            {yearOptions.map((year) => (
-              <SelectItem key={year.value} value={year.value}>
-                {year.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Faceted Filters */}
-        <div className="flex gap-x-2">
+          {/* Role Filter */}
           <DataTableFacetedFilter
             column={table.getColumn("staffRole")}
             title="Role"
@@ -151,17 +108,10 @@ export function PayrollTableToolbar({
               { label: "Worker", value: "WORKER" },
             ]}
           />
-          <DataTableFacetedFilter
-            column={table.getColumn("status")}
-            title="Status"
-            options={[
-              { label: "Paid", value: "Paid" },
-            ]}
-          />
         </div>
 
-        {/* Clear Filters */}
-        {(isFiltered || selectedMonth !== "all" || selectedYear !== "all") && (
+        {/* Clear Filters Button */}
+        {(isFiltered || selectedMonth) && (
           <Button
             variant="ghost"
             onClick={clearFilters}
@@ -172,6 +122,8 @@ export function PayrollTableToolbar({
           </Button>
         )}
       </div>
+      
+      {/* View Options */}
       <DataTableViewOptions table={table} />
     </div>
   );

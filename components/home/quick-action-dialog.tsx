@@ -29,8 +29,10 @@ import { RevenueDialog } from "@/app/(dashboard)/financial/components/revenue-di
 import { EggProductionDialog } from "@/app/(dashboard)/production/components/egg-production-dialog";
 import { BroilerProductionDialog } from "@/app/(dashboard)/production/components/broiler-production-dialog";
 import { ManureProductionDialog } from "@/app/(dashboard)/production/components/manure-production-dialog";
+import { AddStaffDialog } from "@/components/staff/add-staff-dialog";
 import { ExpenseFormData, RevenueFormData } from "@/features/financial/types";
 import { createExpense, createRevenue } from "@/server/financial";
+import { createNonSystemStaff } from "@/server/staff-invites";
 import { toast } from "sonner";
 
 interface QuickActionDialogProps {
@@ -48,6 +50,7 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
   const [isEggProductionDialogOpen, setIsEggProductionDialogOpen] = useState(false);
   const [isBroilerProductionDialogOpen, setIsBroilerProductionDialogOpen] = useState(false);
   const [isManureProductionDialogOpen, setIsManureProductionDialogOpen] = useState(false);
+  const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false);
 
   // Open expense dialog directly when actionType is "add-expense"
   React.useEffect(() => {
@@ -73,6 +76,13 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
       } else if (actionType === "record-manure-production") {
         setIsManureProductionDialogOpen(true);
       }
+    }
+  }, [isOpen, actionType]);
+
+  // Open staff dialog directly when actionType is "add-staff"
+  React.useEffect(() => {
+    if (isOpen && actionType === "add-staff") {
+      setIsAddStaffDialogOpen(true);
     }
   }, [isOpen, actionType]);
 
@@ -132,6 +142,32 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
     } catch (error) {
       console.error("Error creating revenue:", error);
       toast.error("Failed to create revenue");
+    }
+  };
+
+  const handleStaffSubmit = async (data: any) => {
+    try {
+      const result = await createNonSystemStaff({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber || "",
+        image: data.image || "",
+        role: "WORKER",
+        isSystemUser: false,
+      });
+
+      if (result.success) {
+        toast.success("Staff member added successfully!");
+        setIsAddStaffDialogOpen(false);
+        onClose();
+        onRefresh?.();
+      } else {
+        toast.error(result.message || "Failed to add staff member");
+        throw new Error(result.message || "Failed to add staff member");
+      }
+    } catch (error) {
+      console.error("Error adding staff member:", error);
+      toast.error("Failed to add staff member");
     }
   };
 
@@ -235,39 +271,9 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
 
       case "add-staff":
         return (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="John" required />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Doe" required />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="john.doe@example.com" required />
-            </div>
-            <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" placeholder="+1 (555) 123-4567" required />
-            </div>
-            <div>
-              <Label htmlFor="role">Role</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="veterinarian">Veterinarian</SelectItem>
-                  <SelectItem value="worker">Worker</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </form>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Opening staff form...</p>
+          </div>
         );
 
       default:
@@ -397,6 +403,19 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
           onClose();
           onRefresh?.();
         }}
+      />
+
+      {/* Reusable Add Staff Dialog */}
+      <AddStaffDialog
+        isOpen={isAddStaffDialogOpen}
+        onClose={() => {
+          setIsAddStaffDialogOpen(false);
+          onClose();
+        }}
+        onSubmit={handleStaffSubmit}
+        title="Add Staff Member"
+        description="Add a new worker to your team."
+        submitButtonText="Add Staff Member"
       />
     </Dialog>
   );

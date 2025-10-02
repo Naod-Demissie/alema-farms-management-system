@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -25,9 +25,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PayrollRecord } from "./payroll-table-columns";
+import { PayrollMonthFilter, PayrollMonthFilterRef } from "./payroll-month-filter";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
-import { PayrollTableToolbar } from "./payroll-table-toolbar";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -40,14 +40,14 @@ interface PayrollTableProps {
   columns: ColumnDef<PayrollRecord>[];
   data: PayrollRecord[];
   toolbar?: React.ReactNode;
-  staffList?: Array<{ id: string; name: string; role: string }>;
 }
 
-export function PayrollTable({ columns, data, toolbar, staffList = [] }: PayrollTableProps) {
+export function PayrollTable({ columns, data, toolbar }: PayrollTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const monthFilterRef = useRef<PayrollMonthFilterRef>(null);
 
   const table = useReactTable({
     data,
@@ -74,9 +74,27 @@ export function PayrollTable({ columns, data, toolbar, staffList = [] }: Payroll
   return (
     <div className="space-y-4">
       {toolbar || (
-        <PayrollTableToolbar
+        <DataTableToolbar
           table={table}
-          staffList={staffList}
+          filterColumnId="staffName"
+          filterPlaceholder="Filter payroll..."
+          facetedFilters={[
+            {
+              columnId: "staffRole",
+              title: "Role",
+              options: [
+                { label: "Admin", value: "ADMIN" },
+                { label: "Veterinarian", value: "VETERINARIAN" },
+                { label: "Worker", value: "WORKER" },
+              ],
+            },
+          ]}
+          customFilters={[
+            <PayrollMonthFilter key="month-filter" ref={monthFilterRef} table={table} />
+          ]}
+          onResetCustomFilters={() => {
+            monthFilterRef.current?.reset();
+          }}
         />
       )}
       <div className="rounded-md border">

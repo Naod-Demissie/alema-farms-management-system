@@ -148,6 +148,43 @@ export function RevenueManagement() {
   };
 
   const totalRevenue = revenues.reduce((sum, revenue) => sum + revenue.amount, 0);
+  
+  // Calculate revenue for different time periods
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay()); // Start of current week (Sunday)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+  const todayRevenue = revenues
+    .filter(r => {
+      const revenueDate = new Date(r.date);
+      return revenueDate >= today && revenueDate < new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    })
+    .reduce((sum, r) => sum + r.amount, 0);
+
+  const thisWeekRevenue = revenues
+    .filter(r => {
+      const revenueDate = new Date(r.date);
+      return revenueDate >= startOfWeek;
+    })
+    .reduce((sum, r) => sum + r.amount, 0);
+
+  const thisMonthRevenue = revenues
+    .filter(r => {
+      const revenueDate = new Date(r.date);
+      return revenueDate >= startOfMonth;
+    })
+    .reduce((sum, r) => sum + r.amount, 0);
+
+  const thisYearRevenue = revenues
+    .filter(r => {
+      const revenueDate = new Date(r.date);
+      return revenueDate >= startOfYear;
+    })
+    .reduce((sum, r) => sum + r.amount, 0);
+
   const sourceSummary = REVENUE_SOURCES.map(source => {
     const sourceRevenues = revenues.filter(r => r.source === source.value);
     const total = sourceRevenues.reduce((sum, r) => sum + r.amount, 0);
@@ -166,65 +203,61 @@ export function RevenueManagement() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-                   <div className="text-2xl font-bold text-green-600">
-                     {new Intl.NumberFormat("en-ET", {
-                       style: "currency",
-                       currency: "ETB",
-                     }).format(totalRevenue)}
-                   </div>
+            <div className="text-2xl font-bold text-green-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(todayRevenue)}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Records</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">This Week's Revenue</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{revenues.length}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(thisWeekRevenue)}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">This Month's Revenue</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-                   <div className="text-2xl font-bold text-green-600">
-                     {new Intl.NumberFormat("en-ET", {
-                       style: "currency",
-                       currency: "ETB",
-                     }).format(
-                       revenues
-                         .filter(r => {
-                           const revenueDate = new Date(r.date);
-                           const now = new Date();
-                           return revenueDate.getMonth() === now.getMonth() &&
-                                  revenueDate.getFullYear() === now.getFullYear();
-                         })
-                         .reduce((sum, r) => sum + r.amount, 0)
-                     )}
-                   </div>
+            <div className="text-2xl font-bold text-green-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(thisMonthRevenue)}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg per Record</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">This Year's Revenue</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-                   <div className="text-2xl font-bold text-green-600">
-                     {new Intl.NumberFormat("en-ET", {
-                       style: "currency",
-                       currency: "ETB",
-                     }).format(revenues.length > 0 ? totalRevenue / revenues.length : 0)}
-                   </div>
+            <div className="text-2xl font-bold text-green-600">
+              {new Intl.NumberFormat("en-ET", {
+                style: "currency",
+                currency: "ETB",
+              }).format(thisYearRevenue)}
+            </div>
           </CardContent>
         </Card>
       </div>

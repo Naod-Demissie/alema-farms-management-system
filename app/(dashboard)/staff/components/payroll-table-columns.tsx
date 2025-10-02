@@ -173,24 +173,6 @@ export const createPayrollTableColumns = ({
     },
   },
   {
-    accessorKey: "status",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
-    ),
-    cell: ({ row }) => {
-      // All payroll records are considered "Paid" since they have a paidOn date
-      return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-          Paid
-        </Badge>
-      );
-    },
-    filterFn: (row, id, value) => {
-      // Since all records are "Paid", we can filter by this
-      return value.includes("Paid");
-    },
-  },
-  {
     accessorKey: "paidOn",
     id: "paidDate",
     header: ({ column }) => (

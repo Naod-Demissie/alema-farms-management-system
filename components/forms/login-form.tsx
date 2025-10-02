@@ -68,20 +68,32 @@ export function LoginForm({
     setIsLoading(true);
 
     console.log('[LoginForm] Attempting to sign in with email:', values.email);
-    const { success, message } = await signIn(values.email, values.password);
+    
+    try {
+      // Use better-auth client directly for better session handling
+      const result = await authClient.signIn.email({
+        email: values.email,
+        password: values.password,
+      });
 
-    if (success) {
-      console.log('[LoginForm] Sign in successful, redirecting...');
-      toast.success(message as string);
-      // Get callback URL from query params or default to home
-      const urlParams = new URLSearchParams(window.location.search);
-      const callbackUrl = urlParams.get('callbackUrl') || '/home';
-      console.log('[LoginForm] Redirecting to:', callbackUrl);
-      // Use window.location.href for a full page reload to ensure session is properly set
-      window.location.href = callbackUrl;
-    } else {
-      console.log('[LoginForm] Sign in failed:', message);
-      toast.error(message as string);
+      if (result.data) {
+        console.log('[LoginForm] Sign in successful, redirecting...');
+        toast.success("Signed in successfully!");
+        
+        // Get callback URL from query params or default to home
+        const urlParams = new URLSearchParams(window.location.search);
+        const callbackUrl = urlParams.get('callbackUrl') || '/home';
+        console.log('[LoginForm] Redirecting to:', callbackUrl);
+        
+        // Use router.push for client-side navigation with proper session handling
+        router.push(callbackUrl);
+      } else {
+        console.log('[LoginForm] Sign in failed:', result.error);
+        toast.error(result.error?.message || "Sign in failed");
+      }
+    } catch (error) {
+      console.log('[LoginForm] Sign in error:', error);
+      toast.error("An error occurred during sign in");
     }
 
     setIsLoading(false);

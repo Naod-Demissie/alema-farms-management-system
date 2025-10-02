@@ -24,6 +24,7 @@ import {
 import { useStaff } from "@/features/staff/context/staff-context";
 import { StaffInviteDialog } from "@/features/staff/components/staff-invite-dialog";
 import { AddStaffDialog } from "@/features/staff/components/add-staff-dialog";
+import { EditStaffDialog } from "@/components/staff/edit-staff-dialog";
 import { updateStaff, deleteStaff } from "@/server/staff";
 import { getAllStaff, getAllInvites, resendInvite, cancelInvite } from "@/server/staff-invites";
 import { StaffTable } from "@/features/staff/components/staff-table";
@@ -55,14 +56,13 @@ import { Mail as MailIcon, Phone, Calendar, Shield, Copy, Send, XCircle } from "
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 
-const editStaffFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  phoneNumber: z.string().optional(),
-  isActive: z.boolean(),
-});
-
-type EditStaffFormValues = z.infer<typeof editStaffFormSchema>;
+// Edit staff form types (now handled by reusable component)
+type EditStaffFormValues = {
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  isActive: boolean;
+};
 
 const roleColors = {
   ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
@@ -96,15 +96,7 @@ export function StaffDirectory() {
     staff: null,
   });
 
-  const editForm = useForm<EditStaffFormValues>({
-    resolver: zodResolver(editStaffFormSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      phoneNumber: "",
-      isActive: true,
-    },
-  });
+  // Edit form is now handled by the reusable EditStaffDialog component
 
   // Load staff members from database
   const loadStaffMembers = async () => {
@@ -176,12 +168,6 @@ export function StaffDirectory() {
 
   const handleEditStaff = (staff: Staff) => {
     setSelectedStaff(staff);
-    editForm.reset({
-      firstName: staff.firstName,
-      lastName: staff.lastName,
-      phoneNumber: staff.phoneNumber || "",
-      isActive: staff.isActive,
-    });
     setIsEditDialogOpen(true);
   };
 
@@ -694,117 +680,17 @@ export function StaffDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Staff Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Staff Member</DialogTitle>
-            <DialogDescription>
-              Update staff member information and settings.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedStaff && (
-            <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={editForm.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Email</label>
-                  <Input value={selectedStaff.email || ""} disabled />
-                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
-                </div>
-                
-                <FormField
-                  control={editForm.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="+1234567890" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Role</label>
-                    <Input value={selectedStaff.role} disabled />
-                    <p className="text-xs text-muted-foreground mt-1">Role cannot be changed</p>
-                  </div>
-                  <FormField
-                    control={editForm.control}
-                    name="isActive"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <FormControl>
-                          <Select 
-                            value={field.value ? "active" : "inactive"}
-                            onValueChange={(value) => field.onChange(value === "active")}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="inactive">Inactive</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsEditDialogOpen(false)}
-                    disabled={isEditLoading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isEditLoading}>
-                    {isEditLoading ? "Saving..." : "Save Changes"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Reusable Edit Staff Dialog */}
+      <EditStaffDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSubmit={handleEditSubmit}
+        staff={selectedStaff}
+        title="Edit Staff Member"
+        description="Update staff member information and settings."
+        submitButtonText="Save Changes"
+        isLoading={isEditLoading}
+      />
 
       {/* Dialog Components */}
       <StaffInviteDialog />

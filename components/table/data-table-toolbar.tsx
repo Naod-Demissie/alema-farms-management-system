@@ -15,6 +15,8 @@ interface DataTableToolbarProps<TData> {
     title: string;
     options: { label: string; value: string; icon?: React.ComponentType<{ className?: string }> }[];
   }[];
+  customFilters?: React.ReactNode[];
+  onResetCustomFilters?: () => void;
 }
 
 export function DataTableToolbar<TData>({
@@ -22,6 +24,8 @@ export function DataTableToolbar<TData>({
   filterColumnId,
   filterPlaceholder,
   facetedFilters,
+  customFilters,
+  onResetCustomFilters,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -51,11 +55,17 @@ export function DataTableToolbar<TData>({
               />
             )
           )}
+          {customFilters?.map((filter, index) => (
+            <div key={index}>{filter}</div>
+          ))}
         </div>
-        {isFiltered && (
+        {(isFiltered || customFilters) && (
           <Button
             variant="ghost"
-            onClick={() => table.resetColumnFilters()}
+            onClick={() => {
+              table.resetColumnFilters();
+              onResetCustomFilters?.();
+            }}
             className="h-8 px-2 lg:px-3"
           >
             Reset
