@@ -81,7 +81,12 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
   const [isFlockDialogOpen, setIsFlockDialogOpen] = useState(false);
   const [isFeedUsageDialogOpen, setIsFeedUsageDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [dialogLoading, setDialogLoading] = useState(false);
+  const [cardLoadingStates, setCardLoadingStates] = useState({
+    production: false,
+    expenses: false,
+    revenue: false
+  });
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [staffLoading, setStaffLoading] = useState(true);
@@ -225,6 +230,12 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     return option ? option.label : `Today's ${cardType === 'production' ? 'Production' : cardType === 'expenses' ? 'Expenses' : 'Revenue'}`;
   };
 
+  // Helper function to get loading state for specific card type
+  const getCardLoadingState = (cardType?: string) => {
+    if (!cardType) return false;
+    return cardLoadingStates[cardType as keyof typeof cardLoadingStates] || false;
+  };
+
   const kpiStats = [
     { 
       title: "Egg Production", 
@@ -234,10 +245,10 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       hasDropdown: true,
       dropdownValue: productionPeriod,
       onDropdownChange: (value: string) => {
-        setIsLoading(true);
+        setCardLoadingStates(prev => ({ ...prev, production: true }));
         setProductionPeriod(value);
         // Simulate loading delay
-        setTimeout(() => setIsLoading(false), 1000);
+        setTimeout(() => setCardLoadingStates(prev => ({ ...prev, production: false })), 1000);
       },
       cardType: 'production' as const
     },
@@ -249,10 +260,10 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       hasDropdown: true,
       dropdownValue: expensePeriod,
       onDropdownChange: (value: string) => {
-        setIsLoading(true);
+        setCardLoadingStates(prev => ({ ...prev, expenses: true }));
         setExpensePeriod(value);
         // Simulate loading delay
-        setTimeout(() => setIsLoading(false), 1000);
+        setTimeout(() => setCardLoadingStates(prev => ({ ...prev, expenses: false })), 1000);
       },
       cardType: 'expenses' as const
     },
@@ -264,10 +275,10 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       hasDropdown: true,
       dropdownValue: revenuePeriod,
       onDropdownChange: (value: string) => {
-        setIsLoading(true);
+        setCardLoadingStates(prev => ({ ...prev, revenue: true }));
         setRevenuePeriod(value);
         // Simulate loading delay
-        setTimeout(() => setIsLoading(false), 1000);
+        setTimeout(() => setCardLoadingStates(prev => ({ ...prev, revenue: false })), 1000);
       },
       cardType: 'revenue' as const
     },
@@ -406,7 +417,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
   const handleCreateFlock = async (data: any) => {
     try {
-      setIsLoading(true);
+      setDialogLoading(true);
       
       // Import the createFlock function dynamically to avoid SSR issues
       const { createFlock } = await import("@/server/flocks");
@@ -439,7 +450,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
         description: "An unexpected error occurred. Please try again."
       });
     } finally {
-      setIsLoading(false);
+      setDialogLoading(false);
     }
   };
 
@@ -566,7 +577,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                 </div>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {getCardLoadingState(stat.cardType) ? (
                   <div className="text-2xl font-bold">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -809,7 +820,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
             />
           ),
         }}
-        loading={isLoading}
+        loading={dialogLoading}
       />
 
       {/* Feed Usage Dialog */}

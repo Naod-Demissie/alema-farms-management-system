@@ -47,6 +47,11 @@ export const eggProductionColumns = (
         </Badge>
       );
     },
+    filterFn: (row, id, value) => {
+      const production = row.original;
+      const flockCode = production.flock?.batchCode || production.flockId || "";
+      return flockCode.toLowerCase().includes(value.toLowerCase());
+    },
   },
   {
     accessorKey: "date",
@@ -61,6 +66,34 @@ export const eggProductionColumns = (
           </span>
         </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      const production = row.original;
+      const productionDate = new Date(production.date);
+      const filterDate = new Date(value);
+      
+      // Check if it's a specific date filter (has day component) or month filter
+      const isSpecificDate = filterDate.getDate() !== 1 || 
+        filterDate.getHours() !== 0 || 
+        filterDate.getMinutes() !== 0 || 
+        filterDate.getSeconds() !== 0 ||
+        filterDate.getMilliseconds() !== 0;
+      
+      if (isSpecificDate) {
+        // Specific date filtering - match exact date
+        return (
+          productionDate.getFullYear() === filterDate.getFullYear() &&
+          productionDate.getMonth() === filterDate.getMonth() &&
+          productionDate.getDate() === filterDate.getDate()
+        );
+      } else {
+        // Month filtering - match month and year
+        return (
+          productionDate.getMonth() === filterDate.getMonth() &&
+          productionDate.getFullYear() === filterDate.getFullYear()
+        );
+      }
     },
   },
   {
@@ -164,6 +197,11 @@ export const broilerProductionColumns = (
         </Badge>
       );
     },
+    filterFn: (row, id, value) => {
+      const production = row.original;
+      const flockCode = production.flock?.batchCode || production.flockId || "";
+      return flockCode.toLowerCase().includes(value.toLowerCase());
+    },
   },
   {
     accessorKey: "date",
@@ -178,6 +216,34 @@ export const broilerProductionColumns = (
           </span>
         </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      const production = row.original;
+      const productionDate = new Date(production.date);
+      const filterDate = new Date(value);
+      
+      // Check if it's a specific date filter (has day component) or month filter
+      const isSpecificDate = filterDate.getDate() !== 1 || 
+        filterDate.getHours() !== 0 || 
+        filterDate.getMinutes() !== 0 || 
+        filterDate.getSeconds() !== 0 ||
+        filterDate.getMilliseconds() !== 0;
+      
+      if (isSpecificDate) {
+        // Specific date filtering - match exact date
+        return (
+          productionDate.getFullYear() === filterDate.getFullYear() &&
+          productionDate.getMonth() === filterDate.getMonth() &&
+          productionDate.getDate() === filterDate.getDate()
+        );
+      } else {
+        // Month filtering - match month and year
+        return (
+          productionDate.getMonth() === filterDate.getMonth() &&
+          productionDate.getFullYear() === filterDate.getFullYear()
+        );
+      }
     },
   },
   {
@@ -260,6 +326,11 @@ export const manureProductionColumns = (
         </Badge>
       );
     },
+    filterFn: (row, id, value) => {
+      const production = row.original;
+      const flockCode = production.flock?.batchCode || production.flockId || "";
+      return flockCode.toLowerCase().includes(value.toLowerCase());
+    },
   },
   {
     accessorKey: "date",
@@ -274,6 +345,34 @@ export const manureProductionColumns = (
           </span>
         </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      const production = row.original;
+      const productionDate = new Date(production.date);
+      const filterDate = new Date(value);
+      
+      // Check if it's a specific date filter (has day component) or month filter
+      const isSpecificDate = filterDate.getDate() !== 1 || 
+        filterDate.getHours() !== 0 || 
+        filterDate.getMinutes() !== 0 || 
+        filterDate.getSeconds() !== 0 ||
+        filterDate.getMilliseconds() !== 0;
+      
+      if (isSpecificDate) {
+        // Specific date filtering - match exact date
+        return (
+          productionDate.getFullYear() === filterDate.getFullYear() &&
+          productionDate.getMonth() === filterDate.getMonth() &&
+          productionDate.getDate() === filterDate.getDate()
+        );
+      } else {
+        // Month filtering - match month and year
+        return (
+          productionDate.getMonth() === filterDate.getMonth() &&
+          productionDate.getFullYear() === filterDate.getFullYear()
+        );
+      }
     },
   },
   {

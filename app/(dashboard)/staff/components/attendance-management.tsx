@@ -303,7 +303,7 @@ const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
     accessorKey: "date",
     header: "Date",
     cell: ({ row }) => {
-      return new Date(row.getValue("date")).toLocaleDateString();
+      return format(new Date(row.getValue("date")), "MMM dd, yyyy");
     },
   },
   {
@@ -943,7 +943,7 @@ export function AttendanceManagement() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                      {selectedDate ? format(selectedDate, "MMM dd, yyyy") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">

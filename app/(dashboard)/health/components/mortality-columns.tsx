@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -51,7 +51,7 @@ export const mortalityColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="font-medium">
-            {new Date(record.date).toLocaleDateString()}
+            {format(new Date(record.date), "MMM dd, yyyy")}
           </div>
         </div>
       );

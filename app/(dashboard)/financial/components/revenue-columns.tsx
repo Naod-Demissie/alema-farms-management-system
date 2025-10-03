@@ -1,11 +1,12 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { RevenueSource } from "@/lib/generated/prisma";
 import { REVENUE_SOURCES } from "@/features/financial/types";
+import { getRevenueSourceBadgeColor } from "@/lib/badge-colors";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ColumnDef } from "@tanstack/react-table";
 
 interface Revenue {
   id: string;
@@ -35,18 +37,47 @@ export const getRevenueColumns = (
   {
     accessorKey: "date",
     header: "Date",
-    cell: ({ row }) => {
-      return new Date(row.getValue("date")).toLocaleDateString();
+    cell: ({ row }: { row: any }) => {
+      return format(new Date(row.getValue("date")), "MMM dd, yyyy");
+    },
+    filterFn: (row: any, id: string, value: any) => {
+      if (!value) return true;
+      const revenue = row.original;
+      const revenueDate = new Date(revenue.date);
+      const filterDate = new Date(value);
+      
+      // Check if it's a specific date filter (has day component) or month filter
+      const isSpecificDate = filterDate.getDate() !== 1 || 
+        filterDate.getHours() !== 0 || 
+        filterDate.getMinutes() !== 0 || 
+        filterDate.getSeconds() !== 0 ||
+        filterDate.getMilliseconds() !== 0;
+      
+      if (isSpecificDate) {
+        // Specific date filtering - match exact date
+        return (
+          revenueDate.getFullYear() === filterDate.getFullYear() &&
+          revenueDate.getMonth() === filterDate.getMonth() &&
+          revenueDate.getDate() === filterDate.getDate()
+        );
+      } else {
+        // Month filtering - match month and year
+        return (
+          revenueDate.getMonth() === filterDate.getMonth() &&
+          revenueDate.getFullYear() === filterDate.getFullYear()
+        );
+      }
     },
   },
   {
     accessorKey: "source",
     header: "Source",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const source = row.getValue("source") as RevenueSource;
       const sourceConfig = REVENUE_SOURCES.find(s => s.value === source);
+      const badgeColor = getRevenueSourceBadgeColor(source);
       return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+        <Badge className={badgeColor}>
           {sourceConfig?.label || source}
         </Badge>
       );
@@ -55,7 +86,7 @@ export const getRevenueColumns = (
   {
     accessorKey: "quantity",
     header: "Quantity",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const quantity = row.getValue("quantity") as number | null;
       return quantity ? quantity.toLocaleString() : "-";
     },
@@ -63,7 +94,7 @@ export const getRevenueColumns = (
   {
     accessorKey: "costPerQuantity",
     header: "Cost/Unit",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const costPerQuantity = row.getValue("costPerQuantity") as number | null;
       return costPerQuantity ? new Intl.NumberFormat("en-ET", {
         style: "currency",
@@ -74,7 +105,7 @@ export const getRevenueColumns = (
   {
     accessorKey: "amount",
     header: "Total Amount",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const amount = parseFloat(row.getValue("amount"));
       const revenue = row.original;
       return (
@@ -97,7 +128,7 @@ export const getRevenueColumns = (
   {
     accessorKey: "description",
     header: "Description",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const description = row.getValue("description") as string | null;
       return description || "-";
     },
@@ -105,7 +136,7 @@ export const getRevenueColumns = (
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const revenue = row.original;
       
       return (

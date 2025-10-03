@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, DollarSign, TrendingUp, Eye } from "lucide-react";
 import { RevenueFormData, REVENUE_SOURCES } from "@/features/financial/types";
@@ -16,8 +17,9 @@ import {
 import { toast } from "sonner";
 import { RevenueTable } from "./revenue-table";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { RevenueDialog } from "./revenue-dialog";
+import { getRevenueSourceBadgeColor } from "@/lib/badge-colors";
 import { format } from "date-fns";
+import { RevenueDialog } from "./revenue-dialog";
 
 interface Revenue {
   id: string;
@@ -331,14 +333,16 @@ export function RevenueManagement() {
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Date</Label>
                   <p className="text-sm font-medium">
-                    {format(new Date(viewingRevenue.date), "PPP")}
+                    {format(new Date(viewingRevenue.date), "MMM dd, yyyy")}
                   </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Source</Label>
-                  <p className="text-sm font-medium">
-                    {REVENUE_SOURCES.find(s => s.value === viewingRevenue.source)?.label || viewingRevenue.source}
-                  </p>
+                  <div className="mt-1">
+                    <Badge className={getRevenueSourceBadgeColor(viewingRevenue.source as any)}>
+                      {REVENUE_SOURCES.find(s => s.value === viewingRevenue.source)?.label || viewingRevenue.source}
+                    </Badge>
+                  </div>
                 </div>
                 {viewingRevenue.quantity && (
                   <div>

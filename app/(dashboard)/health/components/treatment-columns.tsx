@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -112,7 +112,7 @@ export const treatmentColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="font-medium">
-            {new Date(treatment.startDate).toLocaleDateString()}
+            {format(new Date(treatment.startDate), "MMM dd, yyyy")}
           </div>
         </div>
       );
@@ -127,7 +127,7 @@ export const treatmentColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="font-medium">
-            {treatment.endDate ? new Date(treatment.endDate).toLocaleDateString() : "Ongoing"}
+            {treatment.endDate ? format(new Date(treatment.endDate), "MMM dd, yyyy") : "Ongoing"}
           </div>
         </div>
       );

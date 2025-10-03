@@ -1,11 +1,12 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import { ExpenseCategory } from "@/lib/generated/prisma";
 import { EXPENSE_CATEGORIES } from "@/features/financial/types";
+import { getExpenseCategoryBadgeColor } from "@/lib/badge-colors";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +42,35 @@ export const getExpenseColumns = (
     accessorKey: "date",
     header: "Date",
     cell: ({ row }) => {
-      return new Date(row.getValue("date")).toLocaleDateString();
+      return format(new Date(row.getValue("date")), "MMM dd, yyyy");
+    },
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      const expense = row.original;
+      const expenseDate = new Date(expense.date);
+      const filterDate = new Date(value);
+      
+      // Check if it's a specific date filter (has day component) or month filter
+      const isSpecificDate = filterDate.getDate() !== 1 || 
+        filterDate.getHours() !== 0 || 
+        filterDate.getMinutes() !== 0 || 
+        filterDate.getSeconds() !== 0 ||
+        filterDate.getMilliseconds() !== 0;
+      
+      if (isSpecificDate) {
+        // Specific date filtering - match exact date
+        return (
+          expenseDate.getFullYear() === filterDate.getFullYear() &&
+          expenseDate.getMonth() === filterDate.getMonth() &&
+          expenseDate.getDate() === filterDate.getDate()
+        );
+      } else {
+        // Month filtering - match month and year
+        return (
+          expenseDate.getMonth() === filterDate.getMonth() &&
+          expenseDate.getFullYear() === filterDate.getFullYear()
+        );
+      }
     },
   },
   {
@@ -50,8 +79,9 @@ export const getExpenseColumns = (
     cell: ({ row }) => {
       const category = row.getValue("category") as ExpenseCategory;
       const categoryConfig = EXPENSE_CATEGORIES.find(c => c.value === category);
+      const badgeColor = getExpenseCategoryBadgeColor(category);
       return (
-        <Badge variant="outline">
+        <Badge className={badgeColor}>
           {categoryConfig?.label || category}
         </Badge>
       );

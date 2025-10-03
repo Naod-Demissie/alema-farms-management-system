@@ -58,7 +58,7 @@ export const PayrollMonthFilter = forwardRef<PayrollMonthFilterRef, PayrollMonth
           )}
         >
           {selectedMonth ? (
-            format(selectedMonth, "MMMM yyyy")
+            format(selectedMonth, "MMM dd, yyyy")
           ) : (
             <span>All months</span>
           )}

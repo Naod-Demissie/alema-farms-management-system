@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus, Egg, Bird, Droplets, AlertCircle, AlertTriangle, TrendingUp, Activity } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
 import { 
   eggProductionColumns, 
   broilerProductionColumns, 
   manureProductionColumns 
 } from "./components/production-columns";
+import { ProductionTableToolbar } from "./components/production-table-toolbar";
+import { ProductionTable } from "./components/production-table";
 import { 
   getEggProduction, 
   getBroilerProduction, 
@@ -472,9 +473,10 @@ export default function ProductionManagementPage() {
                   </div>
                 </div>
               ) : (
-                <DataTable
+                <ProductionTable
                   columns={getColumns()}
                   data={data}
+                  flocks={flocks}
                   enableFiltering={true}
                   enablePagination={true}
                   enableSorting={true}

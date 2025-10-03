@@ -162,7 +162,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, "MMM dd, yyyy")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -359,7 +359,7 @@ export function VaccinationForm({ form, flocks, veterinarians }: VaccinationForm
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, "MMM dd, yyyy")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -647,7 +647,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, "MMM dd, yyyy")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -690,7 +690,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
                     )}
                   >
                     {field.value ? (
-                      format(field.value, "PPP")
+                      format(field.value, "MMM dd, yyyy")
                     ) : (
                       <span>Pick a date</span>
                     )}

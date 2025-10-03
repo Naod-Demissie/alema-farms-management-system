@@ -91,7 +91,7 @@ export function PayrollManagement() {
   const handlePayPeriodSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedPayPeriod(date);
-      setFormData({...formData, period: format(date, "MMMM yyyy")});
+      setFormData({...formData, period: format(date, "MMM dd, yyyy")});
     }
   };
 
@@ -472,7 +472,7 @@ export function PayrollManagement() {
                       )}
                     >
                       {selectedPayPeriod ? (
-                        format(selectedPayPeriod, "MMMM yyyy")
+                        format(selectedPayPeriod, "MMM dd, yyyy")
                       ) : (
                         <span>Select pay period</span>
                       )}
@@ -630,7 +630,7 @@ export function PayrollManagement() {
                         )}
                       >
                         {selectedPayPeriod ? (
-                          format(selectedPayPeriod, "MMMM yyyy")
+                          format(selectedPayPeriod, "MMM dd, yyyy")
                         ) : (
                           <span>Select pay period</span>
                         )}

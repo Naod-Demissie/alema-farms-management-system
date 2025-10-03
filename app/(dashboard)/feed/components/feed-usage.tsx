@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -194,7 +195,7 @@ export function FeedUsage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
@@ -215,7 +216,7 @@ export function FeedUsage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
@@ -236,7 +237,7 @@ export function FeedUsage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold text-green-600">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
@@ -257,7 +258,7 @@ export function FeedUsage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
@@ -378,7 +379,7 @@ export function FeedUsage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-muted-foreground">Date</Label>
-                    <p className="text-sm font-medium">{new Date(viewingItem.date).toLocaleDateString()}</p>
+                    <p className="text-sm font-medium">{format(new Date(viewingItem.date), "MMM dd, yyyy")}</p>
                   </div>
                   
                   <div className="space-y-2">

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, DollarSign, Eye } from "lucide-react";
 import { ExpenseFormData, EXPENSE_CATEGORIES } from "@/features/financial/types";
@@ -17,8 +18,9 @@ import {
 import { toast } from "sonner";
 import { ExpenseTable } from "./expense-table";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { ExpenseDialog } from "./expense-dialog";
+import { getExpenseCategoryBadgeColor } from "@/lib/badge-colors";
 import { format } from "date-fns";
+import { ExpenseDialog } from "./expense-dialog";
 
 interface Expense {
   id: string;
@@ -337,14 +339,16 @@ export function ExpenseTracking() {
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Date</Label>
                   <p className="text-sm font-medium">
-                    {format(new Date(viewingExpense.date), "PPP")}
+                    {format(new Date(viewingExpense.date), "MMM dd, yyyy")}
                   </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Category</Label>
-                  <p className="text-sm font-medium">
-                    {EXPENSE_CATEGORIES.find(c => c.value === viewingExpense.category)?.label || viewingExpense.category}
-                  </p>
+                  <div className="mt-1">
+                    <Badge className={getExpenseCategoryBadgeColor(viewingExpense.category as any)}>
+                      {EXPENSE_CATEGORIES.find(c => c.value === viewingExpense.category)?.label || viewingExpense.category}
+                    </Badge>
+                  </div>
                 </div>
                 {viewingExpense.quantity && (
                   <div>

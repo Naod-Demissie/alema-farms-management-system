@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -61,7 +61,7 @@ export const vaccinationColumns = (
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div>
             <div className="font-medium">
-              {new Date(vaccination.administeredDate).toLocaleDateString()}
+              {format(new Date(vaccination.administeredDate), "MMM dd, yyyy")}
             </div>
             <div className="text-sm text-muted-foreground">
               by {vaccination.administeredBy}

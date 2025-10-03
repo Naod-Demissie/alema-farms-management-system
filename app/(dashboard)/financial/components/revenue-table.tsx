@@ -5,6 +5,7 @@ import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import { useReactTable, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, getFacetedRowModel, getFacetedUniqueValues, ColumnFiltersState, ColumnVisibility, VisibilityState } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { FinancialDateFilter } from "./financial-date-filter";
 import { getRevenueColumns } from "./revenue-columns";
 
 interface Revenue {
@@ -63,14 +64,17 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
     <div className="space-y-4">
       <DataTableToolbar
         table={table}
-        filterColumnId="source"
-        filterPlaceholder="Filter by source..."
+        filterColumnId="description"
+        filterPlaceholder="Search revenues..."
         facetedFilters={[
           {
             columnId: "source",
             title: "Source",
             options: sourceOptions,
           },
+        ]}
+        customFilters={[
+          <FinancialDateFilter key="date-filter" table={table} />
         ]}
       />
       {loading ? (

@@ -83,7 +83,7 @@ export function PayrollTableToolbar({
                 )}
               >
                 {selectedMonth ? (
-                  format(selectedMonth, "MMMM yyyy")
+                  format(selectedMonth, "MMM dd, yyyy")
                 ) : (
                   <span>All months</span>
                 )}

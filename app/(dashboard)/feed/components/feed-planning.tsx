@@ -136,7 +136,7 @@ export function FeedPlanning() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
@@ -156,7 +156,7 @@ export function FeedPlanning() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
@@ -180,7 +180,7 @@ export function FeedPlanning() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
@@ -202,7 +202,7 @@ export function FeedPlanning() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center h-16">
+              <div className="text-2xl font-bold">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (

@@ -102,7 +102,7 @@ export const createPayrollTableColumns = ({
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {format(new Date(date), "MMM yyyy")}
+            {format(new Date(date), "MMM dd, yyyy")}
           </div>
         </div>
       );
