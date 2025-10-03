@@ -183,8 +183,11 @@ export function RevenueDialog({
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.quantity || ""}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
+                  value={formData.quantity === 0 ? "" : formData.quantity}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, quantity: value === "" ? 0 : parseFloat(value) || 0 });
+                  }}
                   placeholder="e.g., 100"
                   required
                 />
@@ -198,8 +201,11 @@ export function RevenueDialog({
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.costPerQuantity || ""}
-                  onChange={(e) => setFormData({ ...formData, costPerQuantity: parseFloat(e.target.value) || 0 })}
+                  value={formData.costPerQuantity === 0 ? "" : formData.costPerQuantity}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, costPerQuantity: value === "" ? 0 : parseFloat(value) || 0 });
+                  }}
                   placeholder="e.g., 2.50"
                   required
                 />
@@ -208,7 +214,6 @@ export function RevenueDialog({
 
             {/* Total Amount Display */}
             <div className="grid gap-2">
-              <Label htmlFor="amount">Total Amount</Label>
               <div className="bg-muted/50 p-3 rounded-lg text-center">
                 <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
                 <div className="text-xl font-semibold">

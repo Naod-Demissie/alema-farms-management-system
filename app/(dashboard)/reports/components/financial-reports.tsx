@@ -426,12 +426,18 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(totalRevenue)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(totalRevenue)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -443,12 +449,18 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(totalExpenses)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-red-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-red-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(totalExpenses)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -458,16 +470,26 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             <DollarSign className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div
-              className={`text-2xl font-bold ${
-                totalProfit >= 0 ? "text-green-500" : "text-red-600"
-              }`}
-            >
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(totalProfit)}
-            </div>
+            {loading ? (
+              <div
+                className={`text-2xl font-bold ${
+                  totalProfit >= 0 ? "text-green-500" : "text-red-600"
+                }`}
+              >
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div
+                className={`text-2xl font-bold ${
+                  totalProfit >= 0 ? "text-green-500" : "text-red-600"
+                }`}
+              >
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(totalProfit)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -477,13 +499,23 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             <Target className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div
-              className={`text-2xl font-bold ${
-                profitMargin >= 0 ? "text-green-400" : "text-red-600"
-              }`}
-            >
-              {Number(profitMargin || 0).toFixed(1)}%
-            </div>
+            {loading ? (
+              <div
+                className={`text-2xl font-bold ${
+                  profitMargin >= 0 ? "text-green-400" : "text-red-600"
+                }`}
+              >
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div
+                className={`text-2xl font-bold ${
+                  profitMargin >= 0 ? "text-green-400" : "text-red-600"
+                }`}
+              >
+                {Number(profitMargin || 0).toFixed(1)}%
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

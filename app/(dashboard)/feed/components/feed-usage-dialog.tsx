@@ -306,8 +306,11 @@ export function FeedUsageDialog({
                         step="0.1"
                         placeholder="0.0"
                         className="h-9 w-full"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        value={field.value === 0 ? "" : field.value}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -322,7 +325,7 @@ export function FeedUsageDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="text-sm font-medium">Notes (Optional)</FormLabel>
+                  <FormLabel className="text-sm font-medium">Notes</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Additional notes about this feeding..."

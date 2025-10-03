@@ -192,8 +192,11 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                     min="0"
                     step="0.1"
                     placeholder="0"
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    value={field.value === 0 ? "" : field.value}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -221,8 +224,11 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                       type="number"
                       min="0"
                       placeholder="0"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      value={field.value === 0 ? "" : field.value}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -243,8 +249,11 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                       type="number"
                       min="0"
                       placeholder="0"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      value={field.value === 0 ? "" : field.value}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -265,8 +274,11 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                       type="number"
                       min="0"
                       placeholder="0"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      value={field.value === 0 ? "" : field.value}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

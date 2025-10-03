@@ -89,17 +89,82 @@ export function ProductionReports({
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+      <div className="space-y-6">
+        {/* Key Metrics Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Eggs</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             </CardContent>
           </Card>
-        ))}
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Quality Rate</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Flocks</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Production Trend</CardTitle>
+              <CardDescription>Daily egg production over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quality Breakdown</CardTitle>
+              <CardDescription>Distribution of egg grades</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -242,12 +307,20 @@ export function ProductionReports({
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {summary?.totalEggs?.toLocaleString() || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All time production
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {summary?.totalEggs?.toLocaleString() || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  All time production
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -257,12 +330,20 @@ export function ProductionReports({
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {summary?.averageDailyProduction?.toFixed(1) || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Eggs per day
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {summary?.averageDailyProduction?.toFixed(1) || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Eggs per day
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -272,17 +353,25 @@ export function ProductionReports({
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {(() => {
-                if (!summary?.gradeBreakdown) return "0%";
-                const total = summary.gradeBreakdown.normal + summary.gradeBreakdown.cracked + summary.gradeBreakdown.spoiled;
-                const quality = total > 0 ? (summary.gradeBreakdown.normal / total) * 100 : 0;
-                return `${quality.toFixed(1)}%`;
-              })()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Good quality eggs
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {(() => {
+                    if (!summary?.gradeBreakdown) return "0%";
+                    const total = summary.gradeBreakdown.normal + summary.gradeBreakdown.cracked + summary.gradeBreakdown.spoiled;
+                    const quality = total > 0 ? (summary.gradeBreakdown.normal / total) * 100 : 0;
+                    return `${quality.toFixed(1)}%`;
+                  })()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Good quality eggs
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -292,12 +381,20 @@ export function ProductionReports({
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {uniqueFlocks.length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Producing flocks
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {uniqueFlocks.length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Producing flocks
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

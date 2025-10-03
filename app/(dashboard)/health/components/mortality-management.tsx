@@ -346,8 +346,16 @@ export function MortalityManagement() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalMortality}</div>
-            <p className="text-xs text-muted-foreground">birds this month</p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalMortality}</div>
+                <p className="text-xs text-muted-foreground">birds this month</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -357,10 +365,18 @@ export function MortalityManagement() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{diseaseMortality}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalMortality > 0 ? Math.round((diseaseMortality / totalMortality) * 100) : 0}% of total
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-red-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-red-600">{diseaseMortality}</div>
+                <p className="text-xs text-muted-foreground">
+                  {totalMortality > 0 ? Math.round((diseaseMortality / totalMortality) * 100) : 0}% of total
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -370,10 +386,18 @@ export function MortalityManagement() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{injuryMortality}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalMortality > 0 ? Math.round((injuryMortality / totalMortality) * 100) : 0}% of total
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-orange-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-orange-600">{injuryMortality}</div>
+                <p className="text-xs text-muted-foreground">
+                  {totalMortality > 0 ? Math.round((injuryMortality / totalMortality) * 100) : 0}% of total
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -383,10 +407,18 @@ export function MortalityManagement() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mortalityRate.toFixed(2)}%</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">-0.2%</span> from last month
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{mortalityRate.toFixed(2)}%</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-green-600">-0.2%</span> from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

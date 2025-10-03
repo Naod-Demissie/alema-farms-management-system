@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import { useReactTable, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, getFacetedRowModel, getFacetedUniqueValues, ColumnFiltersState, ColumnVisibility, VisibilityState } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
@@ -29,13 +30,16 @@ interface RevenueTableProps {
 export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }: RevenueTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  
+  const columns = getRevenueColumns(onEdit, onDelete);
+  const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
     columns: getRevenueColumns(onEdit, onDelete),
     state: {
       columnFilters,
-      columnVisibility,
+      columnVisibility: mobileColumnVisibility,
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,

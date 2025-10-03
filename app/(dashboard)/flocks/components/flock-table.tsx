@@ -16,6 +16,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import {
   Table,
   TableBody,
@@ -63,6 +64,8 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  
+  const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
@@ -138,7 +141,7 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
     }),
     state: {
       sorting,
-      columnVisibility,
+      columnVisibility: mobileColumnVisibility,
       rowSelection,
       columnFilters,
     },

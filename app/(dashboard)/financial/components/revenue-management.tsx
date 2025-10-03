@@ -207,12 +207,18 @@ export function RevenueManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(todayRevenue)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(todayRevenue)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -222,12 +228,18 @@ export function RevenueManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(thisWeekRevenue)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(thisWeekRevenue)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -237,12 +249,18 @@ export function RevenueManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(thisMonthRevenue)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(thisMonthRevenue)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -252,12 +270,18 @@ export function RevenueManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(thisYearRevenue)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(thisYearRevenue)}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -213,12 +213,18 @@ export function ExpenseTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(todayExpenses)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-red-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-red-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(todayExpenses)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -228,12 +234,18 @@ export function ExpenseTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(thisWeekExpenses)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-red-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-red-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(thisWeekExpenses)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -243,12 +255,18 @@ export function ExpenseTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(thisMonthExpenses)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-red-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-red-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(thisMonthExpenses)}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -258,12 +276,18 @@ export function ExpenseTracking() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat("en-ET", {
-                style: "currency",
-                currency: "ETB",
-              }).format(thisYearExpenses)}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold text-red-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-red-600">
+                {new Intl.NumberFormat("en-ET", {
+                  style: "currency",
+                  currency: "ETB",
+                }).format(thisYearExpenses)}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

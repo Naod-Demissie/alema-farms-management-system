@@ -18,7 +18,7 @@ model Staff {
   name             String
   email            String?         @unique
   emailVerified    Boolean         @default(false)
-  image            String?
+  image            String? @db.Text
   phoneNumber      String?
   role             StaffRole       @default(WORKER)
   isActive         Boolean         @default(true)

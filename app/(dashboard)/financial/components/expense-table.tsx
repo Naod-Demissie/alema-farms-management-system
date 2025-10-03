@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import { useReactTable, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, getFacetedRowModel, getFacetedUniqueValues, ColumnFiltersState, ColumnVisibility, VisibilityState } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
@@ -34,13 +35,16 @@ interface ExpenseTableProps {
 export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }: ExpenseTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  
+  const columns = getExpenseColumns(onView, onEdit, onDelete);
+  const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
     columns: getExpenseColumns(onView, onEdit, onDelete),
     state: {
       columnFilters,
-      columnVisibility,
+      columnVisibility: mobileColumnVisibility,
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,

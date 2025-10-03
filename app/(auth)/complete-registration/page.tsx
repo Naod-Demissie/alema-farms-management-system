@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/form";
 import { validateInvite, completeStaffRegistration } from "@/server/staff";
 import { toast } from "sonner";
-import { Upload, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { Upload, User, Mail, Phone, Lock, Eye, EyeOff, X } from "lucide-react";
 
 const registrationSchema = z
   .object({
@@ -101,6 +101,19 @@ function CompleteRegistrationContent() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+
+      // Validate file size (2MB limit)
+      const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+      if (file.size > maxSize) {
+        toast.error("Image size must be less than 2MB");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -127,10 +140,21 @@ function CompleteRegistrationContent() {
           setImagePreview(compressedImage);
           form.setValue("image", compressedImage);
         };
+        img.onerror = () => {
+          toast.error("Failed to process image");
+        };
         img.src = result;
+      };
+      reader.onerror = () => {
+        toast.error("Failed to read image file");
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview("");
+    form.setValue("image", "");
   };
 
   const onSubmit = async (data: RegistrationFormValues) => {
@@ -266,12 +290,12 @@ function CompleteRegistrationContent() {
                 {/* Profile Image Upload */}
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={imagePreview} />
+                    <AvatarImage src={imagePreview || undefined} />
                     <AvatarFallback>
                       <User className="h-12 w-12" />
                     </AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="image-upload" className="cursor-pointer">
                       <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
                         <Upload className="h-4 w-4" />
@@ -285,6 +309,21 @@ function CompleteRegistrationContent() {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
+                    {imagePreview && (
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRemoveImage}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Remove Picture
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG or GIF. Max size 2MB.
+                    </p>
                   </div>
                 </div>
 
@@ -335,7 +374,7 @@ function CompleteRegistrationContent() {
                     <FormItem>
                       <FormLabel className="flex items-center space-x-2">
                         <Phone className="h-4 w-4" />
-                        <span>Phone Number (Optional)</span>
+                        <span>Phone Number</span>
                       </FormLabel>
                       <FormControl>
                         <Input

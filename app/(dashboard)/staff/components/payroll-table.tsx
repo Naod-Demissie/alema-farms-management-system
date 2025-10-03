@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -48,13 +49,15 @@ export function PayrollTable({ columns, data, toolbar }: PayrollTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const monthFilterRef = useRef<PayrollMonthFilterRef>(null);
+  
+  const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
-      columnVisibility,
+      columnVisibility: mobileColumnVisibility,
       rowSelection,
       columnFilters,
     },

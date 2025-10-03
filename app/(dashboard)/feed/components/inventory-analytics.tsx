@@ -239,10 +239,18 @@ export function InventoryAnalytics() {
                         <Package className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{analytics.summary.totalUsage.toFixed(1)} kg</div>
-                        <p className="text-xs text-muted-foreground">
-                          {analytics.summary.totalRecords} records
-                        </p>
+                        {loading ? (
+                          <div className="text-2xl font-bold">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-2xl font-bold">{analytics.summary.totalUsage.toFixed(1)} kg</div>
+                            <p className="text-xs text-muted-foreground">
+                              {analytics.summary.totalRecords} records
+                            </p>
+                          </>
+                        )}
                       </CardContent>
                     </Card>
                     
@@ -252,10 +260,18 @@ export function InventoryAnalytics() {
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{formatNumber(analytics.summary.totalCost)} ETB</div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatNumber(analytics.summary.averageCostPerKg)} ETB/kg avg
-                        </p>
+                        {loading ? (
+                          <div className="text-2xl font-bold">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-2xl font-bold">{formatNumber(analytics.summary.totalCost)} ETB</div>
+                            <p className="text-xs text-muted-foreground">
+                              {formatNumber(analytics.summary.averageCostPerKg)} ETB/kg avg
+                            </p>
+                          </>
+                        )}
                       </CardContent>
                     </Card>
                     
@@ -265,10 +281,18 @@ export function InventoryAnalytics() {
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{analytics.summary.uniqueFlocks}</div>
-                        <p className="text-xs text-muted-foreground">
-                          Flocks consuming feed
-                        </p>
+                        {loading ? (
+                          <div className="text-2xl font-bold">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-2xl font-bold">{analytics.summary.uniqueFlocks}</div>
+                            <p className="text-xs text-muted-foreground">
+                              Flocks consuming feed
+                            </p>
+                          </>
+                        )}
                       </CardContent>
                     </Card>
                     
@@ -278,10 +302,18 @@ export function InventoryAnalytics() {
                         <BarChart3 className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{analytics.analytics.length}</div>
-                        <p className="text-xs text-muted-foreground">
-                          Different feed types used
-                        </p>
+                        {loading ? (
+                          <div className="text-2xl font-bold">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-2xl font-bold">{analytics.analytics.length}</div>
+                            <p className="text-xs text-muted-foreground">
+                              Different feed types used
+                            </p>
+                          </>
+                        )}
                       </CardContent>
                     </Card>
                   </div>

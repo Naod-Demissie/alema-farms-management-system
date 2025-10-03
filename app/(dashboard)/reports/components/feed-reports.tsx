@@ -27,6 +27,8 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import {
   AreaChart,
@@ -170,22 +172,6 @@ export function FeedReports({ filters }: FeedReportsProps) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
 
   if (!data) {
     return (
@@ -229,13 +215,21 @@ export function FeedReports({ filters }: FeedReportsProps) {
             <Utensils className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {data.totalFeedUsed.toLocaleString()} kg
-            </div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +12% from last month
-            </p>
+            {loading || !data ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {data.totalFeedUsed.toLocaleString()} kg
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  +12% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -245,13 +239,21 @@ export function FeedReports({ filters }: FeedReportsProps) {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${data.totalFeedCost.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +8% from last month
-            </p>
+            {loading || !data ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  ${data.totalFeedCost.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  +8% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -261,11 +263,19 @@ export function FeedReports({ filters }: FeedReportsProps) {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.feedEfficiency}%</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +2.3% from last month
-            </p>
+            {loading || !data ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{data.feedEfficiency}%</div>
+                <p className="text-xs text-muted-foreground">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  +2.3% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -275,17 +285,25 @@ export function FeedReports({ filters }: FeedReportsProps) {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.flockFeedUsage.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Consuming feed
-            </p>
+            {loading || !data ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{data.flockFeedUsage.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Consuming feed
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Charts Row 1: Feed Usage by Flock */}
       <div className="grid grid-cols-1 gap-6">
-        <Card>
+        <Card className="pt-0">
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
               <CardTitle>Feed Usage by Flock</CardTitle>
@@ -293,7 +311,7 @@ export function FeedReports({ filters }: FeedReportsProps) {
             </div>
             <Select value={feedUsageTimeFilter} onValueChange={setFeedUsageTimeFilter}>
               <SelectTrigger
-                className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                className="w-[160px] rounded-lg sm:ml-auto"
                 aria-label="Select a time range"
               >
                 <SelectValue placeholder="Last 3 months" />
@@ -305,68 +323,84 @@ export function FeedReports({ filters }: FeedReportsProps) {
               </SelectContent>
             </Select>
           </CardHeader>
-          <CardContent>
-            {filteredFlockUsageData.length > 0 ? (
-              <div className="space-y-4">
-                <ChartContainer
-                  config={(() => {
-                    const cfg: any = {};
-                    data.flockFeedUsage.forEach((flock, idx) => {
-                      cfg[flock.flockCode] = { 
-                        label: flock.flockCode, 
-                        color: flockColors[idx % flockColors.length] 
-                      };
+          <CardContent className="px-2 sm:p-6">
+            <ChartContainer
+              config={(() => {
+                const cfg: any = {};
+                if (data) {
+                  data.flockFeedUsage.forEach((flock, idx) => {
+                    cfg[flock.flockCode] = { 
+                      label: flock.flockCode, 
+                      color: flockColors[idx % flockColors.length] 
+                    };
+                  });
+                }
+                return cfg;
+              })()}
+              className="aspect-auto h-[300px] w-full"
+            >
+              <AreaChart data={filteredFlockUsageData}>
+                <defs>
+                  {data?.flockFeedUsage.map((flock, idx) => {
+                    const color = flockColors[idx % flockColors.length];
+                    return (
+                      <linearGradient key={`fill${flock.flockCode}`} id={`fill${flock.flockCode}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={color} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={color} stopOpacity={0.1} />
+                      </linearGradient>
+                    );
+                  })}
+                </defs>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  minTickGap={32}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
                     });
-                    return cfg;
-                  })()}
-                  className="aspect-auto h-[250px] w-full"
-                >
-                  <AreaChart data={filteredFlockUsageData}>
-                    <defs>
-                      {data.flockFeedUsage.map((flock, idx) => {
-                        const color = flockColors[idx % flockColors.length];
-                        return (
-                          <linearGradient key={`fill${flock.flockCode}`} id={`fill${flock.flockCode}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={color} stopOpacity={0.8} />
-                            <stop offset="95%" stopColor={color} stopOpacity={0.1} />
-                          </linearGradient>
-                        );
-                      })}
-                    </defs>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      minTickGap={32}
-                      tickFormatter={(value) =>
-                        new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                      }
+                  }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      labelFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        });
+                      }}
+                      formatter={(value, name) => [
+                        `${Number(value).toLocaleString()} kg`,
+                        name,
+                      ]}
+                      indicator="dot"
                     />
-                    <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                    {data.flockFeedUsage.map((flock, idx) => {
-                      const color = flockColors[idx % flockColors.length];
-                      return (
-                        <Area
-                          key={flock.flockCode}
-                          dataKey={flock.flockCode}
-                          type="linear"
-                          fill={`url(#fill${flock.flockCode})`}
-                          stroke={color}
-                        />
-                      );
-                    })}
-                  </AreaChart>
-                </ChartContainer>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No feed usage data available</p>
-              </div>
-            )}
+                  }
+                />
+                {data?.flockFeedUsage.map((flock, idx) => {
+                  const color = flockColors[idx % flockColors.length];
+                  return (
+                    <Area
+                      key={flock.flockCode}
+                      dataKey={flock.flockCode}
+                      type="linear"
+                      fill={`url(#fill${flock.flockCode})`}
+                      stroke={color}
+                      stackId="a"
+                    />
+                  );
+                })}
+                <ChartLegend content={<ChartLegendContent />} />
+              </AreaChart>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -395,93 +429,84 @@ export function FeedReports({ filters }: FeedReportsProps) {
             </Select>
           </CardHeader>
           <CardContent>
-            {filteredFeedTypeData.length > 0 ? (
-              <div className="h-[300px]">
-                <ChartContainer
-                  config={{
-                    quantity: { label: "Quantity (kg)" },
-                    ...filteredFeedTypeData.reduce((acc: any, item, index) => {
-                      acc[item.type] = { 
-                        label: item.type.charAt(0).toUpperCase() + item.type.slice(1), 
-                        color: feedTypeColors[index % feedTypeColors.length] 
-                      };
-                      return acc;
-                    }, {} as any),
-                  }}
-                  className="mx-auto aspect-square max-h-[250px]"
+            <ChartContainer
+              config={{
+                quantity: { label: "Quantity (kg)" },
+                ...(data?.feedByType || []).reduce((acc: any, item, index) => {
+                  acc[item.type] = { 
+                    label: item.type.charAt(0).toUpperCase() + item.type.slice(1), 
+                    color: feedTypeColors[index % feedTypeColors.length] 
+                  };
+                  return acc;
+                }, {} as any),
+              }}
+              className="mx-auto aspect-square max-h-[250px]"
+            >
+              <RechartsPieChart>
+                <Pie
+                  data={filteredFeedTypeData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="quantity"
                 >
-                  <RechartsPieChart>
-                    <Pie
-                      data={filteredFeedTypeData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="quantity"
-                    >
-                      {filteredFeedTypeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={feedTypeColors[index % feedTypeColors.length]} />
-                      ))}
-                      <Label
-                        content={({ viewBox }) => {
-                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                            const total = filteredFeedTypeData.reduce((acc, curr) => acc + curr.quantity, 0);
-                            return (
-                              <text
-                                x={viewBox.cx}
-                                y={viewBox.cy}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={viewBox.cy}
-                                  className="fill-foreground text-3xl font-bold"
-                                >
-                                  {total.toLocaleString()}
-                                </tspan>
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={(viewBox.cy || 0) + 24}
-                                  className="fill-muted-foreground"
-                                >
-                                  kg
-                                </tspan>
-                              </text>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  </RechartsPieChart>
-                </ChartContainer>
-                <div className="flex flex-col items-center gap-2 text-sm px-2 pt-4">
-                  {(() => {
-                    const sorted = [...filteredFeedTypeData].sort((a, b) => b.quantity - a.quantity);
-                    const leader = sorted[0];
-                    const total = filteredFeedTypeData.reduce((acc, it) => acc + it.quantity, 0);
-                    const percentage = total > 0 && leader?.quantity ? (leader.quantity / total) * 100 : 0;
-                    return (
-                      <div className="flex items-center gap-2 leading-none font-medium">
-                        <TrendingUp className="h-4 w-4" />
-                        {leader?.type.charAt(0).toUpperCase() + leader?.type.slice(1)} leading with {percentage.toFixed(1)}%
-                      </div>
-                    );
-                  })()}
-                  <div className="text-muted-foreground leading-none text-center">
-                    Showing distribution across {filteredFeedTypeData.length} feed types
+                  {filteredFeedTypeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={feedTypeColors[index % feedTypeColors.length]} />
+                  ))}
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        const total = filteredFeedTypeData.reduce((acc, curr) => acc + curr.quantity, 0);
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-3xl font-bold"
+                            >
+                              {total.toLocaleString()}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-muted-foreground"
+                            >
+                              kg
+                            </tspan>
+                          </text>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+              </RechartsPieChart>
+            </ChartContainer>
+            <div className="flex flex-col items-center gap-2 text-sm px-2 pt-4">
+              {(() => {
+                const sorted = [...filteredFeedTypeData].sort((a, b) => b.quantity - a.quantity);
+                const leader = sorted[0];
+                const total = filteredFeedTypeData.reduce((acc, it) => acc + it.quantity, 0);
+                const percentage = total > 0 && leader?.quantity ? (leader.quantity / total) * 100 : 0;
+                return (
+                  <div className="flex items-center gap-2 leading-none font-medium">
+                    <TrendingUp className="h-4 w-4" />
+                    {leader?.type.charAt(0).toUpperCase() + leader?.type.slice(1)} leading with {percentage.toFixed(1)}%
                   </div>
-                </div>
+                );
+              })()}
+              <div className="text-muted-foreground leading-none text-center">
+                Showing distribution across {filteredFeedTypeData.length} feed types
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <PieChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No feed type data available</p>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
 
@@ -507,93 +532,84 @@ export function FeedReports({ filters }: FeedReportsProps) {
             </Select>
           </CardHeader>
           <CardContent>
-            {filteredSupplierData.length > 0 ? (
-              <div className="h-[300px]">
-                <ChartContainer
-                  config={{
-                    quantity: { label: "Quantity (kg)" },
-                    ...filteredSupplierData.reduce((acc: any, item, index) => {
-                      acc[item.supplier] = { 
-                        label: item.supplier, 
-                        color: supplierColors[index % supplierColors.length] 
-                      };
-                      return acc;
-                    }, {} as any),
-                  }}
-                  className="mx-auto aspect-square max-h-[250px]"
+            <ChartContainer
+              config={{
+                quantity: { label: "Quantity (kg)" },
+                ...(data?.feedBySupplier || []).reduce((acc: any, item, index) => {
+                  acc[item.supplier] = { 
+                    label: item.supplier, 
+                    color: supplierColors[index % supplierColors.length] 
+                  };
+                  return acc;
+                }, {} as any),
+              }}
+              className="mx-auto aspect-square max-h-[250px]"
+            >
+              <RechartsPieChart>
+                <Pie
+                  data={filteredSupplierData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="quantity"
                 >
-                  <RechartsPieChart>
-                    <Pie
-                      data={filteredSupplierData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="quantity"
-                    >
-                      {filteredSupplierData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={supplierColors[index % supplierColors.length]} />
-                      ))}
-                      <Label
-                        content={({ viewBox }) => {
-                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                            const total = filteredSupplierData.reduce((acc, curr) => acc + curr.quantity, 0);
-                            return (
-                              <text
-                                x={viewBox.cx}
-                                y={viewBox.cy}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={viewBox.cy}
-                                  className="fill-foreground text-3xl font-bold"
-                                >
-                                  {total.toLocaleString()}
-                                </tspan>
-                                <tspan
-                                  x={viewBox.cx}
-                                  y={(viewBox.cy || 0) + 24}
-                                  className="fill-muted-foreground"
-                                >
-                                  kg
-                                </tspan>
-                              </text>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  </RechartsPieChart>
-                </ChartContainer>
-                <div className="flex flex-col items-center gap-2 text-sm px-2 pt-4">
-                  {(() => {
-                    const sorted = [...filteredSupplierData].sort((a, b) => b.quantity - a.quantity);
-                    const leader = sorted[0];
-                    const total = filteredSupplierData.reduce((acc, it) => acc + it.quantity, 0);
-                    const percentage = total > 0 && leader?.quantity ? (leader.quantity / total) * 100 : 0;
-                    return (
-                      <div className="flex items-center gap-2 leading-none font-medium">
-                        <TrendingUp className="h-4 w-4" />
-                        {leader?.supplier} leading with {percentage.toFixed(1)}%
-                      </div>
-                    );
-                  })()}
-                  <div className="text-muted-foreground leading-none text-center">
-                    Showing distribution across {filteredSupplierData.length} suppliers
+                  {filteredSupplierData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={supplierColors[index % supplierColors.length]} />
+                  ))}
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        const total = filteredSupplierData.reduce((acc, curr) => acc + curr.quantity, 0);
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-3xl font-bold"
+                            >
+                              {total.toLocaleString()}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-muted-foreground"
+                            >
+                              kg
+                            </tspan>
+                          </text>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+              </RechartsPieChart>
+            </ChartContainer>
+            <div className="flex flex-col items-center gap-2 text-sm px-2 pt-4">
+              {(() => {
+                const sorted = [...filteredSupplierData].sort((a, b) => b.quantity - a.quantity);
+                const leader = sorted[0];
+                const total = filteredSupplierData.reduce((acc, it) => acc + it.quantity, 0);
+                const percentage = total > 0 && leader?.quantity ? (leader.quantity / total) * 100 : 0;
+                return (
+                  <div className="flex items-center gap-2 leading-none font-medium">
+                    <TrendingUp className="h-4 w-4" />
+                    {leader?.supplier} leading with {percentage.toFixed(1)}%
                   </div>
-                </div>
+                );
+              })()}
+              <div className="text-muted-foreground leading-none text-center">
+                Showing distribution across {filteredSupplierData.length} suppliers
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <PieChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No supplier data available</p>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>

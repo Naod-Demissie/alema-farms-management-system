@@ -199,9 +199,11 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                   type="number"
                   min="0"
                   placeholder="e.g., 1, 7, 14"
-                  {...field}
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  value={field.value === 0 ? "" : field.value}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -225,7 +227,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                   type="number"
                   min="1"
                   placeholder="e.g., 1000"
-                  value={field.value || ""}
+                  value={field.value === 0 ? "" : field.value}
                   onChange={(e) => {
                     const value = e.target.value;
                     field.onChange(value === "" ? 0 : parseInt(value) || 0);
@@ -249,7 +251,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                   type="number"
                   min="0"
                   placeholder="e.g., 950"
-                  value={field.value || ""}
+                  value={field.value === 0 ? "" : field.value}
                   onChange={(e) => {
                     const value = e.target.value;
                     field.onChange(value === "" ? 0 : parseInt(value) || 0);
@@ -268,7 +270,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
         name="notes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Notes (Optional)</FormLabel>
+            <FormLabel>Notes</FormLabel>
             <FormControl>
               <Textarea
                 placeholder="Additional notes about the flock..."
@@ -422,8 +424,11 @@ export function VaccinationForm({ form, flocks, veterinarians }: VaccinationForm
                 <Input
                   type="number"
                   placeholder="500"
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  value={field.value === 0 ? "" : field.value}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -483,7 +488,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="flockId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Flock ID</FormLabel>
+              <FormLabel>Flock ID <span className="text-red-500">*</span></FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -507,7 +512,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="disease"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Disease Type</FormLabel>
+              <FormLabel>Disease Type <span className="text-red-500">*</span></FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -533,7 +538,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
         name="diseaseName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Disease Name</FormLabel>
+            <FormLabel>Disease Name <span className="text-red-500">*</span></FormLabel>
             <FormControl>
               <Input placeholder="e.g., Infectious Bronchitis" {...field} />
             </FormControl>
@@ -548,7 +553,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="medication"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Medication</FormLabel>
+              <FormLabel>Medication <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Amoxicillin" {...field} />
               </FormControl>
@@ -561,7 +566,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="dosage"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Dosage</FormLabel>
+              <FormLabel>Dosage <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., 10mg/kg body weight" {...field} />
               </FormControl>
@@ -577,7 +582,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="frequency"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Frequency</FormLabel>
+              <FormLabel>Frequency <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Twice daily" {...field} />
               </FormControl>
@@ -590,7 +595,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="duration"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Duration</FormLabel>
+              <FormLabel>Duration <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., 5 days" {...field} />
               </FormControl>
@@ -606,7 +611,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="treatedBy"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Treated By</FormLabel>
+              <FormLabel>Treated By <span className="text-red-500">*</span></FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -630,7 +635,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
           name="startDate"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Start Date</FormLabel>
+              <FormLabel>Start Date <span className="text-red-500">*</span></FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -673,7 +678,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
         name="endDate"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>End Date (Optional)</FormLabel>
+            <FormLabel>End Date</FormLabel>
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>

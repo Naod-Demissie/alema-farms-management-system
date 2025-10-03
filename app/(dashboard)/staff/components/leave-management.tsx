@@ -635,10 +635,18 @@ export function LeaveManagement() {
             </Popover>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leaveStats.totalRequests}</div>
-            <p className="text-xs text-muted-foreground">
-              This month
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{leaveStats.totalRequests}</div>
+                <p className="text-xs text-muted-foreground">
+                  This month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -648,10 +656,18 @@ export function LeaveManagement() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{leaveStats.pendingRequests}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting approval
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-yellow-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-yellow-600">{leaveStats.pendingRequests}</div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting approval
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -661,10 +677,18 @@ export function LeaveManagement() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{leaveStats.approvedRequests}</div>
-            <p className="text-xs text-muted-foreground">
-              Successfully approved
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-green-600">{leaveStats.approvedRequests}</div>
+                <p className="text-xs text-muted-foreground">
+                  Successfully approved
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -674,10 +698,18 @@ export function LeaveManagement() {
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leaveStats.totalDays}</div>
-            <p className="text-xs text-muted-foreground">
-              Leave days taken
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{leaveStats.totalDays}</div>
+                <p className="text-xs text-muted-foreground">
+                  Leave days taken
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

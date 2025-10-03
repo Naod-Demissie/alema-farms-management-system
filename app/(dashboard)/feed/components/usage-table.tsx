@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -61,6 +62,8 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  
+  const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
@@ -104,7 +107,7 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
     }),
     state: {
       sorting,
-      columnVisibility,
+      columnVisibility: mobileColumnVisibility,
       rowSelection,
       columnFilters,
     },

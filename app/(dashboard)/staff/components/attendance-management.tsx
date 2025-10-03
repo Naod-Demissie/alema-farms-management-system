@@ -776,10 +776,18 @@ export function AttendanceManagement() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{attendanceStats.totalStaff}</div>
-            <p className="text-xs text-muted-foreground">
-              Active worker staff members
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{attendanceStats.totalStaff}</div>
+                <p className="text-xs text-muted-foreground">
+                  Active worker staff members
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -789,10 +797,18 @@ export function AttendanceManagement() {
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{attendanceStats.present}</div>
-            <p className="text-xs text-muted-foreground">
-              {attendanceStats.totalStaff > 0 ? Math.round((attendanceStats.present / attendanceStats.totalStaff) * 100) : 0}% attendance rate
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-green-600">{attendanceStats.present}</div>
+                <p className="text-xs text-muted-foreground">
+                  {attendanceStats.totalStaff > 0 ? Math.round((attendanceStats.present / attendanceStats.totalStaff) * 100) : 0}% attendance rate
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -802,10 +818,18 @@ export function AttendanceManagement() {
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{attendanceStats.absent}</div>
-            <p className="text-xs text-muted-foreground">
-              Staff not present
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-red-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-red-600">{attendanceStats.absent}</div>
+                <p className="text-xs text-muted-foreground">
+                  Staff not present
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -815,10 +839,18 @@ export function AttendanceManagement() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{attendanceStats.averageHours}h</div>
-            <p className="text-xs text-muted-foreground">
-              Per staff member today
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{attendanceStats.averageHours}h</div>
+                <p className="text-xs text-muted-foreground">
+                  Per staff member today
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

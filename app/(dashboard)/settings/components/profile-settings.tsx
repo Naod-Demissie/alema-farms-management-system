@@ -181,7 +181,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
         <CardContent>
           <div className="flex items-center space-x-6">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={formData.profileImage} alt="Profile" />
+              <AvatarImage src={formData.profileImage || undefined} alt="Profile" />
               <AvatarFallback className="text-lg">
                 {getInitials(formData.firstName, formData.lastName)}
               </AvatarFallback>

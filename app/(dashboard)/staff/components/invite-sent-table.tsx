@@ -445,7 +445,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
 
             <div>
               <label className="text-sm font-medium">
-                Email {formData.isSystemUser ? <span className="text-red-500">*</span> : "(Optional)"}
+                Email {formData.isSystemUser ? <span className="text-red-500">*</span> : ""}
               </label>
               <Input 
                 type="email"
@@ -457,7 +457,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
             </div>
 
             <div>
-              <label className="text-sm font-medium">Phone Number (Optional)</label>
+              <label className="text-sm font-medium">Phone Number</label>
               <Input 
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}

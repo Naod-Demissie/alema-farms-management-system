@@ -221,7 +221,13 @@ export function FeedSuppliers() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{suppliers.length}</div>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold">{suppliers.length}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -229,7 +235,13 @@ export function FeedSuppliers() {
             <CardTitle className="text-sm font-medium">Active Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeSuppliers.length}</div>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-green-600">{activeSuppliers.length}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -237,7 +249,13 @@ export function FeedSuppliers() {
             <CardTitle className="text-sm font-medium">Inactive Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{inactiveSuppliers.length}</div>
+            {loading ? (
+              <div className="text-2xl font-bold text-gray-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-gray-600">{inactiveSuppliers.length}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -245,9 +263,15 @@ export function FeedSuppliers() {
             <CardTitle className="text-sm font-medium">With Contact Info</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {suppliers.filter(s => s.phone).length}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold">
+                {suppliers.filter(s => s.phone).length}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

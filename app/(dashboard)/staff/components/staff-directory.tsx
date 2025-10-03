@@ -510,10 +510,18 @@ export function StaffDirectory() {
                 <Mail className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{inviteStats.total}</div>
-                <p className="text-xs text-muted-foreground">
-                  All invitations
-                </p>
+                {isInviteLoading ? (
+                  <div className="text-2xl font-bold">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{inviteStats.total}</div>
+                    <p className="text-xs text-muted-foreground">
+                      All invitations
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -523,10 +531,18 @@ export function StaffDirectory() {
                 <RefreshCw className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{inviteStats.pending}</div>
-                <p className="text-xs text-muted-foreground">
-                  Awaiting response
-                </p>
+                {isInviteLoading ? (
+                  <div className="text-2xl font-bold text-yellow-600">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-yellow-600">{inviteStats.pending}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Awaiting response
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -536,10 +552,18 @@ export function StaffDirectory() {
                 <UserPlus className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{inviteStats.accepted}</div>
-                <p className="text-xs text-muted-foreground">
-                  Successfully joined
-                </p>
+                {isInviteLoading ? (
+                  <div className="text-2xl font-bold text-green-600">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-green-600">{inviteStats.accepted}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Successfully joined
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -549,10 +573,18 @@ export function StaffDirectory() {
                 <XCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">{inviteStats.expired}</div>
-                <p className="text-xs text-muted-foreground">
-                  No longer valid
-                </p>
+                {isInviteLoading ? (
+                  <div className="text-2xl font-bold text-red-600">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-red-600">{inviteStats.expired}</div>
+                    <p className="text-xs text-muted-foreground">
+                      No longer valid
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

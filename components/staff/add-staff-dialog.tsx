@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createNonSystemStaff } from "@/server/staff-invites";
 import { toast } from "sonner";
-import { Upload, User } from "lucide-react";
+import { Upload, User, X } from "lucide-react";
 
 const addStaffFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -70,6 +70,19 @@ export function AddStaffDialog({
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+
+      // Validate file size (2MB limit)
+      const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+      if (file.size > maxSize) {
+        toast.error("Image size must be less than 2MB");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -96,10 +109,21 @@ export function AddStaffDialog({
           setImagePreview(compressedImage);
           form.setValue("image", compressedImage);
         };
+        img.onerror = () => {
+          toast.error("Failed to process image");
+        };
         img.src = result;
+      };
+      reader.onerror = () => {
+        toast.error("Failed to read image file");
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview("");
+    form.setValue("image", "");
   };
 
   const handleSubmit = async (data: AddStaffFormValues) => {
@@ -165,12 +189,12 @@ export function AddStaffDialog({
             {/* Profile Image Upload */}
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="h-24 w-24">
-                <AvatarImage src={imagePreview} />
+                <AvatarImage src={imagePreview || undefined} />
                 <AvatarFallback>
                   <User className="h-12 w-12" />
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="image-upload" className="cursor-pointer">
                   <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
                     <Upload className="h-4 w-4" />
@@ -184,6 +208,21 @@ export function AddStaffDialog({
                   onChange={handleImageUpload}
                   className="hidden"
                 />
+                {imagePreview && (
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRemoveImage}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Remove Picture
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG or GIF. Max size 2MB.
+                </p>
               </div>
             </div>
 
@@ -221,7 +260,7 @@ export function AddStaffDialog({
               name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number (Optional)</FormLabel>
+                  <FormLabel>Phone Number</FormLabel>
                   <FormControl>
                     <Input placeholder="+1234567890" {...field} />
                   </FormControl>

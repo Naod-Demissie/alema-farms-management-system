@@ -158,6 +158,21 @@ export const flockColumns: ColumnDef<Flock>[] = [
     },
   },
   {
+    accessorKey: "notes",
+    header: "Notes",
+    cell: ({ row }) => {
+      const notes = row.getValue("notes") as string;
+      if (!notes) {
+        return <div className="text-muted-foreground">-</div>;
+      }
+      return (
+        <div className="max-w-[200px] truncate" title={notes}>
+          {notes}
+        </div>
+      );
+    },
+  },
+  {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {

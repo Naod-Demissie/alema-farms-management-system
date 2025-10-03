@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -47,13 +48,15 @@ export function LeaveBalanceTable({ columns, data, toolbar, staffList = [] }: Le
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  
+  const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
-      columnVisibility,
+      columnVisibility: mobileColumnVisibility,
       rowSelection,
       columnFilters,
     },

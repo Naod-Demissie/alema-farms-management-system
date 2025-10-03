@@ -242,7 +242,13 @@ export function FeedInventory() {
             <CardTitle className="text-sm font-medium">Total Items</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{inventory.length}</div>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold">{inventory.length}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -251,7 +257,13 @@ export function FeedInventory() {
             <AlertTriangle className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
+            {loading ? (
+              <div className="text-2xl font-bold text-orange-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -259,11 +271,17 @@ export function FeedInventory() {
             <CardTitle className="text-sm font-medium">Total Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatNumber(inventory.reduce((sum, item) => 
-                sum + (item.quantity * (item.costPerUnit || 0)), 0
-              ))} ETB
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold">
+                {formatNumber(inventory.reduce((sum, item) => 
+                  sum + (item.quantity * (item.costPerUnit || 0)), 0
+                ))} ETB
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -271,9 +289,15 @@ export function FeedInventory() {
             <CardTitle className="text-sm font-medium">Active Items</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {inventory.filter(item => item.isActive).length}
-            </div>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold">
+                {inventory.filter(item => item.isActive).length}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -346,7 +370,7 @@ export function FeedInventory() {
                         name="supplierId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Supplier (Optional)</FormLabel>
+                            <FormLabel>Supplier</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="w-full">
@@ -383,8 +407,11 @@ export function FeedInventory() {
                                 type="number" 
                                 placeholder="0" 
                                 className="w-full"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                value={field.value === 0 ? "" : field.value}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -428,8 +455,11 @@ export function FeedInventory() {
                                 step="0.01"
                                 placeholder="0.00" 
                                 className="w-full"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                value={field.value === 0 ? "" : field.value}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(value === "" ? 0 : parseFloat(value) || 0);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />

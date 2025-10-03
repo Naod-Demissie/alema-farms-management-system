@@ -229,8 +229,11 @@ export function FeedProgram() {
                           min="1"
                           placeholder="Enter age in weeks"
                           className="w-full"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                          value={field.value === 1 ? "" : field.value}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === "" ? 1 : parseInt(value) || 1);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -304,8 +307,11 @@ export function FeedProgram() {
                           min="0.1"
                           placeholder="Enter grams per hen"
                           className="w-full"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0.1)}
+                          value={field.value === 0.1 ? "" : field.value}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === "" ? 0.1 : parseFloat(value) || 0.1);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

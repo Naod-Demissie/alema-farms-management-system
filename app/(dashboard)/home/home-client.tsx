@@ -233,7 +233,12 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       color: "bg-yellow-500",
       hasDropdown: true,
       dropdownValue: productionPeriod,
-      onDropdownChange: setProductionPeriod,
+      onDropdownChange: (value: string) => {
+        setIsLoading(true);
+        setProductionPeriod(value);
+        // Simulate loading delay
+        setTimeout(() => setIsLoading(false), 1000);
+      },
       cardType: 'production' as const
     },
     { 
@@ -243,7 +248,12 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       color: "bg-rose-500",
       hasDropdown: true,
       dropdownValue: expensePeriod,
-      onDropdownChange: setExpensePeriod,
+      onDropdownChange: (value: string) => {
+        setIsLoading(true);
+        setExpensePeriod(value);
+        // Simulate loading delay
+        setTimeout(() => setIsLoading(false), 1000);
+      },
       cardType: 'expenses' as const
     },
     { 
@@ -253,7 +263,12 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       color: "bg-purple-500",
       hasDropdown: true,
       dropdownValue: revenuePeriod,
-      onDropdownChange: setRevenuePeriod,
+      onDropdownChange: (value: string) => {
+        setIsLoading(true);
+        setRevenuePeriod(value);
+        // Simulate loading delay
+        setTimeout(() => setIsLoading(false), 1000);
+      },
       cardType: 'revenue' as const
     },
     { title: "Feed Left in Stock", value: `${(summary.feedLeft || 0).toLocaleString()} kg`, icon: Zap, color: "bg-green-500" },
@@ -551,13 +566,21 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stat.title === "Egg Production" && "eggs"}
-                  {stat.title === "Expenses" && "total spent"}
-                  {stat.title === "Revenue" && "total earned"}
-                  {stat.title === "Feed Left in Stock" && "remaining"}
-                </p>
+                {isLoading ? (
+                  <div className="text-2xl font-bold">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stat.title === "Egg Production" && "eggs"}
+                      {stat.title === "Expenses" && "total spent"}
+                      {stat.title === "Revenue" && "total earned"}
+                      {stat.title === "Feed Left in Stock" && "remaining"}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           );

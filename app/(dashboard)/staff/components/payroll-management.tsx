@@ -327,10 +327,18 @@ export function PayrollManagement() {
             <span className="text-sm font-medium text-muted-foreground">ETB</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalStats.totalPayroll.toLocaleString()} ETB</div>
-            <p className="text-xs text-muted-foreground">
-              This month
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalStats.totalPayroll.toLocaleString()} ETB</div>
+                <p className="text-xs text-muted-foreground">
+                  This month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -340,10 +348,18 @@ export function PayrollManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{totalStats.paidAmount.toLocaleString()} ETB</div>
-            <p className="text-xs text-muted-foreground">
-              Successfully processed
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-green-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-green-600">{totalStats.paidAmount.toLocaleString()} ETB</div>
+                <p className="text-xs text-muted-foreground">
+                  Successfully processed
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -353,10 +369,18 @@ export function PayrollManagement() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{totalStats.pendingAmount.toLocaleString()} ETB</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting processing
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold text-yellow-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-yellow-600">{totalStats.pendingAmount.toLocaleString()} ETB</div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting processing
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -366,10 +390,18 @@ export function PayrollManagement() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalStats.averageSalary.toLocaleString()} ETB</div>
-            <p className="text-xs text-muted-foreground">
-              Per staff member
-            </p>
+            {loading ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalStats.averageSalary.toLocaleString()} ETB</div>
+                <p className="text-xs text-muted-foreground">
+                  Per staff member
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

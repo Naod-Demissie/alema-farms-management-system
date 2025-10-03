@@ -267,30 +267,38 @@ export default function ProductionManagementPage() {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {(() => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const tomorrow = new Date(today);
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    
-                    const todayRecords = data.filter(record => {
-                      const recordDate = new Date(record.date);
-                      return recordDate >= today && recordDate < tomorrow;
-                    });
-                    
-                    if (activeTab === "eggs") {
-                      return todayRecords.reduce((sum, record) => sum + (record.totalCount || 0), 0).toLocaleString();
-                    } else {
-                      return todayRecords.reduce((sum, record) => sum + (record.quantity || 0), 0).toLocaleString();
-                    }
-                  })()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {activeTab === "eggs" ? "Eggs collected today" : 
-                   activeTab === "broiler" ? "Birds available today" : 
-                   "bags produced today"}
-                </p>
+                {loading ? (
+                  <div className="text-2xl font-bold">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">
+                      {(() => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        
+                        const todayRecords = data.filter(record => {
+                          const recordDate = new Date(record.date);
+                          return recordDate >= today && recordDate < tomorrow;
+                        });
+                        
+                        if (activeTab === "eggs") {
+                          return todayRecords.reduce((sum, record) => sum + (record.totalCount || 0), 0).toLocaleString();
+                        } else {
+                          return todayRecords.reduce((sum, record) => sum + (record.quantity || 0), 0).toLocaleString();
+                        }
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {activeTab === "eggs" ? "Eggs collected today" : 
+                       activeTab === "broiler" ? "Birds available today" : 
+                       "bags produced today"}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -300,29 +308,37 @@ export default function ProductionManagementPage() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {(() => {
-                    const weekAgo = new Date();
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    weekAgo.setHours(0, 0, 0, 0);
-                    
-                    const weekRecords = data.filter(record => {
-                      const recordDate = new Date(record.date);
-                      return recordDate >= weekAgo;
-                    });
-                    
-                    if (activeTab === "eggs") {
-                      return weekRecords.reduce((sum, record) => sum + (record.totalCount || 0), 0).toLocaleString();
-                    } else {
-                      return weekRecords.reduce((sum, record) => sum + (record.quantity || 0), 0).toLocaleString();
-                    }
-                  })()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {activeTab === "eggs" ? "Eggs collected this week" : 
-                   activeTab === "broiler" ? "Birds available this week" : 
-                   "bags produced this week"}
-                </p>
+                {loading ? (
+                  <div className="text-2xl font-bold">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">
+                      {(() => {
+                        const weekAgo = new Date();
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        weekAgo.setHours(0, 0, 0, 0);
+                        
+                        const weekRecords = data.filter(record => {
+                          const recordDate = new Date(record.date);
+                          return recordDate >= weekAgo;
+                        });
+                        
+                        if (activeTab === "eggs") {
+                          return weekRecords.reduce((sum, record) => sum + (record.totalCount || 0), 0).toLocaleString();
+                        } else {
+                          return weekRecords.reduce((sum, record) => sum + (record.quantity || 0), 0).toLocaleString();
+                        }
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {activeTab === "eggs" ? "Eggs collected this week" : 
+                       activeTab === "broiler" ? "Birds available this week" : 
+                       "bags produced this week"}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -332,29 +348,37 @@ export default function ProductionManagementPage() {
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {(() => {
-                    const monthStart = new Date();
-                    monthStart.setDate(1);
-                    monthStart.setHours(0, 0, 0, 0);
-                    
-                    const monthRecords = data.filter(record => {
-                      const recordDate = new Date(record.date);
-                      return recordDate >= monthStart;
-                    });
-                    
-                    if (activeTab === "eggs") {
-                      return monthRecords.reduce((sum, record) => sum + (record.totalCount || 0), 0).toLocaleString();
-                    } else {
-                      return monthRecords.reduce((sum, record) => sum + (record.quantity || 0), 0).toLocaleString();
-                    }
-                  })()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {activeTab === "eggs" ? "Eggs collected this month" : 
-                   activeTab === "broiler" ? "Birds available this month" : 
-                   "bags produced this month"}
-                </p>
+                {loading ? (
+                  <div className="text-2xl font-bold">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">
+                      {(() => {
+                        const monthStart = new Date();
+                        monthStart.setDate(1);
+                        monthStart.setHours(0, 0, 0, 0);
+                        
+                        const monthRecords = data.filter(record => {
+                          const recordDate = new Date(record.date);
+                          return recordDate >= monthStart;
+                        });
+                        
+                        if (activeTab === "eggs") {
+                          return monthRecords.reduce((sum, record) => sum + (record.totalCount || 0), 0).toLocaleString();
+                        } else {
+                          return monthRecords.reduce((sum, record) => sum + (record.quantity || 0), 0).toLocaleString();
+                        }
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {activeTab === "eggs" ? "Eggs collected this month" : 
+                       activeTab === "broiler" ? "Birds available this month" : 
+                       "bags produced this month"}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -365,19 +389,27 @@ export default function ProductionManagementPage() {
                   <Egg className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(() => {
-                      const totalEggs = data.reduce((sum, record) => sum + (record.totalCount || 0), 0);
-                      const normalEggs = data.reduce((sum, record) => {
-                        const counts = record.gradeCounts || {};
-                        return sum + (counts.normal || 0);
-                      }, 0);
-                      return totalEggs > 0 ? ((normalEggs / totalEggs) * 100).toFixed(1) : 0;
-                    })()}%
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Normal quality eggs
-                  </p>
+                  {loading ? (
+                    <div className="text-2xl font-bold">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">
+                        {(() => {
+                          const totalEggs = data.reduce((sum, record) => sum + (record.totalCount || 0), 0);
+                          const normalEggs = data.reduce((sum, record) => {
+                            const counts = record.gradeCounts || {};
+                            return sum + (counts.normal || 0);
+                          }, 0);
+                          return totalEggs > 0 ? ((normalEggs / totalEggs) * 100).toFixed(1) : 0;
+                        })()}%
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Normal quality eggs
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -390,16 +422,24 @@ export default function ProductionManagementPage() {
                   <Droplets className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(() => {
-                      const totalManure = data.reduce((sum, record) => sum + (record.quantity || 0), 0);
-                      const days = data.length || 1;
-                      return (totalManure / days).toFixed(1);
-                    })()} bags
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Average daily production
-                  </p>
+                  {loading ? (
+                    <div className="text-2xl font-bold">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">
+                        {(() => {
+                          const totalManure = data.reduce((sum, record) => sum + (record.quantity || 0), 0);
+                          const days = data.length || 1;
+                          return (totalManure / days).toFixed(1);
+                        })()} bags
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Average daily production
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}

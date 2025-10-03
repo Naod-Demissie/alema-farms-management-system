@@ -193,10 +193,18 @@ export function FeedUsage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalUsage.toFixed(1)}kg</div>
-            <p className="text-xs text-muted-foreground">
-              All time feed consumption
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalUsage.toFixed(1)}kg</div>
+                <p className="text-xs text-muted-foreground">
+                  All time feed consumption
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -206,10 +214,18 @@ export function FeedUsage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{uniqueFlocks}</div>
-            <p className="text-xs text-muted-foreground">
-              Flocks with usage records
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{uniqueFlocks}</div>
+                <p className="text-xs text-muted-foreground">
+                  Flocks with usage records
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -219,10 +235,18 @@ export function FeedUsage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{todayUsage.toFixed(1)}kg</div>
-            <p className="text-xs text-muted-foreground">
-              Feed consumed today
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-green-600">{todayUsage.toFixed(1)}kg</div>
+                <p className="text-xs text-muted-foreground">
+                  Feed consumed today
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -232,10 +256,18 @@ export function FeedUsage() {
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{feedUsage.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Usage records tracked
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{feedUsage.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Usage records tracked
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

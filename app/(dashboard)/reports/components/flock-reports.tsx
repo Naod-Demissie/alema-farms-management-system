@@ -186,13 +186,6 @@ export function FlockReports({ filters }: FlockReportsProps) {
     return date >= startDate;
   }) || [];
 
-  if (loading || !data) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -204,11 +197,19 @@ export function FlockReports({ filters }: FlockReportsProps) {
             <Bird className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalFlocks}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +12% from last month
-            </p>
+            {loading || !data ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{data.totalFlocks}</div>
+                <p className="text-xs text-muted-foreground">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  +12% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -218,11 +219,19 @@ export function FlockReports({ filters }: FlockReportsProps) {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalBirds.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1" />
-              +8% from last month
-            </p>
+            {loading || !data ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{data.totalBirds.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  +8% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -232,11 +241,19 @@ export function FlockReports({ filters }: FlockReportsProps) {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.averageMortalityRate.toFixed(2)}%</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingDown className="inline h-3 w-3 mr-1" />
-              -0.3% from last month
-            </p>
+            {loading || !data ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{data.averageMortalityRate.toFixed(2)}%</div>
+                <p className="text-xs text-muted-foreground">
+                  <TrendingDown className="inline h-3 w-3 mr-1" />
+                  -0.3% from last month
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -246,12 +263,20 @@ export function FlockReports({ filters }: FlockReportsProps) {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {data.healthStatus.find(h => h.status === "Healthy")?.count || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {Math.round(((data.healthStatus.find(h => h.status === "Healthy")?.count || 0) / data.totalFlocks) * 100)}% of total
-            </p>
+            {loading || !data ? (
+              <div className="text-2xl font-bold">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {data.healthStatus.find(h => h.status === "Healthy")?.count || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {Math.round(((data.healthStatus.find(h => h.status === "Healthy")?.count || 0) / data.totalFlocks) * 100)}% of total
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -288,38 +313,99 @@ export function FlockReports({ filters }: FlockReportsProps) {
             </Select>
           </CardHeader>
           <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-            <ChartContainer
-              config={(() => {
-                const config: any = {
-                  birdsPerFlock: {
-                    label: "Birds per Flock",
-                  },
-                };
-                
-                // Add each flock to the config
-                flocks.forEach((flock, index) => {
-                  const colors = [
-                    "rgb(249, 115, 22)",
-                    "rgb(124, 45, 18)", 
-                    "rgb(194, 65, 12)",
-                    "rgb(59, 130, 246)",
-                    "rgb(16, 185, 129)",
-                    "rgb(245, 158, 11)",
-                    "rgb(239, 68, 68)",
-                    "rgb(139, 92, 246)"
-                  ];
-                  config[`flock_${index}`] = {
-                    label: flock.batchCode,
-                    color: colors[index % colors.length],
+            {loading || !data ? (
+              <div className="flex items-center justify-center h-[250px]">
+              </div>
+            ) : (
+              <ChartContainer
+                config={(() => {
+                  const config: any = {
+                    birdsPerFlock: {
+                      label: "Birds per Flock",
+                    },
                   };
-                });
-                
-                return config;
-              })()}
-              className="aspect-auto h-[250px] w-full"
-            >
-              <AreaChart data={filteredPopulationData}>
-                <defs>
+                  
+                  // Add each flock to the config
+                  flocks.forEach((flock, index) => {
+                    const colors = [
+                      "rgb(249, 115, 22)",
+                      "rgb(124, 45, 18)", 
+                      "rgb(194, 65, 12)",
+                      "rgb(59, 130, 246)",
+                      "rgb(16, 185, 129)",
+                      "rgb(245, 158, 11)",
+                      "rgb(239, 68, 68)",
+                      "rgb(139, 92, 246)"
+                    ];
+                    config[`flock_${index}`] = {
+                      label: flock.batchCode,
+                      color: colors[index % colors.length],
+                    };
+                  });
+                  
+                  return config;
+                })()}
+                className="aspect-auto h-[250px] w-full"
+              >
+                <AreaChart data={filteredPopulationData}>
+                  <defs>
+                    {flocks.map((flock, index) => {
+                      const colors = [
+                        "rgb(249, 115, 22)",
+                        "rgb(124, 45, 18)", 
+                        "rgb(194, 65, 12)",
+                        "rgb(59, 130, 246)",
+                        "rgb(16, 185, 129)",
+                        "rgb(245, 158, 11)",
+                        "rgb(239, 68, 68)",
+                        "rgb(139, 92, 246)"
+                      ];
+                      const color = colors[index % colors.length];
+                      return (
+                        <linearGradient key={`fillFlock_${index}`} id={`fillFlock_${index}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop
+                            offset="5%"
+                            stopColor={color}
+                            stopOpacity={0.8}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor={color}
+                            stopOpacity={0.1}
+                          />
+                        </linearGradient>
+                      );
+                    })}
+                  </defs>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={32}
+                    tickFormatter={(value) => {
+                      const date = new Date(value)
+                      return date.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value) => {
+                          return new Date(value).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })
+                        }}
+                        indicator="dot"
+                      />
+                    }
+                  />
                   {flocks.map((flock, index) => {
                     const colors = [
                       "rgb(249, 115, 22)",
@@ -333,76 +419,20 @@ export function FlockReports({ filters }: FlockReportsProps) {
                     ];
                     const color = colors[index % colors.length];
                     return (
-                      <linearGradient key={`fillFlock_${index}`} id={`fillFlock_${index}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor={color}
-                          stopOpacity={0.8}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor={color}
-                          stopOpacity={0.1}
-                        />
-                      </linearGradient>
+                      <Area
+                        key={`flock_${index}`}
+                        dataKey={`flock_${index}`}
+                        type="linear"
+                        fill={`url(#fillFlock_${index})`}
+                        stroke={color}
+                        stackId="a"
+                      />
                     );
                   })}
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
-                  tickFormatter={(value) => {
-                    const date = new Date(value)
-                    return date.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  }}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => {
-                        return new Date(value).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })
-                      }}
-                      indicator="dot"
-                    />
-                  }
-                />
-                {flocks.map((flock, index) => {
-                  const colors = [
-                    "rgb(249, 115, 22)",
-                    "rgb(124, 45, 18)", 
-                    "rgb(194, 65, 12)",
-                    "rgb(59, 130, 246)",
-                    "rgb(16, 185, 129)",
-                    "rgb(245, 158, 11)",
-                    "rgb(239, 68, 68)",
-                    "rgb(139, 92, 246)"
-                  ];
-                  const color = colors[index % colors.length];
-                  return (
-                    <Area
-                      key={`flock_${index}`}
-                      dataKey={`flock_${index}`}
-                      type="linear"
-                      fill={`url(#fillFlock_${index})`}
-                      stroke={color}
-                      stackId="a"
-                    />
-                  );
-                })}
-                <ChartLegend content={<ChartLegendContent />} />
-              </AreaChart>
-            </ChartContainer>
+                  <ChartLegend content={<ChartLegendContent />} />
+                </AreaChart>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -413,90 +443,101 @@ export function FlockReports({ filters }: FlockReportsProps) {
             <CardDescription>Flocks by breed type</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 pb-0">
-            <ChartContainer
-              config={{
-                count: {
-                  label: "Flock Count",
-                },
-                broiler: {
-                  label: "Broiler",
-                  color: "rgb(249, 115, 22)",
-                },
-                layer: {
-                  label: "Layer", 
-                  color: "rgb(124, 45, 18)",
-                },
-                dual_purpose: {
-                  label: "Dual Purpose",
-                  color: "rgb(194, 65, 12)",
-                },
-              }}
-              className="mx-auto aspect-square max-h-[250px]"
-            >
-              <PieChart>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Pie
-                  data={data.flocksByBreed.map((breed, index) => {
-                    const colors = [
-                      "rgb(67, 20, 7)",      // Broiler - Dark brown
-                      "rgb(124, 45, 18)",    // Layer - Medium brown
-                      "rgb(194, 65, 12)"     // Dual Purpose - Light brown
-                    ];
-                    return {
-                      ...breed,
-                      fill: colors[index]
-                    };
-                  })}
-                  dataKey="count"
-                  nameKey="breed"
-                  innerRadius={60}
-                  strokeWidth={5}
-                >
-                  <Label
-                    content={({ viewBox }) => {
-                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                        const totalFlocks = data.flocksByBreed.reduce((acc, curr) => acc + curr.count, 0);
-                        return (
-                          <text
-                            x={viewBox.cx}
-                            y={viewBox.cy}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                          >
-                            <tspan
+            {loading || !data ? (
+              <div className="flex items-center justify-center h-[250px]">
+              </div>
+            ) : (
+              <ChartContainer
+                config={{
+                  count: {
+                    label: "Flock Count",
+                  },
+                  broiler: {
+                    label: "Broiler",
+                    color: "rgb(249, 115, 22)",
+                  },
+                  layer: {
+                    label: "Layer", 
+                    color: "rgb(124, 45, 18)",
+                  },
+                  dual_purpose: {
+                    label: "Dual Purpose",
+                    color: "rgb(194, 65, 12)",
+                  },
+                }}
+                className="mx-auto aspect-square max-h-[250px]"
+              >
+                <PieChart>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Pie
+                    data={data.flocksByBreed.map((breed, index) => {
+                      const colors = [
+                        "rgb(67, 20, 7)",      // Broiler - Dark brown
+                        "rgb(124, 45, 18)",    // Layer - Medium brown
+                        "rgb(194, 65, 12)"     // Dual Purpose - Light brown
+                      ];
+                      return {
+                        ...breed,
+                        fill: colors[index]
+                      };
+                    })}
+                    dataKey="count"
+                    nameKey="breed"
+                    innerRadius={60}
+                    strokeWidth={5}
+                  >
+                    <Label
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          const totalFlocks = data.flocksByBreed.reduce((acc, curr) => acc + curr.count, 0);
+                          return (
+                            <text
                               x={viewBox.cx}
                               y={viewBox.cy}
-                              className="fill-foreground text-3xl font-bold"
+                              textAnchor="middle"
+                              dominantBaseline="middle"
                             >
-                              {totalFlocks}
-                            </tspan>
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy || 0) + 24}
-                              className="fill-muted-foreground"
-                            >
-                              Flocks
-                            </tspan>
-                          </text>
-                        )
-                      }
-                    }}
-                  />
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+                              <tspan
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                className="fill-foreground text-3xl font-bold"
+                              >
+                                {totalFlocks}
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 24}
+                                className="fill-muted-foreground"
+                              >
+                                Flocks
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
+                    />
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col items-center gap-2 text-sm">
-            <div className="flex items-center gap-2 leading-none font-medium">
-              <TrendingUp className="h-4 w-4" />
-              Broiler flocks leading with {data.flocksByBreed[0]?.percentage}%
-            </div>
-            <div className="text-muted-foreground leading-none text-center">
-              Showing distribution across {data.flocksByBreed.length} breed types
-            </div>
+            {loading || !data ? (
+              <div className="text-muted-foreground"></div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 leading-none font-medium">
+                  <TrendingUp className="h-4 w-4" />
+                  Broiler flocks leading with {data.flocksByBreed[0]?.percentage}%
+                </div>
+                <div className="text-muted-foreground leading-none text-center">
+                  Showing distribution across {data.flocksByBreed.length} breed types
+                </div>
+              </>
+            )}
           </CardFooter>
         </Card>
       </div>

@@ -135,10 +135,18 @@ export function FeedPlanning() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRequired.toFixed(1)} kg</div>
-            <p className="text-xs text-muted-foreground">
-              {currentRequirements.length} feed types
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalRequired.toFixed(1)} kg</div>
+                <p className="text-xs text-muted-foreground">
+                  {currentRequirements.length} feed types
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -147,14 +155,22 @@ export function FeedPlanning() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalAvailable.toFixed(1)} kg</div>
-            <p className="text-xs text-muted-foreground">
-              {inventoryWithUsage.filter(item => item.isActive).length} active items
-            </p>
-            {averageDailyConsumption > 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Avg: {averageDailyConsumption.toFixed(1)} kg/day
-              </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalAvailable.toFixed(1)} kg</div>
+                <p className="text-xs text-muted-foreground">
+                  {inventoryWithUsage.filter(item => item.isActive).length} active items
+                </p>
+                {averageDailyConsumption > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Avg: {averageDailyConsumption.toFixed(1)} kg/day
+                  </p>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -163,12 +179,20 @@ export function FeedPlanning() {
             <CardTitle className="text-sm font-medium">Coverage</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {totalRequired > 0 ? ((totalAvailable / totalRequired) * 100).toFixed(0) : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Stock vs requirements
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {totalRequired > 0 ? ((totalAvailable / totalRequired) * 100).toFixed(0) : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Stock vs requirements
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -177,12 +201,20 @@ export function FeedPlanning() {
             <AlertTriangle className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {lowStockItems.length + criticalStockItems.length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {criticalStockItems.length} critical, {lowStockItems.length} low stock
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {lowStockItems.length + criticalStockItems.length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {criticalStockItems.length} critical, {lowStockItems.length} low stock
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

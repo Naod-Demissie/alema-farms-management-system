@@ -58,6 +58,7 @@ const breedLabels = {
 export function FeedAnalytics() {
   const [timeRange, setTimeRange] = useState("6months");
   const [selectedFlock, setSelectedFlock] = useState("all");
+  const [loading, setLoading] = useState(false);
 
   const calculateTrend = (current: number, previous: number) => {
     if (previous === 0) return 0;
@@ -112,17 +113,25 @@ export function FeedAnalytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${mockAnalytics.totalFeedCost.toFixed(2)}</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              {costTrend > 0 ? (
-                <TrendingUp className="h-3 w-3 text-red-500 mr-1" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-green-500 mr-1" />
-              )}
-              <span className={costTrend > 0 ? "text-red-500" : "text-green-500"}>
-                {Math.abs(costTrend).toFixed(1)}% from last month
-              </span>
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">${mockAnalytics.totalFeedCost.toFixed(2)}</div>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  {costTrend > 0 ? (
+                    <TrendingUp className="h-3 w-3 text-red-500 mr-1" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-green-500 mr-1" />
+                  )}
+                  <span className={costTrend > 0 ? "text-red-500" : "text-green-500"}>
+                    {Math.abs(costTrend).toFixed(1)}% from last month
+                  </span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -132,17 +141,25 @@ export function FeedAnalytics() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockAnalytics.totalFeedUsed.toFixed(1)} kg</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              {usageTrend > 0 ? (
-                <TrendingUp className="h-3 w-3 text-red-500 mr-1" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-green-500 mr-1" />
-              )}
-              <span className={usageTrend > 0 ? "text-red-500" : "text-green-500"}>
-                {Math.abs(usageTrend).toFixed(1)}% from last month
-              </span>
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{mockAnalytics.totalFeedUsed.toFixed(1)} kg</div>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  {usageTrend > 0 ? (
+                    <TrendingUp className="h-3 w-3 text-red-500 mr-1" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-green-500 mr-1" />
+                  )}
+                  <span className={usageTrend > 0 ? "text-red-500" : "text-green-500"}>
+                    {Math.abs(usageTrend).toFixed(1)}% from last month
+                  </span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -152,10 +169,18 @@ export function FeedAnalytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${mockAnalytics.averageCostPerKg.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              Per kilogram of feed
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">${mockAnalytics.averageCostPerKg.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Per kilogram of feed
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -165,10 +190,18 @@ export function FeedAnalytics() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockAnalytics.flockUsage.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently feeding
-            </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{mockAnalytics.flockUsage.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Currently feeding
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

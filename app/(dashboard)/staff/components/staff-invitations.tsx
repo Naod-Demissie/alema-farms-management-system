@@ -677,7 +677,7 @@ export function StaffInvitations() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Custom Message (Optional)</label>
+              <label className="text-sm font-medium">Custom Message</label>
               <Textarea 
                 placeholder="Add a personal message to the invitation..." 
                 rows={3}
@@ -727,7 +727,7 @@ export function StaffInvitations() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Additional Message (Optional)</label>
+              <label className="text-sm font-medium">Additional Message</label>
               <Textarea 
                 placeholder="Add a note for the recipient..." 
                 rows={2}

@@ -706,7 +706,8 @@ export const completeStaffRegistration = async (
                 firstName: registrationData.firstName,
                 lastName: registrationData.lastName,
                 phoneNumber: registrationData.phoneNumber,
-                role: invite.role
+                role: invite.role,
+                image: registrationData.image || null
             },
             headers: await headers()
         });
@@ -716,14 +717,6 @@ export const completeStaffRegistration = async (
                 success: false,
                 message: "Failed to create staff account"
             };
-        }
-
-        // Update the staff record with image if provided
-        if (registrationData.image) {
-            await prisma.staff.update({
-                where: { id: authResult.user.id },
-                data: { image: registrationData.image }
-            });
         }
 
         // Mark the invite as used
