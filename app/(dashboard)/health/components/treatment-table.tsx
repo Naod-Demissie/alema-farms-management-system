@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -200,7 +202,10 @@ export function TreatmentTable({ columns, data, toolbar, onEdit, onDelete }: Tre
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No treatment records found.
+                  <NoDataIcon 
+                    icon={Stethoscope}
+                    title="No treatment records found"
+                  />
                 </TableCell>
               </TableRow>
             )}

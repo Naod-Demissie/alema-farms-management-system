@@ -18,7 +18,7 @@ import {
   Bird,
   Egg,
   Heart,
-  Utensils,
+  Package,
   RefreshCw,
 } from "lucide-react";
 import { exportData } from "@/lib/export-utils";
@@ -28,6 +28,7 @@ import { FinancialReports } from "./components/financial-reports";
 import { FlockReports } from "./components/flock-reports";
 import { ProductionReports } from "./components/production-reports";
 import { FeedReports } from "./components/feed-reports";
+import { PageBanner } from "@/components/ui/page-banner";
 
 interface ReportFilters {
   dateRange: {
@@ -43,13 +44,23 @@ export default function ReportsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   // Default filters - no longer editable since filter card is removed
-  const filters: ReportFilters = {
+  const filters = {
     dateRange: {
       start: new Date(new Date().getFullYear(), 0, 1), // Start of year
       end: new Date(), // Today
     },
     flockId: "",
     reportType: "summary",
+  };
+
+  // Convert filters for components that expect startDate/endDate
+  const filtersWithStartEndDate = {
+    dateRange: {
+      startDate: filters.dateRange.start,
+      endDate: filters.dateRange.end,
+    },
+    flockId: filters.flockId,
+    reportType: filters.reportType,
   };
 
   const handleExport = async (format: "csv" | "pdf") => {
@@ -99,23 +110,19 @@ export default function ReportsPage() {
     {
       id: "feed",
       label: "Feed Management",
-      icon: Utensils,
+      icon: Package,
       description: "Feed usage and inventory reports",
     },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Reports & Analytics
-        </h1>
-        <p className="text-muted-foreground">
-          Comprehensive reports and analytics for all aspects of your poultry
-          farm
-        </p>
-      </div>
+      {/* Banner Header */}
+      <PageBanner
+        title="Reports & Analytics"
+        description="Comprehensive reports and analytics for all aspects of your poultry farm"
+        imageSrc="/banner-bg-image.webp"
+      />
 
       {/* Main Content Tabs */}
       <Tabs
@@ -130,7 +137,7 @@ export default function ReportsPage() {
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+                className="flex items-center gap-2"
               >
                 <Icon className="h-4 w-4 hidden sm:inline" />
                 <span>{tab.label}</span>
@@ -154,7 +161,7 @@ export default function ReportsPage() {
             <Bird className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Flock Management Reports</h2>
           </div>
-          <FlockReports filters={filters} />
+          <FlockReports filters={filtersWithStartEndDate} />
         </TabsContent>
 
         {/* Production Reports */}
@@ -169,7 +176,7 @@ export default function ReportsPage() {
         {/* Feed Reports */}
         <TabsContent value="feed" className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
-            <Utensils className="h-5 w-5" />
+            <Package className="h-5 w-5" />
             <h2 className="text-xl font-semibold">Feed Management Reports</h2>
           </div>
           <FeedReports filters={filters} />

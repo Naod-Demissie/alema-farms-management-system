@@ -28,6 +28,8 @@ import {
 import { Flock } from "./flock-types";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Bird } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -226,7 +228,10 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    No flocks found.
+                    <NoDataIcon 
+                      icon={Bird}
+                      title="No flocks found"
+                    />
                   </TableCell>
                 </TableRow>
               )}

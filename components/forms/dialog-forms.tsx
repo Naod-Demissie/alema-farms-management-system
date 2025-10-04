@@ -117,7 +117,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
               </FormLabel>
               <div className="flex flex-col sm:flex-row gap-2">
                 <FormControl>
-                  <Input placeholder="e.g., BR2401001" {...field} className="h-10" />
+                  <Input placeholder="e.g., FL2501" {...field} className="h-10" />
                 </FormControl>
                 {onGenerateBatchCode && (
                   <Button

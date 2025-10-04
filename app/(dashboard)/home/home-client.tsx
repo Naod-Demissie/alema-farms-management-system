@@ -10,7 +10,6 @@ import {
   Users,
   Bird,
   Egg,
-  Utensils,
   DollarSign,
   BarChart3,
   Clock,
@@ -48,6 +47,7 @@ import { getStaff } from "@/server/staff";
 import { checkIn, checkOut, getAttendance, isStaffOnLeave } from "@/server/attendance";
 import { getKPIData } from "@/server/kpi-data";
 import { createFeedUsageAction } from "@/app/actions/feed-usage";
+import { PageBanner } from "@/components/ui/page-banner";
 
 type DashboardSummary = {
   eggsToday: number;
@@ -540,14 +540,14 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to your poultry management system. Quick access to all features.</p>
-        </div>
-        {/* Removed search and refresh controls as requested */}
-      </div>
+      {/* Banner Header */}
+      <PageBanner
+        title="Dashboard"
+        description="Welcome to your poultry management system. Quick access to all features."
+        imageSrc="/hero-bg-image.webp"
+      />
+
+      {/* Main Content */}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -28,6 +28,8 @@ import {
 import { Invite } from "../data/invite-schema";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Mail } from "lucide-react";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -153,7 +155,10 @@ export function InviteTable({ columns, data, toolbar }: InviteTableProps) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No invitations found.
+                  <NoDataIcon 
+                    icon={Mail}
+                    title="No invitations found"
+                  />
                 </TableCell>
               </TableRow>
             )}

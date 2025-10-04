@@ -28,6 +28,8 @@ import {
 import { LeaveRequest } from "./leave-table-columns";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Calendar } from "lucide-react";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -161,7 +163,10 @@ export function LeaveTable({ columns, data, toolbar, staffList = [], onStatusCha
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No leave requests found.
+                  <NoDataIcon 
+                    icon={Calendar}
+                    title="No leave requests found"
+                  />
                 </TableCell>
               </TableRow>
             )}

@@ -29,6 +29,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ProductionDialog } from "@/components/dialogs/production-dialog";
 import { format } from "date-fns";
+import { PageBanner } from "@/components/ui/page-banner";
 
 interface Flock {
   id: string;
@@ -227,32 +228,32 @@ export default function ProductionManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Production Management</h1>
-        <p className="text-muted-foreground">
-          Track and manage egg production, broiler production, and manure production for your poultry operation.
-        </p>
-      </div>
+      {/* Banner Header */}
+      <PageBanner
+        title="Production Management"
+        description="Track and manage egg production, broiler production, and manure production for your poultry operation"
+        imageSrc="/banner-bg-image.webp"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-1 h-auto">
           <TabsTrigger 
             value="eggs" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            className="flex items-center gap-2"
           >
             <Egg className="h-4 w-4" />
             Egg Production
           </TabsTrigger>
           <TabsTrigger 
             value="broiler" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            className="flex items-center gap-2"
           >
             <Bird className="h-4 w-4" />
             Broiler Production
           </TabsTrigger>
           <TabsTrigger 
             value="manure" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
+            className="flex items-center gap-2"
           >
             <Droplets className="h-4 w-4" />
             Manure Production

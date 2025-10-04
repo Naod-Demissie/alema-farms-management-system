@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -184,7 +186,10 @@ export function SupplierTable({ columns, data, toolbar, onView, onEdit, onDelete
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No suppliers found.
+                  <NoDataIcon 
+                    icon={Truck}
+                    title="No suppliers found"
+                  />
                 </TableCell>
               </TableRow>
             )}

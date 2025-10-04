@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -465,11 +466,11 @@ export function FeedSuppliers() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Created At</Label>
-                  <p className="text-sm font-medium">{new Date(viewingSupplier.createdAt).toLocaleString()}</p>
+                  <p className="text-sm font-medium">{format(new Date(viewingSupplier.createdAt), "MMM dd, yyyy")}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Updated At</Label>
-                  <p className="text-sm font-medium">{new Date(viewingSupplier.updatedAt).toLocaleString()}</p>
+                  <p className="text-sm font-medium">{format(new Date(viewingSupplier.updatedAt), "MMM dd, yyyy")}</p>
                 </div>
               </div>
             </div>

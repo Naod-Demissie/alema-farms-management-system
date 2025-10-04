@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableViewOptions } from "@/components/table/data-table-view-options";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Egg } from "lucide-react";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import { ProductionTableToolbar } from "./production-table-toolbar";
 
@@ -150,7 +152,10 @@ export function ProductionTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  <NoDataIcon 
+                    icon={Egg}
+                    title="No production records found"
+                  />
                 </TableCell>
               </TableRow>
             )}

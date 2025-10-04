@@ -21,7 +21,7 @@ import {
   Settings,
   Heart,
   Bird,
-  Utensils,
+  Wheat,
   Egg,
   DollarSign,
   BarChart3,
@@ -114,7 +114,7 @@ const sidebarData: SidebarData = {
         {
           title: "Feed Management",
           url: "/feed",
-          icon: Utensils,
+          icon: Wheat,
           visible: ["admin", "veterinarian", "worker"],
         },
         {

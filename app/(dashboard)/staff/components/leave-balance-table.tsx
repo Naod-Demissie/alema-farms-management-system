@@ -28,6 +28,8 @@ import {
 import { LeaveBalance } from "./leave-balance-table-columns";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Clock } from "lucide-react";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -144,7 +146,10 @@ export function LeaveBalanceTable({ columns, data, toolbar, staffList = [] }: Le
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No leave balances found.
+                  <NoDataIcon 
+                    icon={Clock}
+                    title="No leave balances found"
+                  />
                 </TableCell>
               </TableRow>
             )}

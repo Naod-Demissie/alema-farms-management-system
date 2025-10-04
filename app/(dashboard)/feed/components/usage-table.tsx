@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Wheat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -198,7 +200,10 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No usage records found.
+                  <NoDataIcon 
+                    icon={Wheat}
+                    title="No usage records found"
+                  />
                 </TableCell>
               </TableRow>
             )}

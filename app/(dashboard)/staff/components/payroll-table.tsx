@@ -29,6 +29,8 @@ import { PayrollRecord } from "./payroll-table-columns";
 import { PayrollMonthFilter, PayrollMonthFilterRef } from "./payroll-month-filter";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { DollarSign } from "lucide-react";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -151,7 +153,10 @@ export function PayrollTable({ columns, data, toolbar }: PayrollTableProps) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No payroll records found.
+                  <NoDataIcon 
+                    icon={DollarSign}
+                    title="No payroll records found"
+                  />
                 </TableCell>
               </TableRow>
             )}

@@ -29,6 +29,8 @@ import {
 import { Staff } from "../data/schema";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Users } from "lucide-react";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -158,7 +160,10 @@ export function StaffTable({ columns, data, toolbar }: DataTableProps) {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No staff members found.
+                  <NoDataIcon 
+                    icon={Users}
+                    title="No staff members found"
+                  />
                 </TableCell>
               </TableRow>
             )}

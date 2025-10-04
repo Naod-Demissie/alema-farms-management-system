@@ -639,14 +639,13 @@ export async function generateBatchCode(breed: string): Promise<ApiResponse> {
     }
 
     const prefix = 'FL'; // Generic flock prefix
-    const year = new Date().getFullYear().toString().slice(-2);
-    const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of year
     
-    // Find the highest existing batch code for this month
+    // Find the highest existing batch code for this year
     const existingCodes = await prisma.flocks.findMany({
       where: {
         batchCode: {
-          startsWith: `${prefix}${year}${month}`
+          startsWith: `${prefix}${year}`
         }
       },
       select: { batchCode: true },
@@ -655,12 +654,16 @@ export async function generateBatchCode(breed: string): Promise<ApiResponse> {
 
     let sequence = 1;
     if (existingCodes.length > 0) {
+      // Extract the sequence number from the last batch code
+      // Format: FL2501 -> extract "01" and convert to number
       const lastCode = existingCodes[0].batchCode;
-      const lastSequence = parseInt(lastCode.slice(-3));
+      const sequencePart = lastCode.slice(-2); // Get last 2 digits
+      const lastSequence = parseInt(sequencePart);
       sequence = lastSequence + 1;
     }
 
-    const batchCode = `${prefix}${year}${month}${sequence.toString().padStart(3, '0')}`;
+    // Generate batch code in format FL2501 (FL + year + 2-digit sequence)
+    const batchCode = `${prefix}${year}${sequence.toString().padStart(2, '0')}`;
 
     return {
       success: true,

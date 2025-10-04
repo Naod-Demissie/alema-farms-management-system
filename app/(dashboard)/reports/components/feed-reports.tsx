@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Utensils,
+  Wheat,
   TrendingUp,
   BarChart3,
   PieChart,
@@ -212,7 +212,7 @@ export function FeedReports({ filters }: FeedReportsProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Feed Used</CardTitle>
-            <Utensils className="h-4 w-4 text-muted-foreground" />
+            <Wheat className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading || !data ? (

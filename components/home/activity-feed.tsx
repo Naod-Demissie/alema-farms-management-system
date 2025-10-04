@@ -10,7 +10,7 @@ import {
   Egg,
   Users,
   Heart,
-  Utensils,
+  Wheat,
   DollarSign,
   ArrowRight,
   Filter,
@@ -54,7 +54,7 @@ export function ActivityFeed({ activities, onRefresh, onViewAll }: ActivityFeedP
       production: Egg,
       staff: Users,
       health: Heart,
-      feed: Utensils,
+      feed: Wheat,
       financial: DollarSign,
     };
     return iconMap[type] || Activity;

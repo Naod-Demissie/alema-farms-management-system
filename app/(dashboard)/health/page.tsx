@@ -25,6 +25,7 @@ import {
 import { VaccinationRecords } from "./components/vaccination-records";
 import { DiseaseTreatment } from "./components/disease-treatment";
 import { MortalityManagement } from "./components/mortality-management";
+import { PageBanner } from "@/components/ui/page-banner";
 
 export default function HealthManagementPage() {
   const [activeTab, setActiveTab] = useState("vaccinations");
@@ -41,15 +42,12 @@ export default function HealthManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Health & Veterinary Management
-        </h1>
-        <p className="text-muted-foreground">
-          Comprehensive vaccination tracking and veterinary care management
-        </p>
-      </div>
+      {/* Banner Header */}
+      <PageBanner
+        title="Health & Veterinary Management"
+        description="Comprehensive vaccination tracking and veterinary care management"
+        imageSrc="/banner-bg-image.webp"
+      />
 
       {/* Main Content with Tabs */}
       <Tabs

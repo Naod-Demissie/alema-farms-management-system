@@ -46,6 +46,7 @@ import {
   User,
   Plus
 } from "lucide-react";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
 
 interface StaffMember {
   id: string;
@@ -319,9 +320,10 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
               ) : filteredStaff.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8">
-                    <div className="text-muted-foreground">
-                      No staff members found. Add some staff members to get started.
-                    </div>
+                    <NoDataIcon 
+                      icon={User}
+                      title="No staff members found"
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

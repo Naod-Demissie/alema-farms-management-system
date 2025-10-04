@@ -7,19 +7,19 @@ import { FeedUsage } from "./components/feed-usage";
 import { FeedSuppliers } from "./components/feed-suppliers";
 import { FeedProgram } from "./components/feed-program";
 import { FeedPlanning } from "./components/feed-planning";
+import { PageBanner } from "@/components/ui/page-banner";
 
 export default function FeedManagementPage() {
   const [activeTab, setActiveTab] = useState("usage");
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Feed Management</h1>
-        <p className="text-muted-foreground">
-          Manage feed inventory, track usage, suppliers, and costs for your
-          poultry operation.
-        </p>
-      </div>
+      {/* Banner Header */}
+      <PageBanner
+        title="Feed Management"
+        description="Manage feed inventory, track usage, suppliers, and costs for your poultry operation"
+        imageSrc="/banner-bg-image.webp"
+      />
 
       <Tabs
         value={activeTab}

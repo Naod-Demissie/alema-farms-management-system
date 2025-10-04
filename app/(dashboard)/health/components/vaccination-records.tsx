@@ -382,17 +382,17 @@ export function VaccinationRecords() {
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
         title={
           confirmDialog.type === 'delete'
-            ? 'Delete Vaccination Record'
+            ? 'Delete Vaccination'
             : 'Confirm Action'
         }
         desc={
           confirmDialog.type === 'delete'
-            ? `Are you sure you want to delete the vaccination record for "${confirmDialog.vaccination?.vaccineName}"? This action cannot be undone and the vaccination record will be permanently removed.`
+            ? 'Are you sure you want to delete this vaccination record? This action cannot be undone.'
             : 'Are you sure you want to proceed?'
         }
         confirmText={
           confirmDialog.type === 'delete'
-            ? 'Delete Vaccination Record'
+            ? 'Delete'
             : 'Continue'
         }
         cancelBtnText="Cancel"

@@ -14,7 +14,7 @@ import {
   Bird,
   Heart,
   Egg,
-  Utensils,
+  Wheat,
   DollarSign,
   BarChart3,
   Settings,
@@ -81,7 +81,7 @@ export function QuickSearch({ onResultSelect }: QuickSearchProps) {
     { id: "quality-assessment", title: "Quality Assessment", description: "Assess egg quality grades", category: "Production Management", href: "/production", icon: Target, type: "action" },
     
     // Feed Management
-    { id: "add-feed-inventory", title: "Add Feed Inventory", description: "Update feed stock levels", category: "Feed Management", href: "/feed", icon: Utensils, type: "action" },
+    { id: "add-feed-inventory", title: "Add Feed Inventory", description: "Update feed stock levels", category: "Feed Management", href: "/feed", icon: Wheat, type: "action" },
     { id: "feed-analytics", title: "Feed Analytics", description: "Analyze feed costs and usage", category: "Feed Management", href: "/feed?tab=analytics", icon: PieChart, type: "page" },
     { id: "feed-usage", title: "Feed Usage Tracking", description: "Track daily feed consumption", category: "Feed Management", href: "/feed?tab=usage", icon: Calculator, type: "page" },
     

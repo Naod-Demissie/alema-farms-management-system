@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { FlockManagementMerged } from "./components/flock-management";
 import { getFlocks } from "@/server/flocks";
 import { Flock } from "./components/flock-types";
+import { PageBanner } from "@/components/ui/page-banner";
 
 export default function FlocksPage() {
   const [flocks, setFlocks] = useState<Flock[]>([]);
@@ -58,6 +59,13 @@ export default function FlocksPage() {
 
   return (
     <div className="space-y-6">
+      {/* Banner Header */}
+      <PageBanner
+        title="Flock Management"
+        description="Manage your poultry flocks, track growth, and monitor health"
+        imageSrc="/banner-bg-image.webp"
+      />
+
       {/* Main Content */}
       <FlockManagementMerged
         flocks={flocks}

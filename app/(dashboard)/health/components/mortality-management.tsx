@@ -46,7 +46,8 @@ import {
   CalendarDays,
   FileText,
   AlertTriangle,
-  Activity
+  Activity,
+  Loader2
 } from "lucide-react";
 import { MortalityTable } from "./mortality-table";
 import { mortalityColumns } from "./mortality-columns";
@@ -535,8 +536,11 @@ export function MortalityManagement() {
                                 type="number"
                                 placeholder="1"
                                 className="h-10"
-                                {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                value={field.value === 0 ? "" : field.value}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -627,6 +631,7 @@ export function MortalityManagement() {
                         Cancel
                       </Button>
                       <Button type="submit" disabled={loading}>
+                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                         {loading ? "Saving..." : editingRecord ? "Update Record" : "Add Record"}
                       </Button>
                     </DialogFooter>
@@ -666,12 +671,12 @@ export function MortalityManagement() {
         }
         desc={
           confirmDialog.type === 'delete'
-            ? `Are you sure you want to delete the mortality record for ${confirmDialog.record?.count} deaths? This action cannot be undone and the record will be permanently removed.`
+            ? 'Are you sure you want to delete this mortality record? This action cannot be undone.'
             : 'Are you sure you want to proceed?'
         }
         confirmText={
           confirmDialog.type === 'delete'
-            ? 'Delete Mortality Record'
+            ? 'Delete'
             : 'Continue'
         }
         cancelBtnText="Cancel"

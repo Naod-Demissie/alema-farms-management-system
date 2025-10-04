@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -197,7 +199,10 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No inventory items found.
+                  <NoDataIcon 
+                    icon={Package}
+                    title="No inventory items found"
+                  />
                 </TableCell>
               </TableRow>
             )}

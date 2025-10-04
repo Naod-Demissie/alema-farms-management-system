@@ -12,21 +12,19 @@ import {
 import { ProfileSettings } from "./components/profile-settings";
 import { AccountSettings } from "./components/account-settings";
 import { PreferencesSettings } from "./components/preferences-settings";
+import { PageBanner } from "@/components/ui/page-banner";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences.
-          </p>
-        </div>
-      </div>
+      {/* Banner Header */}
+      <PageBanner
+        title="Settings"
+        description="Manage your account settings and preferences"
+        imageSrc="/banner-bg-image.webp"
+      />
 
       {/* Settings Tabs */}
       <Tabs

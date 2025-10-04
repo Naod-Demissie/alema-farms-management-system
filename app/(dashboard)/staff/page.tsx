@@ -9,6 +9,7 @@ import { PayrollManagement } from "./components/payroll-management";
 import { LeaveManagement } from "./components/leave-management";
 import { StaffInvitations } from "./components/staff-invitations";
 import StaffProvider from "@/features/staff/context/staff-context";
+import { PageBanner } from "@/components/ui/page-banner";
 
 export default function StaffManagementPage() {
   const [activeTab, setActiveTab] = useState("directory");
@@ -16,15 +17,12 @@ export default function StaffManagementPage() {
   return (
     <StaffProvider>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Staff Management
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your staff members, attendance, payroll, and more.
-          </p>
-        </div>
+        {/* Banner Header */}
+        <PageBanner
+          title="Staff Management"
+          description="Manage your staff members, attendance, payroll, and more"
+          imageSrc="/banner-bg-image.webp"
+        />
 
         {/* Main Content with Tabs */}
         <Tabs
@@ -33,28 +31,16 @@ export default function StaffManagementPage() {
           className="space-y-6"
         >
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 h-auto">
-            <TabsTrigger 
-              value="directory"
-              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
-            >
+            <TabsTrigger value="directory">
               Staffs
             </TabsTrigger>
-            <TabsTrigger 
-              value="payroll"
-              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
-            >
+            <TabsTrigger value="payroll">
               Payroll
             </TabsTrigger>
-            <TabsTrigger 
-              value="attendance"
-              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
-            >
+            <TabsTrigger value="attendance">
               Attendance
             </TabsTrigger>
-            <TabsTrigger 
-              value="leave"
-              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-300 hover:text-white transition-colors rounded-md"
-            >
+            <TabsTrigger value="leave">
               Leave
             </TabsTrigger>
           </TabsList>

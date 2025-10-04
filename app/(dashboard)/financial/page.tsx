@@ -7,18 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ExpenseTracking } from "./components/expense-tracking";
 import { RevenueManagement } from "./components/revenue-management";
+import { PageBanner } from "@/components/ui/page-banner";
 
 export default function FinancialManagementPage() {
   const [activeTab, setActiveTab] = useState("expenses");
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Financial Management</h1>
-        <p className="text-muted-foreground">
-          Track expenses, manage revenue, and generate financial reports for your poultry operation.
-        </p>
-      </div>
+      {/* Banner Header */}
+      <PageBanner
+        title="Financial Management"
+        description="Track expenses, manage revenue, and generate financial reports for your poultry operation"
+        imageSrc="/banner-bg-image.webp"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
