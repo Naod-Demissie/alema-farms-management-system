@@ -40,8 +40,10 @@ export async function middleware(request: NextRequest) {
                       request.cookies.get('session_token') ||
                       request.cookies.get('better-auth.session');
 
-  // Debug logging (remove in production)
-  console.log(`[Middleware] Path: ${pathname}, Has Session: ${!!sessionToken}, Is Root: ${isRootRoute}, Is Protected: ${isProtectedRoute}, Is Auth: ${isAuthRoute}`);
+  // Debug logging with more details
+  console.log(`[Middleware] Path: ${pathname}`);
+  console.log(`[Middleware] Cookies:`, Object.fromEntries(request.cookies.getAll().map(c => [c.name, c.value.substring(0, 20) + '...'])));
+  console.log(`[Middleware] Has Session: ${!!sessionToken}, Is Root: ${isRootRoute}, Is Protected: ${isProtectedRoute}, Is Auth: ${isAuthRoute}`);
 
   // Handle root route redirects
   if (isRootRoute) {

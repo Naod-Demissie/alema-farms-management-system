@@ -18,6 +18,13 @@ export const metadata: Metadata = {
     "Manage your flocks, production, staff, and reports — all in one secure platform.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,  
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -85,15 +85,26 @@ export function LoginForm({
         const callbackUrl = urlParams.get('callbackUrl') || '/home';
         console.log('[LoginForm] Redirecting to:', callbackUrl);
         
-        // Use router.push for client-side navigation with proper session handling
-        router.push(callbackUrl);
+        // Use router.replace for client-side navigation with proper session handling
+        router.replace(callbackUrl);
       } else {
         console.log('[LoginForm] Sign in failed:', result.error);
         toast.error(result.error?.message || "Sign in failed");
       }
     } catch (error) {
       console.log('[LoginForm] Sign in error:', error);
-      toast.error("An error occurred during sign in");
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+      // More specific error handling
+      if (error instanceof Error) {
+        console.error('[LoginForm] Error details:', error.message);
+        toast.error(`Sign in failed: ${error.message}`);
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        console.error('[LoginForm] Error details:', (error as any).message);
+        toast.error(`Sign in failed: ${(error as any).message}`);
+      } else {
+        console.error('[LoginForm] Unknown error:', error);
+        toast.error("An error occurred during sign in. Please check your credentials and try again.");
+      }
     }
 
     setIsLoading(false);

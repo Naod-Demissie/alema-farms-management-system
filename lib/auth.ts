@@ -5,12 +5,37 @@ import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { sessionCache } from './session-cache';
 
+const baseURL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+console.log('[Auth Server] Base URL:', baseURL);
+
 export const auth = betterAuth({
     // Configure base URL for proper session handling
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    baseURL,
     
     // Configure cookie prefix for consistent naming
     cookiePrefix: "better-auth",
+    
+    // Add CORS configuration for network access
+    cors: {
+        origin: [
+            "http://localhost:3000",
+            "http://192.168.1.8:3000",
+            "http://127.0.0.1:3000"
+        ],
+        credentials: true,
+    },
+    
+    // Configure cookies for network access
+    cookies: {
+        sessionToken: {
+            name: "better-auth.session_token",
+            httpOnly: true,
+            secure: false, // Set to false for HTTP in development
+            sameSite: "lax", // More permissive for mobile browsers
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+            domain: undefined, // Allow cookies on all subdomains and IPs
+        },
+    },
     
     // Configure user model to use Staff
     user: {
