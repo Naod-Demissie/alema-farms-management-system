@@ -13,9 +13,17 @@ export interface InventoryCounts {
 
 export async function getInventoryCounts(): Promise<InventoryCounts> {
   try {
-    const inventory = await prisma.inventory.findMany({
+    // Use optimized query with aggregation instead of fetching all records
+    const inventoryAggregates = await prisma.inventory.groupBy({
+      by: ['type'],
       where: {
         isActive: true,
+      },
+      _sum: {
+        quantity: true,
+        eggCount: true,
+        broilerCount: true,
+        manureWeight: true,
       },
     });
 
@@ -27,22 +35,22 @@ export async function getInventoryCounts(): Promise<InventoryCounts> {
       manure: 0,
     };
 
-    inventory.forEach(item => {
-      switch (item.type) {
+    inventoryAggregates.forEach(aggregate => {
+      switch (aggregate.type) {
         case InventoryType.EGG:
-          counts.eggs += item.eggCount || 0;
+          counts.eggs += aggregate._sum.eggCount || 0;
           break;
         case InventoryType.FEED:
-          counts.feed += item.quantity;
+          counts.feed += aggregate._sum.quantity || 0;
           break;
         case InventoryType.MEDICINE:
-          counts.medicine += item.quantity;
+          counts.medicine += aggregate._sum.quantity || 0;
           break;
         case InventoryType.BROILER:
-          counts.broilers += item.broilerCount || 0;
+          counts.broilers += aggregate._sum.broilerCount || 0;
           break;
         case InventoryType.MANURE:
-          counts.manure += item.manureWeight || 0;
+          counts.manure += aggregate._sum.manureWeight || 0;
           break;
       }
     });

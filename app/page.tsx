@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
+import { useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -63,6 +66,19 @@ const buttonVariants: Variants = {
 };
 
 export default function Home() {
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    if (session?.user) {
+      // If user is authenticated, redirect to home
+      router.push('/home');
+    } else {
+      // If user is not authenticated, redirect to signin
+      router.push('/signin');
+    }
+  };
+
   return (
     <section className="dark relative flex h-screen w-screen overflow-hidden bg-[url('/hero-bg-image.webp')] bg-cover bg-center bg-no-repeat font-sans after:absolute after:left-0 after:top-0 after:z-10 after:h-full after:w-full after:bg-black/60 after:content-['']">
       {/* 🌈 Gradient overlay */}
@@ -120,14 +136,14 @@ export default function Home() {
           variants={buttonVariants}
           style={{ willChange: "opacity, transform" }}
         >
-          <Link href="/signin">
-            <Button
-              variant="outline"
-              className="h-fit w-fit rounded-full px-10 py-4 text-md font-medium leading-tight"
-            >
-              Get Started
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            className="h-fit w-fit rounded-full px-10 py-4 text-md font-medium leading-tight"
+            onClick={handleGetStarted}
+            disabled={isPending}
+          >
+            {isPending ? "Loading..." : "Get Started"}
+          </Button>
         </motion.div>
       </motion.div>
     </section>

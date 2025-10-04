@@ -40,35 +40,25 @@ export async function middleware(request: NextRequest) {
                       request.cookies.get('session_token') ||
                       request.cookies.get('better-auth.session');
 
-  // Debug logging with more details
-  console.log(`[Middleware] Path: ${pathname}`);
-  console.log(`[Middleware] Cookies:`, Object.fromEntries(request.cookies.getAll().map(c => [c.name, c.value.substring(0, 20) + '...'])));
-  console.log(`[Middleware] Has Session: ${!!sessionToken}, Is Root: ${isRootRoute}, Is Protected: ${isProtectedRoute}, Is Auth: ${isAuthRoute}`);
+  // Debug logging only in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Middleware] Path: ${pathname}, Has Session: ${!!sessionToken}`);
+  }
 
-  // Handle root route redirects
+  // Handle root route - always allow landing page to be accessible
   if (isRootRoute) {
-    if (sessionToken) {
-      // If user is authenticated and visits root, redirect to home
-      console.log(`[Middleware] Redirecting authenticated user from root to /home`);
-      return NextResponse.redirect(new URL('/home', request.url));
-    } else {
-      // If user is not authenticated and visits root, redirect to signin
-      console.log(`[Middleware] Redirecting unauthenticated user from root to /signin`);
-      return NextResponse.redirect(new URL('/signin', request.url));
-    }
+    return NextResponse.next();
   }
 
   // If user is on a protected route and has no session, redirect to signin
   if (isProtectedRoute && !sessionToken) {
     const signInUrl = new URL('/signin', request.url);
     signInUrl.searchParams.set('callbackUrl', pathname);
-    console.log(`[Middleware] Redirecting to signin with callback: ${pathname}`);
     return NextResponse.redirect(signInUrl);
   }
 
   // If user is authenticated and trying to access auth routes, redirect to home
   if (isAuthRoute && sessionToken) {
-    console.log(`[Middleware] Redirecting authenticated user from auth route to /home`);
     return NextResponse.redirect(new URL('/home', request.url));
   }
 

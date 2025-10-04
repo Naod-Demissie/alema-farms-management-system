@@ -5,7 +5,25 @@ import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { sessionCache } from './session-cache';
 
-const baseURL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+// Dynamic base URL based on environment
+const getBaseURL = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.NEXT_PUBLIC_APP_URL || "https://alemafarms.vercel.app";
+  }
+  
+  // For development, allow both localhost and network IP
+  const host = process.env.HOST || 'localhost';
+  const port = process.env.PORT || '3000';
+  
+  if (host === '0.0.0.0' || host === '::') {
+    // When binding to all interfaces, use localhost for auth
+    return `http://localhost:${port}`;
+  }
+  
+  return `http://${host}:${port}`;
+};
+
+const baseURL = getBaseURL();
 console.log('[Auth Server] Base URL:', baseURL);
 
 export const auth = betterAuth({
@@ -20,7 +38,8 @@ export const auth = betterAuth({
         origin: [
             "http://localhost:3000",
             "http://192.168.1.8:3000",
-            "http://127.0.0.1:3000"
+            "http://127.0.0.1:3000",
+            "https://alemafarms.vercel.app"
         ],
         credentials: true,
     },
@@ -30,10 +49,10 @@ export const auth = betterAuth({
         sessionToken: {
             name: "better-auth.session_token",
             httpOnly: true,
-            secure: false, // Set to false for HTTP in development
+            secure: process.env.NODE_ENV === 'production', // Secure in production
             sameSite: "lax", // More permissive for mobile browsers
             maxAge: 60 * 60 * 24 * 7, // 7 days
-            domain: undefined, // Allow cookies on all subdomains and IPs
+            domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined, // Allow cookies on all subdomains and IPs in dev
         },
     },
     

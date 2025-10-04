@@ -179,18 +179,22 @@ export async function getFlocks(
     // Get total count
     const total = await prisma.flocks.count({ where });
 
-    // Get flocks with pagination
+    // Get flocks with pagination - optimized with selective loading
     const flocks = await prisma.flocks.findMany({
       where,
       skip: offset,
       take: limit,
       orderBy: { [sort.field]: sort.direction },
-      include: {
-        mortality: {
-          select: {
-            count: true
-          }
-        },
+      select: {
+        id: true,
+        batchCode: true,
+        arrivalDate: true,
+        initialCount: true,
+        currentCount: true,
+        ageInDays: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             vaccinations: true,
@@ -226,7 +230,7 @@ export async function getFlocks(
   }
 }
 
-// Get a single flock by ID
+// Get a single flock by ID with optimized selective loading
 export async function getFlockById(flockId: string): Promise<ApiResponse> {
   try {
     // Get authenticated user
@@ -238,40 +242,19 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
       };
     }
 
+    // First get basic flock info
     const flock = await prisma.flocks.findUnique({
       where: { id: flockId },
-      include: {
-        vaccinations: {
-          orderBy: { createdAt: 'desc' },
-          take: 5
-        },
-        treatments: {
-          orderBy: { createdAt: 'desc' },
-          take: 5
-        },
-        mortality: {
-          orderBy: { date: 'desc' },
-          take: 5
-        },
-        feedUsage: {
-          orderBy: { date: 'desc' },
-          take: 5,
-          include: {
-            feed: true
-          }
-        },
-        eggProduction: {
-          orderBy: { date: 'desc' },
-          take: 5
-        },
-        broilerProduction: {
-          orderBy: { date: 'desc' },
-          take: 5
-        },
-        manureProduction: {
-          orderBy: { date: 'desc' },
-          take: 5
-        },
+      select: {
+        id: true,
+        batchCode: true,
+        arrivalDate: true,
+        initialCount: true,
+        currentCount: true,
+        ageInDays: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             vaccinations: true,
@@ -294,9 +277,112 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
       };
     }
 
+    // Load related data in parallel only if needed
+    const [recentVaccinations, recentTreatments, recentMortality, recentFeedUsage, recentEggProduction, recentBroilerProduction, recentManureProduction] = await Promise.all([
+      prisma.vaccinations.findMany({
+        where: { flockId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          vaccineName: true,
+          date: true,
+          notes: true,
+          createdAt: true
+        }
+      }),
+      prisma.treatments.findMany({
+        where: { flockId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          disease: true,
+          treatment: true,
+          date: true,
+          response: true,
+          notes: true,
+          createdAt: true
+        }
+      }),
+      prisma.mortality.findMany({
+        where: { flockId },
+        orderBy: { date: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          count: true,
+          date: true,
+          cause: true,
+          notes: true
+        }
+      }),
+      prisma.feedUsage.findMany({
+        where: { flockId },
+        orderBy: { date: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          amountUsed: true,
+          unit: true,
+          date: true,
+          notes: true,
+          feed: {
+            select: {
+              id: true,
+              feedName: true,
+              feedType: true
+            }
+          }
+        }
+      }),
+      prisma.eggProduction.findMany({
+        where: { flockId },
+        orderBy: { date: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          totalCount: true,
+          date: true,
+          notes: true
+        }
+      }),
+      prisma.broilerProduction.findMany({
+        where: { flockId },
+        orderBy: { date: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          quantity: true,
+          date: true,
+          notes: true
+        }
+      }),
+      prisma.manureProduction.findMany({
+        where: { flockId },
+        orderBy: { date: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          quantity: true,
+          date: true,
+          notes: true
+        }
+      })
+    ]);
+
     return {
       success: true,
-      data: flock
+      data: {
+        ...flock,
+        vaccinations: recentVaccinations,
+        treatments: recentTreatments,
+        mortality: recentMortality,
+        feedUsage: recentFeedUsage,
+        eggProduction: recentEggProduction,
+        broilerProduction: recentBroilerProduction,
+        manureProduction: recentManureProduction
+      }
     };
   } catch (error) {
     const e = error as Error;
