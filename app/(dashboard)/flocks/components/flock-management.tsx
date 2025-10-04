@@ -247,16 +247,6 @@ export function FlockManagementMerged({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Flock Management</h2>
-          <p className="text-muted-foreground">
-            Manage your poultry flocks and track their performance
-          </p>
-        </div>
-      </div>
-
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useStaff } from "../context/staff-context";
 import { createInvite } from "@/server/staff-invites";
 import { toast } from "sonner";
@@ -132,6 +133,7 @@ export function StaffInviteDialog() {
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isLoading ? "Sending..." : "Send Invitation"}
               </Button>
             </DialogFooter>

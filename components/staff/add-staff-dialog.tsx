@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createNonSystemStaff } from "@/server/staff-invites";
 import { toast } from "sonner";
-import { Upload, User, X } from "lucide-react";
+import { Upload, User, X, Loader2 } from "lucide-react";
 
 const addStaffFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -279,6 +279,7 @@ export function AddStaffDialog({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isLoading ? "Adding..." : submitButtonText}
               </Button>
             </DialogFooter>

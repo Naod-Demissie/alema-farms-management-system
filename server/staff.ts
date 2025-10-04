@@ -292,6 +292,7 @@ export const updateStaff = async (id: string, data: any) => {
         }
         if (data.email) updateData.email = data.email;
         if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+        if (data.image !== undefined) updateData.image = data.image;
         if (data.role && user.role === "ADMIN") updateData.role = data.role;
         if (data.isActive !== undefined && user.role === "ADMIN") updateData.isActive = data.isActive;
 

@@ -60,7 +60,9 @@ import { toast } from "sonner";
 type EditStaffFormValues = {
   firstName: string;
   lastName: string;
+  email?: string;
   phoneNumber?: string;
+  image?: string;
   isActive: boolean;
 };
 
@@ -179,7 +181,9 @@ export function StaffDirectory() {
       const result = await updateStaff(selectedStaff.id, {
         firstName: data.firstName,
         lastName: data.lastName,
+        email: data.email,
         phoneNumber: data.phoneNumber || "",
+        image: data.image || "",
         isActive: data.isActive,
       });
 
