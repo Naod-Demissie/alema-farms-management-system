@@ -7,8 +7,16 @@ import { sessionCache } from './session-cache';
 
 // Dynamic base URL based on environment
 const getBaseURL = () => {
+  // Always use NEXT_PUBLIC_APP_URL if available, regardless of environment
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    console.log('[Auth Server] Using NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  
+  // Fallback for production
   if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_APP_URL || "https://alemafarms.vercel.app";
+    console.log('[Auth Server] Using production fallback URL');
+    return "https://alemafarms.vercel.app";
   }
   
   // For development, allow both localhost and network IP
@@ -52,7 +60,7 @@ export const auth = betterAuth({
             secure: process.env.NODE_ENV === 'production', // Secure in production
             sameSite: "lax", // More permissive for mobile browsers
             maxAge: 60 * 60 * 24 * 7, // 7 days
-            domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined, // Allow cookies on all subdomains and IPs in dev
+            domain: undefined, // Remove domain restriction to fix production issues
         },
     },
     

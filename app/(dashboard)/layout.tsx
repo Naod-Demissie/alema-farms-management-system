@@ -22,6 +22,15 @@ export default function DashboardLayout({
       userEmail: session?.user?.email 
     });
     
+    // Debug: Log environment variables and current state
+    console.log('[DashboardLayout] Environment check:', {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      currentURL: typeof window !== 'undefined' ? window.location.href : 'N/A',
+      sessionExists: !!session,
+      sessionUser: session?.user?.email || 'No user'
+    });
+    
     if (!isPending && !session?.user) {
       // Redirect to signin with callback URL
       const currentPath = window.location.pathname;

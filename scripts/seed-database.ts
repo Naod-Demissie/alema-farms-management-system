@@ -217,8 +217,8 @@ async function seedFlocks() {
   const flocksData = [];
   const currentDate = new Date();
   
-  // Create flocks with different ages
-  for (let i = 0; i < 8; i++) {
+  // Create flocks with different ages (6 flocks total)
+  for (let i = 0; i < 6; i++) {
     const arrivalDate = getRandomDate(
       new Date(currentDate.getTime() - 365 * 24 * 60 * 60 * 1000), // 1 year ago
       new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000)   // 1 month ago
@@ -230,7 +230,7 @@ async function seedFlocks() {
     const currentCount = Math.floor(initialCount * (1 - mortalityRate));
     
     flocksData.push({
-      batchCode: `ETH-${arrivalDate.getFullYear()}-${String(i + 1).padStart(3, '0')}`,
+      batchCode: `FL${arrivalDate.getFullYear()}${String(i + 1).padStart(2, '0')}`,
       arrivalDate,
       initialCount,
       currentCount,
@@ -259,35 +259,78 @@ async function seedProductionData(flocks: any[], staff: any[]) {
     const flockAge = flock.ageInDays;
     const startDate = new Date(flock.arrivalDate);
     
-    // Generate daily records from arrival to current date
-    for (let day = 0; day < flockAge; day++) {
-      const recordDate = new Date(startDate.getTime() + day * 24 * 60 * 60 * 1000);
+    // Generate records with strategic spacing to spread across months
+    const daysSinceArrival = Math.floor((currentDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    
+    // Only generate egg production records for layers older than 120 days
+    if (daysSinceArrival > 120) {
+      const eggProductionStartDay = 120;
+      const eggProductionDays = daysSinceArrival - eggProductionStartDay;
       
-      // Egg production (only for layers older than 120 days)
-      if (flockAge > 120) {
-        const productionRate = Math.min(0.85, (flockAge - 120) / 100); // Gradual increase to 85%
-        const dailyEggs = Math.floor(flock.currentCount * productionRate * getRandomFloat(0.8, 1.2));
+      // Generate records every 2-3 days to spread data across months
+      const recordInterval = getRandomInt(2, 4);
+      
+      for (let day = eggProductionStartDay; day < daysSinceArrival; day += recordInterval) {
+        const recordDate = new Date(startDate.getTime() + day * 24 * 60 * 60 * 1000);
+        
+        // Calculate production rate based on flock age (peaks around 200-300 days)
+        const ageInDays = day;
+        let productionRate;
+        if (ageInDays < 150) {
+          productionRate = Math.min(0.6, (ageInDays - 120) / 50); // Gradual increase
+        } else if (ageInDays < 300) {
+          productionRate = getRandomFloat(0.75, 0.9); // Peak production
+        } else {
+          productionRate = Math.max(0.4, 0.9 - (ageInDays - 300) / 200); // Gradual decline
+        }
+        
+        const dailyEggs = Math.floor(flock.currentCount * productionRate * getRandomFloat(0.85, 1.15));
         
         if (dailyEggs > 0) {
+          // Calculate egg quality distribution with seasonal variations
+          const month = recordDate.getMonth();
+          let normalRate, crackedRate, spoiledRate;
+          
+          // Seasonal quality variations (better quality in cooler months)
+          if (month >= 10 || month <= 2) { // Nov-Feb (cooler months)
+            normalRate = getRandomFloat(0.90, 0.96);
+            crackedRate = getRandomFloat(0.02, 0.05);
+            spoiledRate = getRandomFloat(0.01, 0.03);
+          } else { // Mar-Oct (warmer months)
+            normalRate = getRandomFloat(0.85, 0.92);
+            crackedRate = getRandomFloat(0.04, 0.08);
+            spoiledRate = getRandomFloat(0.02, 0.05);
+          }
+          
+          const crackedCount = Math.floor(dailyEggs * crackedRate);
+          const spoiledCount = Math.floor(dailyEggs * spoiledRate);
+          const normalCount = dailyEggs - crackedCount - spoiledCount;
+          
           await prisma.eggProduction.create({
             data: {
               flockId: flock.id,
               date: recordDate,
               totalCount: dailyEggs,
               gradeCounts: {
-                large: Math.floor(dailyEggs * 0.6),
-                medium: Math.floor(dailyEggs * 0.3),
-                small: Math.floor(dailyEggs * 0.1)
+                normal: normalCount,
+                cracked: crackedCount,
+                spoiled: spoiledCount
               },
-              notes: day % 7 === 0 ? 'Weekly quality check completed' : null
+              notes: day % 14 === 0 ? 'Bi-weekly quality assessment completed' : null
             }
           });
           totalRecords++;
         }
       }
+    }
+    
+    // Generate mortality records (less frequent but spread across time)
+    const mortalityInterval = getRandomInt(7, 21); // Every 1-3 weeks
+    for (let day = 0; day < daysSinceArrival; day += mortalityInterval) {
+      const recordDate = new Date(startDate.getTime() + day * 24 * 60 * 60 * 1000);
       
       // Mortality records (random occurrences)
-      if (Math.random() < 0.05) { // 5% chance of mortality record per day
+      if (Math.random() < 0.3) { // 30% chance of mortality record per interval
         const mortalityCount = getRandomInt(1, 5);
         const causes: DeathCause[] = ['disease', 'injury', 'environmental', 'unknown'];
         
@@ -303,19 +346,21 @@ async function seedProductionData(flocks: any[], staff: any[]) {
         });
         totalRecords++;
       }
+    }
+    
+    // Generate manure production records (weekly)
+    for (let week = 0; week < Math.floor(daysSinceArrival / 7); week++) {
+      const recordDate = new Date(startDate.getTime() + week * 7 * 24 * 60 * 60 * 1000);
       
-      // Manure production (daily)
-      if (day % 3 === 0) { // Every 3 days
-        await prisma.manureProduction.create({
-          data: {
-            flockId: flock.id,
-            date: recordDate,
-            quantity: getRandomFloat(50, 150), // kg per day
-            notes: 'Daily manure collection'
-          }
-        });
-        totalRecords++;
-      }
+      await prisma.manureProduction.create({
+        data: {
+          flockId: flock.id,
+          date: recordDate,
+          quantity: getRandomFloat(50, 150), // kg per week
+          notes: 'Weekly manure collection'
+        }
+      });
+      totalRecords++;
     }
   }
   

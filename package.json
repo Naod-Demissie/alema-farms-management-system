@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "create-admin": "tsx scripts/create-admin.ts",
-    "seed-feed": "tsx scripts/seed-feed-program.ts",
+    "for ": "tsx scripts/seed-feed-program.ts",
     "seed-database": "tsx scripts/seed-database.ts"
   },
   "dependencies": {

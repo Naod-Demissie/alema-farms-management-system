@@ -68,6 +68,11 @@ export function LoginForm({
     setIsLoading(true);
 
     console.log('[LoginForm] Attempting to sign in with email:', values.email);
+    console.log('[LoginForm] Environment check:', {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      currentURL: window.location.href
+    });
     
     try {
       // Use better-auth client directly for better session handling
@@ -76,8 +81,11 @@ export function LoginForm({
         password: values.password,
       });
 
+      console.log('[LoginForm] Sign in result:', result);
+
       if (result.data) {
         console.log('[LoginForm] Sign in successful, redirecting...');
+        console.log('[LoginForm] Session data:', result.data);
         toast.success("Signed in successfully!");
         
         // Get callback URL from query params or default to home
