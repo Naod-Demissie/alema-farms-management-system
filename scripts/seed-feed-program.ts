@@ -1,6 +1,5 @@
-import { PrismaClient, FeedType } from '../lib/generated/prisma';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { FeedType } from '../lib/generated/prisma';
 
 const feedProgramData = [
   // Layer feed program

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { FeedType } from "@/lib/generated/prisma";
 
+// Import the feed program functions from the server-only lib file
+import { getAllFeedRecommendations, getFeedRecommendation, getDailyFeedRequirements, getWeeklyFeedRequirements, getFeedCompliance } from "@/lib/feed-program-server";
+
 export async function getFeedProgramAction() {
   try {
     const program = await prisma.feedProgram.findMany({
@@ -15,6 +18,56 @@ export async function getFeedProgramAction() {
   } catch (error) {
     console.error("Error fetching feed program:", error);
     return { success: false, error: "Failed to fetch feed program" };
+  }
+}
+
+export async function getFeedRecommendationsAction() {
+  try {
+    const recommendations = await getAllFeedRecommendations();
+    return { success: true, data: recommendations };
+  } catch (error) {
+    console.error("Error fetching feed recommendations:", error);
+    return { success: false, error: "Failed to fetch feed recommendations" };
+  }
+}
+
+export async function getFeedRecommendationAction(flockId: string) {
+  try {
+    const recommendation = await getFeedRecommendation(flockId);
+    return { success: true, data: recommendation };
+  } catch (error) {
+    console.error("Error fetching feed recommendation:", error);
+    return { success: false, error: "Failed to fetch feed recommendation" };
+  }
+}
+
+export async function getDailyFeedRequirementsAction() {
+  try {
+    const requirements = await getDailyFeedRequirements();
+    return { success: true, data: requirements };
+  } catch (error) {
+    console.error("Error fetching daily feed requirements:", error);
+    return { success: false, error: "Failed to fetch daily feed requirements" };
+  }
+}
+
+export async function getWeeklyFeedRequirementsAction() {
+  try {
+    const requirements = await getWeeklyFeedRequirements();
+    return { success: true, data: requirements };
+  } catch (error) {
+    console.error("Error fetching weekly feed requirements:", error);
+    return { success: false, error: "Failed to fetch weekly feed requirements" };
+  }
+}
+
+export async function getFeedComplianceAction(flockId: string, days: number = 7) {
+  try {
+    const compliance = await getFeedCompliance(flockId, days);
+    return { success: true, data: compliance };
+  } catch (error) {
+    console.error("Error fetching feed compliance:", error);
+    return { success: false, error: "Failed to fetch feed compliance" };
   }
 }
 
@@ -69,46 +122,3 @@ export async function deleteFeedProgramAction(id: string) {
   }
 }
 
-export async function getFeedRecommendationsAction() {
-  try {
-    const { getAllFeedRecommendations } = await import("@/lib/feed-program");
-    const recommendations = await getAllFeedRecommendations();
-    return { success: true, data: recommendations };
-  } catch (error) {
-    console.error("Error fetching feed recommendations:", error);
-    return { success: false, error: "Failed to fetch feed recommendations" };
-  }
-}
-
-export async function getDailyFeedRequirementsAction() {
-  try {
-    const { getDailyFeedRequirements } = await import("@/lib/feed-program");
-    const requirements = await getDailyFeedRequirements();
-    return { success: true, data: requirements };
-  } catch (error) {
-    console.error("Error fetching daily feed requirements:", error);
-    return { success: false, error: "Failed to fetch daily feed requirements" };
-  }
-}
-
-export async function getWeeklyFeedRequirementsAction() {
-  try {
-    const { getWeeklyFeedRequirements } = await import("@/lib/feed-program");
-    const requirements = await getWeeklyFeedRequirements();
-    return { success: true, data: requirements };
-  } catch (error) {
-    console.error("Error fetching weekly feed requirements:", error);
-    return { success: false, error: "Failed to fetch weekly feed requirements" };
-  }
-}
-
-export async function getFeedComplianceAction(flockId: string, days: number = 7) {
-  try {
-    const { getFeedCompliance } = await import("@/lib/feed-program");
-    const compliance = await getFeedCompliance(flockId, days);
-    return { success: true, data: compliance };
-  } catch (error) {
-    console.error("Error fetching feed compliance:", error);
-    return { success: false, error: "Failed to fetch feed compliance" };
-  }
-}
