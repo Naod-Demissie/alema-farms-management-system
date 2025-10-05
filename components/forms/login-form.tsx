@@ -93,8 +93,11 @@ export function LoginForm({
         const callbackUrl = urlParams.get('callbackUrl') || '/home';
         console.log('[LoginForm] Redirecting to:', callbackUrl);
         
-        // Use router.replace for client-side navigation with proper session handling
-        router.replace(callbackUrl);
+        // Add a small delay to ensure session is properly set before redirect
+        setTimeout(() => {
+          // Use window.location.href for a full page reload to ensure session is recognized
+          window.location.href = callbackUrl;
+        }, 100);
       } else {
         console.log('[LoginForm] Sign in failed:', result.error);
         toast.error(result.error?.message || "Sign in failed");

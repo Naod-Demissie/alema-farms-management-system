@@ -31,11 +31,16 @@ export default function DashboardLayout({
       sessionUser: session?.user?.email || 'No user'
     });
     
+    // Only redirect if we're sure there's no session (not just loading)
     if (!isPending && !session?.user) {
-      // Redirect to signin with callback URL
-      const currentPath = window.location.pathname;
-      console.log('[DashboardLayout] No session found, redirecting to signin with callback:', currentPath);
-      router.replace(`/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
+      // Add a small delay to prevent race conditions with session creation
+      const timeoutId = setTimeout(() => {
+        const currentPath = window.location.pathname;
+        console.log('[DashboardLayout] No session found after delay, redirecting to signin with callback:', currentPath);
+        router.replace(`/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [session, isPending, router]);
 
