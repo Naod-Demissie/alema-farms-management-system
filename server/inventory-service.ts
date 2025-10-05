@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { InventoryType } from "@/lib/generated/prisma";
+import { InventoryType } from "@/lib/generated/prisma/enums";
 
 export interface ApiResponse<T> {
   success: boolean;

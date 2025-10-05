@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { FeedType } from "@/lib/generated/prisma";
+import { FeedType } from "@/lib/generated/prisma/enums";
 
 // Feed Inventory Management
 export async function getFeedInventory() {

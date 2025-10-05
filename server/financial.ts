@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { ExpenseCategory, RevenueSource, InventoryType } from "@/lib/generated/prisma";
+import { ExpenseCategory, RevenueSource, InventoryType } from "@/lib/generated/prisma/enums";
 import { 
   FinancialSummary, 
   ExpenseSummary, 

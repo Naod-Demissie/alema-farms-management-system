@@ -1,7 +1,7 @@
 // lib/feed-program-server.ts
 // Server-side only functions for feed program calculations
 import { prisma } from "@/lib/prisma";
-import { FeedType } from "@/lib/generated/prisma";
+import { FeedType } from "@/lib/generated/prisma/enums";
 
 export interface Flock {
   id: string;

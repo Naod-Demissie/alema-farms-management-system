@@ -1,4 +1,4 @@
-import { ExpenseCategory, RevenueSource, BankName } from "@/lib/generated/prisma";
+import { ExpenseCategory, RevenueSource, BankName } from "@/lib/generated/prisma/enums";
 
 export interface FinancialSummary {
   totalExpenses: number;

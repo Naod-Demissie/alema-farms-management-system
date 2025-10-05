@@ -1,6 +1,6 @@
 // lib/feed-program.ts
 // Client-safe types and constants for feed program
-import { FeedType } from "@/lib/generated/prisma";
+import { FeedType } from "@/lib/generated/prisma/enums";
 
 export interface Flock {
   id: string;

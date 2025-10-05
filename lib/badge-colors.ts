@@ -1,4 +1,4 @@
-import { ExpenseCategory, RevenueSource } from "@/lib/generated/prisma";
+import { ExpenseCategory, RevenueSource } from "@/lib/generated/prisma/enums";
 
 // Color mapping for expense categories - following feed type color pattern
 export const getExpenseCategoryBadgeColor = (category: ExpenseCategory): string => {

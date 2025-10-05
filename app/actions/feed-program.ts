@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { FeedType } from "@/lib/generated/prisma";
+import { FeedType } from "@/lib/generated/prisma/enums";
 
 // Import the feed program functions from the server-only lib file
 import { getAllFeedRecommendations, getFeedRecommendation, getDailyFeedRequirements, getWeeklyFeedRequirements, getFeedCompliance } from "@/lib/feed-program-server";

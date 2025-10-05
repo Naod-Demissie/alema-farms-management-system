@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, DollarSign, Eye } from "lucide-react";
 import { ExpenseFormData, EXPENSE_CATEGORIES } from "@/features/financial/types";
-import { ExpenseCategory } from "@/lib/generated/prisma";
+import { ExpenseCategory } from "@/lib/generated/prisma/enums";
 import {
   getExpenses,
   createExpense,

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, AuthenticatedUser } from "./auth-middleware";
 import { ApiResponse, PaginatedResponse, FilterParams, PaginationParams, SortParams } from "./types";
 import { addToInventory, deductFromInventory } from "./inventory-service";
-import { InventoryType } from "@/lib/generated/prisma";
+import { InventoryType } from "@/lib/generated/prisma/enums";
 
 // ===================
 // Production Management Types

@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
-import { RevenueSource } from "@/lib/generated/prisma";
+import { RevenueSource } from "@/lib/generated/prisma/enums";
 import { REVENUE_SOURCES } from "@/features/financial/types";
 import { getRevenueSourceBadgeColor } from "@/lib/badge-colors";
 import {

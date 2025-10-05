@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { FeedType } from "@/lib/generated/prisma";
+import { FeedType } from "@/lib/generated/prisma/enums";
 
 export async function getFeedInventoryAction() {
   try {

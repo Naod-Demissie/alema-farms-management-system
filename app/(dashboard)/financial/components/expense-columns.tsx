@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
-import { ExpenseCategory } from "@/lib/generated/prisma";
+import { ExpenseCategory } from "@/lib/generated/prisma/enums";
 import { EXPENSE_CATEGORIES } from "@/features/financial/types";
 import { getExpenseCategoryBadgeColor } from "@/lib/badge-colors";
 import {

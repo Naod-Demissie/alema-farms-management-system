@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { ExpenseFormData, EXPENSE_CATEGORIES } from "@/features/financial/types";
-import { ExpenseCategory } from "@/lib/generated/prisma";
+import { ExpenseCategory } from "@/lib/generated/prisma/enums";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
