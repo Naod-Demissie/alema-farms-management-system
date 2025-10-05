@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -66,17 +64,11 @@ const buttonVariants: Variants = {
 };
 
 export default function Home() {
-  const { data: session, isPending } = useSession();
   const router = useRouter();
 
   const handleGetStarted = () => {
-    if (session?.user) {
-      // If user is authenticated, redirect to home
-      router.push('/home');
-    } else {
-      // If user is not authenticated, redirect to signin
-      router.push('/signin');
-    }
+    // Always redirect to signin - middleware will handle redirecting authenticated users
+    router.push('/signin');
   };
 
   return (
@@ -140,9 +132,8 @@ export default function Home() {
             variant="outline"
             className="h-fit w-fit rounded-full px-10 py-4 text-md font-medium leading-tight"
             onClick={handleGetStarted}
-            disabled={isPending}
           >
-            {isPending ? "Loading..." : "Get Started"}
+            Get Started
           </Button>
         </motion.div>
       </motion.div>

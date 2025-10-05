@@ -3,7 +3,6 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
-import { sessionCache } from './session-cache';
 
 // Dynamic base URL based on environment
 const getBaseURL = () => {
@@ -221,17 +220,7 @@ export async function getServerSession() {
       return null;
     }
     
-    // Check cache first
-    const cachedSession = sessionCache.get(session.session.token);
-    if (cachedSession) {
-      return {
-        user: cachedSession.user,
-        session: cachedSession.session,
-      };
-    }
-
-    // Cache the session data
-    const sessionData = {
+    return {
       user: session.user,
       session: {
         id: session.session.id,
@@ -240,11 +229,6 @@ export async function getServerSession() {
         token: session.session.token,
       },
     };
-
-    // Cache the session
-    sessionCache.set(session.session.token, sessionData);
-
-    return sessionData;
   } catch (error) {
     console.error("Error getting server session:", error);
     return null;

@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import HomeClient from "./home-client";
 import { getInventoryCounts } from "@/server/inventory-alerts";
 
+// Force dynamic rendering to avoid build-time database calls
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);

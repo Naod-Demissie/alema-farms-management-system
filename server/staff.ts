@@ -6,7 +6,6 @@ import { headers } from "next/headers";
 import { getAuthenticatedUser } from "./auth-middleware";
 import { ApiResponse } from "./types";
 import { getServerSession } from "@/lib/auth";
-import { sessionCache } from "@/lib/session-cache";
 
 // ===================
 // Authentication Actions
@@ -43,11 +42,6 @@ export const signOut = async () => {
     try {
         const session = await getServerSession();
         
-        if (session) {
-            // Clear from cache
-            sessionCache.delete(session.session.token);
-        }
-
         await auth.api.signOut({ headers: await headers() });
         
         return {

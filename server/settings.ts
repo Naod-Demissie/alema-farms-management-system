@@ -6,7 +6,6 @@ import { headers as getHeaders } from "next/headers";
 import { ApiResponse } from "./types";
 import bcrypt from "bcryptjs";
 import { getServerSession } from "@/lib/auth";
-import { sessionCache } from "@/lib/session-cache";
 
 // Profile Settings Types
 export interface UpdateProfileData {
@@ -142,11 +141,6 @@ export const updateProfile = async (data: UpdateProfileData): Promise<ApiRespons
         updatedAt: true
       }
     });
-
-    // Invalidate session cache to force refresh
-    if (session.session?.token) {
-      sessionCache.delete(session.session.token);
-    }
 
     return {
       success: true,
