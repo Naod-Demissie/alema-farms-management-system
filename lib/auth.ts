@@ -3,66 +3,9 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
-
-// Dynamic base URL based on environment
-const getBaseURL = () => {
-  // Always use NEXT_PUBLIC_APP_URL if available, regardless of environment
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    console.log('[Auth Server] Using NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-  
-  // Fallback for production
-  if (process.env.NODE_ENV === 'production') {
-    console.log('[Auth Server] Using production fallback URL');
-    return "https://alemafarms.vercel.app";
-  }
-  
-  // For development, allow both localhost and network IP
-  const host = process.env.HOST || 'localhost';
-  const port = process.env.PORT || '3000';
-  
-  if (host === '0.0.0.0' || host === '::') {
-    // When binding to all interfaces, use localhost for auth
-    return `http://localhost:${port}`;
-  }
-  
-  return `http://${host}:${port}`;
-};
-
-const baseURL = getBaseURL();
-console.log('[Auth Server] Base URL:', baseURL);
+import { sessionCache } from './session-cache';
 
 export const auth = betterAuth({
-    // Configure base URL for proper session handling
-    baseURL,
-    
-    // Configure cookie prefix for consistent naming
-    cookiePrefix: "better-auth",
-    
-    // Add CORS configuration for network access
-    cors: {
-        origin: [
-            "http://localhost:3000",
-            "http://192.168.1.8:3000",
-            "http://127.0.0.1:3000",
-            "https://alemafarms.vercel.app"
-        ],
-        credentials: true,
-    },
-    
-    // Configure cookies for network access
-    cookies: {
-        sessionToken: {
-            name: "better-auth.session_token",
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Secure in production
-            sameSite: "lax", // More permissive for mobile browsers
-            maxAge: 60 * 60 * 24 * 7, // 7 days
-            domain: undefined, // Remove domain restriction to fix production issues
-        },
-    },
-    
     // Configure user model to use Staff
     user: {
         modelName: "staff", 
@@ -109,7 +52,6 @@ export const auth = betterAuth({
     // Configure session model
     session: {
         modelName: "sessions",
-        expiresIn: 60 * 60 * 24 * 7, // 1 week in seconds
         fields: {
             userId: "userId", // References Staff.id
             expiresAt: "expiresAt",
@@ -220,7 +162,17 @@ export async function getServerSession() {
       return null;
     }
     
-    return {
+    // Check cache first
+    const cachedSession = sessionCache.get(session.session.token);
+    if (cachedSession) {
+      return {
+        user: cachedSession.user,
+        session: cachedSession.session,
+      };
+    }
+
+    // Cache the session data
+    const sessionData = {
       user: session.user,
       session: {
         id: session.session.id,
@@ -229,6 +181,11 @@ export async function getServerSession() {
         token: session.session.token,
       },
     };
+
+    // Cache the session
+    sessionCache.set(session.session.token, sessionData);
+
+    return sessionData;
   } catch (error) {
     console.error("Error getting server session:", error);
     return null;
