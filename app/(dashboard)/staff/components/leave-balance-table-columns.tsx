@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { DataTableRowActions } from "@/components/table/data-table-row-actions";
 import { User, Calendar, Edit, Trash2 } from "lucide-react";
+import { EthiopianCalendarUtils } from "@/lib/ethiopian-calendar";
 
 // Leave balance type
 export interface LeaveBalance {
@@ -84,7 +85,7 @@ export const createLeaveBalanceTableColumns = ({
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm font-medium">
-            {year}
+            {year} ዓ.ም
           </div>
         </div>
       );

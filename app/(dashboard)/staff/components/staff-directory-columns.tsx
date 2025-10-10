@@ -7,6 +7,7 @@ import { DataTableColumnHeader } from "@/components/table/data-table-column-head
 import { DataTableRowActions } from "@/components/table/data-table-row-actions";
 import { Staff } from "@/features/staff/data/schema";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Mail, Phone } from "lucide-react";
 
 interface StaffDirectoryColumnsProps {
@@ -124,7 +125,7 @@ export const createStaffDirectoryColumns = ({
       const date = row.getValue("createdAt") as string;
       return (
         <div className="text-sm">
-          {format(new Date(date), "MMM dd, yyyy")}
+          {EthiopianDateFormatter.formatForTable(new Date(date))}
         </div>
       );
     },

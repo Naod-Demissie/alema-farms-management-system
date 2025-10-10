@@ -13,6 +13,7 @@ import { CalendarIcon } from "lucide-react";
 import { RevenueFormData, REVENUE_SOURCES, BANK_NAMES } from "@/features/financial/types";
 import { RevenueSource, BankName } from "@/lib/generated/prisma/enums";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
 
 interface RevenueDialogProps {
@@ -128,7 +129,7 @@ export function RevenueDialog({
                       )}
                     >
                       {formData.date ? (
-                        format(formData.date, "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(formData.date)
                       ) : (
                         <span>Select date</span>
                       )}

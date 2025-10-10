@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -112,7 +113,7 @@ export const treatmentColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="font-medium">
-            {format(new Date(treatment.startDate), "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(treatment.startDate))}
           </div>
         </div>
       );
@@ -127,7 +128,7 @@ export const treatmentColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="font-medium">
-            {treatment.endDate ? format(new Date(treatment.endDate), "MMM dd, yyyy") : "Ongoing"}
+            {treatment.endDate ? EthiopianDateFormatter.formatForTable(new Date(treatment.endDate)) : "Ongoing"}
           </div>
         </div>
       );

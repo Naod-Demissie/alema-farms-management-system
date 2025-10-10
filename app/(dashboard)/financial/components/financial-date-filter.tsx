@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { MonthPicker } from "@/components/ui/monthpicker";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, X } from "lucide-react";
-import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
 
 interface FinancialDateFilterProps<TData> {
@@ -67,7 +67,7 @@ export function FinancialDateFilter<TData>({
             disabled={!!selectedDate}
           >
             {selectedMonth ? (
-              format(selectedMonth, "MMM dd, yyyy")
+              EthiopianDateFormatter.formatForForm(selectedMonth)
             ) : (
               <span className="truncate">Filter by month</span>
             )}
@@ -94,7 +94,7 @@ export function FinancialDateFilter<TData>({
             disabled={!!selectedMonth}
           >
             {selectedDate ? (
-              format(selectedDate, "MMM dd, yyyy")
+              EthiopianDateFormatter.formatForForm(selectedDate)
             ) : (
               <span className="truncate">Filter by date</span>
             )}

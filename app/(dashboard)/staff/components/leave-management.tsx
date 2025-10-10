@@ -40,6 +40,8 @@ import {
   CalendarDays
 } from "lucide-react";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
+import { EthiopianCalendarUtils } from "@/lib/ethiopian-calendar";
 import { cn } from "@/lib/utils";
 import { 
   getLeaveRequests, 
@@ -102,15 +104,15 @@ export function LeaveManagement() {
   const [formData, setFormData] = useState({
     staffId: "",
     leaveType: "ANNUAL",
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: EthiopianDateFormatter.getCurrentEthiopianDate().toISOString().split('T')[0],
+    endDate: EthiopianDateFormatter.getCurrentEthiopianDate().toISOString().split('T')[0],
     reason: ""
   });
 
   // Leave balance form state
   const [balanceFormData, setBalanceFormData] = useState({
     staffId: "",
-    year: new Date().getFullYear(),
+    year: EthiopianCalendarUtils.gregorianToEthiopian(new Date()).year,
     totalLeaveDays: 25,
     usedLeaveDays: 0
   });
@@ -345,8 +347,8 @@ export function LeaveManagement() {
         setFormData({
           staffId: "",
           leaveType: "ANNUAL",
-          startDate: new Date().toISOString().split('T')[0],
-          endDate: new Date().toISOString().split('T')[0],
+          startDate: EthiopianDateFormatter.getCurrentEthiopianDate().toISOString().split('T')[0],
+          endDate: EthiopianDateFormatter.getCurrentEthiopianDate().toISOString().split('T')[0],
           reason: ""
         });
         toast.success("Leave request created successfully!", {
@@ -452,7 +454,7 @@ export function LeaveManagement() {
         setIsCreateBalanceDialogOpen(false);
         setBalanceFormData({
           staffId: "",
-          year: new Date().getFullYear(),
+          year: EthiopianCalendarUtils.gregorianToEthiopian(new Date()).year,
           totalLeaveDays: 25,
           usedLeaveDays: 0
         });
@@ -618,7 +620,6 @@ export function LeaveManagement() {
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
-                  mode="single"
                   selected={new Date()}
                   onSelect={(date) => {
                     if (date) {
@@ -629,7 +630,6 @@ export function LeaveManagement() {
                   disabled={(date) =>
                     date > new Date() || date < new Date("1900-01-01")
                   }
-                  initialFocus
                 />
               </PopoverContent>
             </Popover>
@@ -876,7 +876,7 @@ export function LeaveManagement() {
                       )}
                     >
                       {formData.startDate ? (
-                        format(new Date(formData.startDate), "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(new Date(formData.startDate))
                       ) : (
                         <span>Select start date</span>
                       )}
@@ -885,7 +885,6 @@ export function LeaveManagement() {
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
-                      mode="single"
                       selected={formData.startDate ? new Date(formData.startDate) : undefined}
                       onSelect={(date) => {
                         if (date) {
@@ -895,7 +894,6 @@ export function LeaveManagement() {
                       disabled={(date) =>
                         date < new Date("1900-01-01")
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -912,7 +910,7 @@ export function LeaveManagement() {
                       )}
                     >
                       {formData.endDate ? (
-                        format(new Date(formData.endDate), "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(new Date(formData.endDate))
                       ) : (
                         <span>Select end date</span>
                       )}
@@ -921,7 +919,6 @@ export function LeaveManagement() {
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
-                      mode="single"
                       selected={formData.endDate ? new Date(formData.endDate) : undefined}
                       onSelect={(date) => {
                         if (date) {
@@ -930,9 +927,8 @@ export function LeaveManagement() {
                       }}
                       disabled={(date) =>
                         date < new Date("1900-01-01") || 
-                        (formData.startDate && date < new Date(formData.startDate))
+                        (formData.startDate ? date < new Date(formData.startDate) : false)
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -1008,7 +1004,7 @@ export function LeaveManagement() {
                         )}
                       >
                         {formData.startDate ? (
-                          format(new Date(formData.startDate), "MMM dd, yyyy")
+                          EthiopianDateFormatter.formatForTable(new Date(formData.startDate))
                         ) : (
                           <span>Select start date</span>
                         )}
@@ -1017,7 +1013,6 @@ export function LeaveManagement() {
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
-                        mode="single"
                         selected={formData.startDate ? new Date(formData.startDate) : undefined}
                         onSelect={(date) => {
                           if (date) {
@@ -1027,7 +1022,6 @@ export function LeaveManagement() {
                         disabled={(date) =>
                           date < new Date("1900-01-01")
                         }
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>
@@ -1044,7 +1038,7 @@ export function LeaveManagement() {
                         )}
                       >
                         {formData.endDate ? (
-                          format(new Date(formData.endDate), "MMM dd, yyyy")
+                          EthiopianDateFormatter.formatForTable(new Date(formData.endDate))
                         ) : (
                           <span>Select end date</span>
                         )}
@@ -1053,7 +1047,6 @@ export function LeaveManagement() {
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
-                        mode="single"
                         selected={formData.endDate ? new Date(formData.endDate) : undefined}
                         onSelect={(date) => {
                           if (date) {
@@ -1062,9 +1055,8 @@ export function LeaveManagement() {
                         }}
                         disabled={(date) =>
                           date < new Date("1900-01-01") || 
-                          (formData.startDate && date < new Date(formData.startDate))
+                          (formData.startDate ? date < new Date(formData.startDate) : false)
                         }
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>
@@ -1130,7 +1122,7 @@ export function LeaveManagement() {
                   className="w-full"
                   type="number"
                   value={balanceFormData.year}
-                  onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
+                  onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || EthiopianCalendarUtils.gregorianToEthiopian(new Date()).year }))}
                 />
               </div>
             </div>
@@ -1188,7 +1180,7 @@ export function LeaveManagement() {
                     className="w-full"
                     type="number"
                     value={balanceFormData.year}
-                    onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
+                    onChange={(e) => setBalanceFormData(prev => ({ ...prev, year: parseInt(e.target.value) || EthiopianCalendarUtils.gregorianToEthiopian(new Date()).year }))}
                   />
                 </div>
               </div>

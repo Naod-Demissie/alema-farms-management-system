@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Flock } from "./flock-types";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 export const flockColumns: ColumnDef<Flock>[] = [
   {
@@ -33,7 +34,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
     header: "Arrival Date",
     cell: ({ row }) => {
       const date = new Date(row.getValue("arrivalDate"));
-      return <div>{format(date, 'MMM dd, yyyy')}</div>;
+      return <div>{EthiopianDateFormatter.formatForTable(date)}</div>;
     },
   },
   {

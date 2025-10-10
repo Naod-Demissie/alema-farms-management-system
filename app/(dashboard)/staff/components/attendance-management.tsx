@@ -28,6 +28,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Search } from "lucide-react";
 
@@ -303,7 +304,7 @@ const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
     accessorKey: "date",
     header: "Date",
     cell: ({ row }) => {
-      return format(new Date(row.getValue("date")), "MMM dd, yyyy");
+      return EthiopianDateFormatter.formatForTable(new Date(row.getValue("date")));
     },
   },
   {
@@ -943,7 +944,7 @@ export function AttendanceManagement() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "MMM dd, yyyy") : "Pick a date"}
+                      {selectedDate ? EthiopianDateFormatter.formatForTable(selectedDate) : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">

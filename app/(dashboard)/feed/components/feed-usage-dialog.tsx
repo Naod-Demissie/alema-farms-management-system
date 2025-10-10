@@ -21,6 +21,7 @@ import * as z from "zod";
 import { Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
 import { feedTypeLabels, feedTypeColors } from "@/lib/feed-program";
 import { 
@@ -270,7 +271,7 @@ export function FeedUsageDialog({
                             )}
                           >
                             {field.value ? (
-                              format(field.value, "MMM dd, yyyy")
+                              EthiopianDateFormatter.formatForTable(field.value)
                             ) : (
                               <span>Select date</span>
                             )}

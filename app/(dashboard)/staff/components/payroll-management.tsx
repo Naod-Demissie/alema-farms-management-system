@@ -31,6 +31,7 @@ import { MonthPicker } from "@/components/ui/monthpicker";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
 import { getPayroll, createPayroll, updatePayroll, deletePayroll } from "@/server/payroll";
 import { getStaff as getStaffList } from "@/server/staff";
@@ -84,14 +85,14 @@ export function PayrollManagement() {
   });
   
   // Additional state for date pickers
-  const [selectedPayPeriod, setSelectedPayPeriod] = useState<Date | undefined>(new Date());
-  const [selectedPaidDate, setSelectedPaidDate] = useState<Date | undefined>(new Date());
+  const [selectedPayPeriod, setSelectedPayPeriod] = useState<Date | undefined>(EthiopianDateFormatter.getCurrentEthiopianDate());
+  const [selectedPaidDate, setSelectedPaidDate] = useState<Date | undefined>(EthiopianDateFormatter.getCurrentEthiopianDate());
 
   // Helper functions
   const handlePayPeriodSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedPayPeriod(date);
-      setFormData({...formData, period: format(date, "MMM dd, yyyy")});
+      setFormData({...formData, period: EthiopianDateFormatter.formatForTable(date)});
     }
   };
 
@@ -472,7 +473,7 @@ export function PayrollManagement() {
                       )}
                     >
                       {selectedPayPeriod ? (
-                        format(selectedPayPeriod, "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(selectedPayPeriod)
                       ) : (
                         <span>Select pay period</span>
                       )}
@@ -505,7 +506,7 @@ export function PayrollManagement() {
                       )}
                     >
                       {selectedPaidDate ? (
-                        format(selectedPaidDate, "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(selectedPaidDate)
                       ) : (
                         <span>Select paid date</span>
                       )}
@@ -630,7 +631,7 @@ export function PayrollManagement() {
                         )}
                       >
                         {selectedPayPeriod ? (
-                          format(selectedPayPeriod, "MMM dd, yyyy")
+                          EthiopianDateFormatter.formatForTable(selectedPayPeriod)
                         ) : (
                           <span>Select pay period</span>
                         )}
@@ -662,9 +663,9 @@ export function PayrollManagement() {
                           !selectedPaidDate && "text-muted-foreground"
                         )}
                       >
-                        {selectedPaidDate ? (
-                          format(selectedPaidDate, "MMM dd, yyyy")
-                        ) : (
+                          {selectedPaidDate ? (
+                            EthiopianDateFormatter.formatForTable(selectedPaidDate)
+                          ) : (
                           <span>Select paid date</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />

@@ -3,30 +3,34 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { buttonVariants } from "./button";
 import { cn } from "@/lib/utils";
+import { EthiopianCalendarUtils, ETHIOPIAN_MONTHS } from "@/lib/ethiopian-calendar";
 
-type Month = {
+type EthiopianMonth = {
     number: number;
     name: string;
 };
 
-const MONTHS: Month[][] = [
+const ETHIOPIAN_MONTHS_GRID: EthiopianMonth[][] = [
     [
-        { number: 0, name: "Jan" },
-        { number: 1, name: "Feb" },
-        { number: 2, name: "Mar" },
-        { number: 3, name: "Apr" },
+        { number: 1, name: ETHIOPIAN_MONTHS[0] },  // መስከረም
+        { number: 2, name: ETHIOPIAN_MONTHS[1] },  // ጥቅምት
+        { number: 3, name: ETHIOPIAN_MONTHS[2] },  // ሕዳር
+        { number: 4, name: ETHIOPIAN_MONTHS[3] },  // ታኅሣሥ
     ],
     [
-        { number: 4, name: "May" },
-        { number: 5, name: "Jun" },
-        { number: 6, name: "Jul" },
-        { number: 7, name: "Aug" },
+        { number: 5, name: ETHIOPIAN_MONTHS[4] },  // ጥር
+        { number: 6, name: ETHIOPIAN_MONTHS[5] },  // የካቲት
+        { number: 7, name: ETHIOPIAN_MONTHS[6] },  // መጋቢት
+        { number: 8, name: ETHIOPIAN_MONTHS[7] },  // ሚያዝያ
     ],
     [
-        { number: 8, name: "Sep" },
-        { number: 9, name: "Oct" },
-        { number: 10, name: "Nov" },
-        { number: 11, name: "Dec" },
+        { number: 9, name: ETHIOPIAN_MONTHS[8] },  // ግንቦት
+        { number: 10, name: ETHIOPIAN_MONTHS[9] }, // ሰኔ
+        { number: 11, name: ETHIOPIAN_MONTHS[10] }, // ሐምሌ
+        { number: 12, name: ETHIOPIAN_MONTHS[11] }, // ነሐሴ
+    ],
+    [
+        { number: 13, name: ETHIOPIAN_MONTHS[12] }, // ጳጉሜን
     ],
 ];
 
@@ -37,7 +41,7 @@ type MonthCalProps = {
     onYearBackward?: () => void;
     callbacks?: {
         yearLabel?: (year: number) => string;
-        monthLabel?: (month: Month) => string;
+        monthLabel?: (month: EthiopianMonth) => string;
     };
     variant?: {
         calendar?: {
@@ -88,20 +92,28 @@ function MonthPicker({
 }
 
 function MonthCal({ selectedMonth, onMonthSelect, callbacks, variant, minDate, maxDate, disabledDates, onYearBackward, onYearForward }: MonthCalProps) {
-    const [year, setYear] = React.useState<number>(selectedMonth?.getFullYear() ?? new Date().getFullYear());
-    const [month, setMonth] = React.useState<number>(selectedMonth?.getMonth() ?? new Date().getMonth());
+    // Get current Ethiopian date
+    const currentEthiopian = EthiopianCalendarUtils.getCurrentEthiopianDate();
+    
+    // Convert selected month to Ethiopian if provided
+    const selectedEthiopian = selectedMonth ? EthiopianCalendarUtils.gregorianToEthiopian(selectedMonth) : currentEthiopian;
+    
+    const [year, setYear] = React.useState<number>(selectedEthiopian.year);
+    const [month, setMonth] = React.useState<number>(selectedEthiopian.month);
     const [menuYear, setMenuYear] = React.useState<number>(year);
 
     if (minDate && maxDate && minDate > maxDate) minDate = maxDate;
 
     const disabledDatesMapped = disabledDates?.map((d) => {
-        return { year: d.getFullYear(), month: d.getMonth() };
+        return EthiopianCalendarUtils.gregorianToEthiopian(d);
     });
 
     return (
         <>
             <div className="flex justify-center pt-1 relative items-center">
-                <div className="text-sm font-medium">{callbacks?.yearLabel ? callbacks?.yearLabel(menuYear) : menuYear}</div>
+                <div className="text-sm font-medium">
+                    {callbacks?.yearLabel ? callbacks?.yearLabel(menuYear) : `${menuYear} ዓ.ም`}
+                </div>
                 <div className="space-x-1 flex items-center">
                     <button
                         onClick={() => {
@@ -125,10 +137,17 @@ function MonthCal({ selectedMonth, onMonthSelect, callbacks, variant, minDate, m
             </div>
             <table className="w-full border-collapse space-y-1">
                 <tbody>
-                    {MONTHS.map((monthRow, a) => {
+                    {ETHIOPIAN_MONTHS_GRID.map((monthRow, a) => {
                         return (
                             <tr key={"row-" + a} className="flex w-full mt-2">
                                 {monthRow.map((m) => {
+                                    const isDisabled = 
+                                        (maxDate ? menuYear > EthiopianCalendarUtils.gregorianToEthiopian(maxDate).year || 
+                                         (menuYear === EthiopianCalendarUtils.gregorianToEthiopian(maxDate).year && m.number > EthiopianCalendarUtils.gregorianToEthiopian(maxDate).month) : false) ||
+                                        (minDate ? menuYear < EthiopianCalendarUtils.gregorianToEthiopian(minDate).year || 
+                                         (menuYear === EthiopianCalendarUtils.gregorianToEthiopian(minDate).year && m.number < EthiopianCalendarUtils.gregorianToEthiopian(minDate).month) : false) ||
+                                        (disabledDatesMapped ? disabledDatesMapped?.some((d) => d.year === menuYear && d.month === m.number) : false);
+
                                     return (
                                         <td
                                             key={m.number}
@@ -138,15 +157,19 @@ function MonthCal({ selectedMonth, onMonthSelect, callbacks, variant, minDate, m
                                                 onClick={() => {
                                                     setMonth(m.number);
                                                     setYear(menuYear);
-                                                    if (onMonthSelect) onMonthSelect(new Date(menuYear, m.number));
+                                                    if (onMonthSelect) {
+                                                        // Create Ethiopian date and convert to Gregorian
+                                                        const ethiopianDate = EthiopianCalendarUtils.createEthiopianDate(menuYear, m.number, 1);
+                                                        onMonthSelect(ethiopianDate);
+                                                    }
                                                 }}
-                                                disabled={
-                                                    (maxDate ? menuYear > maxDate?.getFullYear() || (menuYear == maxDate?.getFullYear() && m.number > maxDate.getMonth()) : false) ||
-                                                    (minDate ? menuYear < minDate?.getFullYear() || (menuYear == minDate?.getFullYear() && m.number < minDate.getMonth()) : false) ||
-                                                    (disabledDatesMapped ? disabledDatesMapped?.some((d) => d.year == menuYear && d.month == m.number) : false)
-                                                }
+                                                disabled={isDisabled}
                                                 className={cn(
-                                                    buttonVariants({ variant: month == m.number && menuYear == year ? variant?.calendar?.selected ?? "default" : variant?.calendar?.main ?? "ghost" }),
+                                                    buttonVariants({ 
+                                                        variant: month === m.number && menuYear === year ? 
+                                                            variant?.calendar?.selected ?? "default" : 
+                                                            variant?.calendar?.main ?? "ghost" 
+                                                    }),
                                                     "h-full w-full p-0 font-normal aria-selected:opacity-100"
                                                 )}
                                             >

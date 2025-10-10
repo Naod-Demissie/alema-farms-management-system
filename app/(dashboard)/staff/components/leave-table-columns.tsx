@@ -6,6 +6,7 @@ import { DataTableColumnHeader } from "@/components/table/data-table-column-head
 import { DataTableRowActions } from "@/components/table/data-table-row-actions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Calendar, User, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 // Leave request type
@@ -131,7 +132,7 @@ export const createLeaveTableColumns = ({
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {isValidDate ? format(date, "MMM dd, yyyy") : "Invalid date"}
+            {isValidDate ? EthiopianDateFormatter.formatForTable(date) : "Invalid date"}
           </div>
         </div>
       );
@@ -150,7 +151,7 @@ export const createLeaveTableColumns = ({
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {isValidDate ? format(date, "MMM dd, yyyy") : "Invalid date"}
+            {isValidDate ? EthiopianDateFormatter.formatForTable(date) : "Invalid date"}
           </div>
         </div>
       );

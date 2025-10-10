@@ -19,6 +19,7 @@ import { RevenueTable } from "./revenue-table";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { getRevenueSourceBadgeColor } from "@/lib/badge-colors";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { RevenueDialog } from "./revenue-dialog";
 
 interface Revenue {
@@ -333,7 +334,7 @@ export function RevenueManagement() {
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Date</Label>
                   <p className="text-sm font-medium">
-                    {format(new Date(viewingRevenue.date), "MMM dd, yyyy")}
+                    {EthiopianDateFormatter.formatForTable(new Date(viewingRevenue.date))}
                   </p>
                 </div>
                 <div>

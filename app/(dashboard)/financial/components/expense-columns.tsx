@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
@@ -42,7 +43,7 @@ export const getExpenseColumns = (
     accessorKey: "date",
     header: "Date",
     cell: ({ row }) => {
-      return format(new Date(row.getValue("date")), "MMM dd, yyyy");
+      return EthiopianDateFormatter.formatForTable(new Date(row.getValue("date")));
     },
     filterFn: (row, id, value) => {
       if (!value) return true;

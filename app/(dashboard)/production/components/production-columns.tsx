@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 const eggGradeColors = {
   normal: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
@@ -62,7 +62,7 @@ export const eggProductionColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm">
-            {format(new Date(production.date), "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(production.date))}
           </span>
         </div>
       );
@@ -212,7 +212,7 @@ export const broilerProductionColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm">
-            {format(new Date(production.date), "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(production.date))}
           </span>
         </div>
       );
@@ -341,7 +341,7 @@ export const manureProductionColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm">
-            {format(new Date(production.date), "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(production.date))}
           </span>
         </div>
       );

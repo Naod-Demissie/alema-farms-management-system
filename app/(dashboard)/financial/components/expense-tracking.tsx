@@ -20,6 +20,7 @@ import { ExpenseTable } from "./expense-table";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { getExpenseCategoryBadgeColor } from "@/lib/badge-colors";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { ExpenseDialog } from "./expense-dialog";
 
 interface Expense {
@@ -339,7 +340,7 @@ export function ExpenseTracking() {
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Date</Label>
                   <p className="text-sm font-medium">
-                    {format(new Date(viewingExpense.date), "MMM dd, yyyy")}
+                    {EthiopianDateFormatter.formatForTable(new Date(viewingExpense.date))}
                   </p>
                 </div>
                 <div>

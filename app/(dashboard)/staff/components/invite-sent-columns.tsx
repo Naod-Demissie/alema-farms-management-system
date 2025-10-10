@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { InviteTableRowActions } from "@/components/table/invite-table-row-actions";
 import { Invite, computeInviteStatus, getInviteStatusColor, getRoleColor } from "@/features/staff/data/invite-schema";
 import { format } from "date-fns";
@@ -90,7 +91,7 @@ export const createInviteSentColumns = ({
         <div className="flex items-center space-x-1">
           <Calendar className="h-3 w-3" />
           <span className="text-sm">
-            {format(date, "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(date))}
           </span>
         </div>
       );
@@ -109,7 +110,7 @@ export const createInviteSentColumns = ({
         <div className="flex items-center space-x-1">
           <Calendar className={`h-3 w-3 ${isExpired ? "text-red-500" : "text-muted-foreground"}`} />
           <span className={`text-sm ${isExpired ? "text-red-500" : ""}`}>
-            {format(expiresAt, "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(expiresAt))}
           </span>
         </div>
       );

@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -61,7 +62,7 @@ export const vaccinationColumns = (
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div>
             <div className="font-medium">
-              {format(new Date(vaccination.administeredDate), "MMM dd, yyyy")}
+              {EthiopianDateFormatter.formatForTable(new Date(vaccination.administeredDate))}
             </div>
             <div className="text-sm text-muted-foreground">
               by {vaccination.administeredBy}

@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 // Schemas
 export const flockSchema = z.object({
@@ -162,7 +163,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -359,7 +360,7 @@ export function VaccinationForm({ form, flocks, veterinarians }: VaccinationForm
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -647,7 +648,7 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
                         <span>Pick a date</span>
                       )}

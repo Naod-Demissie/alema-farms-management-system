@@ -13,6 +13,7 @@ import { CalendarIcon } from "lucide-react";
 import { ExpenseFormData, EXPENSE_CATEGORIES } from "@/features/financial/types";
 import { ExpenseCategory } from "@/lib/generated/prisma/enums";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
 
 interface ExpenseDialogProps {
@@ -122,7 +123,7 @@ export function ExpenseDialog({
                       )}
                     >
                       {formData.date ? (
-                        format(formData.date, "MMM dd, yyyy")
+                        EthiopianDateFormatter.formatForTable(formData.date)
                       ) : (
                         <span>Select date</span>
                       )}

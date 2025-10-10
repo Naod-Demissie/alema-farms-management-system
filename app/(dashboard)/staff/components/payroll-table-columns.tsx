@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { DataTableRowActions } from "@/components/table/data-table-row-actions";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Calendar, User } from "lucide-react";
 
 // Payroll record type
@@ -102,7 +103,7 @@ export const createPayrollTableColumns = ({
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {format(new Date(date), "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(date))}
           </div>
         </div>
       );
@@ -182,7 +183,7 @@ export const createPayrollTableColumns = ({
       const date = row.getValue("paidOn") as Date;
       return (
         <div className="text-sm">
-          {format(new Date(date), "MMM dd, yyyy")}
+          {EthiopianDateFormatter.formatForTable(new Date(date))}
         </div>
       );
     },
