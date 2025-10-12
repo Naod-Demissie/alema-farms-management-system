@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { updateProfile, getUserProfile } from "@/server/settings";
+import { updateProfile, getUserProfile } from "@/app/(dashboard)/settings/server/settings";
 import { authClient } from "@/lib/auth-client";
 import { refreshUserSession } from "@/lib/session-refresh";
 

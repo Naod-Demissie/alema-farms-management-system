@@ -11,7 +11,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Invite, computeInviteStatus } from "@/features/staff/data/invite-schema";
+import { Invite, computeInviteStatus } from "@/app/(dashboard)/staff/types/invite-schema";
 
 interface InviteTableRowActionsProps {
   row: Row<Invite>;

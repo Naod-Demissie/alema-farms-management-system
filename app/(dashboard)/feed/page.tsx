@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FeedInventory } from "./components/feed-inventory";
-import { FeedUsage } from "./components/feed-usage";
-import { FeedSuppliers } from "./components/feed-suppliers";
-import { FeedProgram } from "./components/feed-program";
-import { FeedPlanning } from "./components/feed-planning";
+import { FeedInventory } from "./components/inventory/feed-inventory";
+import { FeedUsage } from "./components/usage/feed-usage";
+import { FeedSuppliers } from "./components/suppliers/feed-suppliers";
+import { FeedProgram } from "./components/program/feed-program";
+import { FeedPlanning } from "./components/planning/feed-planning";
 import { PageBanner } from "@/components/ui/page-banner";
 
 export default function FeedManagementPage() {

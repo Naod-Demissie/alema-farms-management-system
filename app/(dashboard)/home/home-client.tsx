@@ -34,19 +34,19 @@ import {
   UserCheck
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuickActionDialog } from "@/components/home/quick-action-dialog";
+import { QuickActionDialog } from "@/app/(dashboard)/home/components/quick-action-dialog";
 import { ReusableDialog } from "@/components/ui/reusable-dialog";
 import { FlockForm, flockSchema } from "@/components/forms/dialog-forms";
-import { FeedUsageDialog } from "@/app/(dashboard)/feed/components/feed-usage-dialog";
+import { FeedUsageDialog } from "@/app/(dashboard)/feed/components/usage/feed-usage-dialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useState as useStateReact } from "react";
 import { toast } from "sonner";
-import { InventoryCounts } from "@/server/inventory-alerts";
-import { getStaff } from "@/server/staff";
-import { checkIn, checkOut, getAttendance, isStaffOnLeave } from "@/server/attendance";
-import { getKPIData } from "@/server/kpi-data";
-import { createFeedUsageAction } from "@/app/actions/feed-usage";
+import { InventoryCounts } from "@/app/(dashboard)/feed/server/inventory-alerts";
+import { getStaff } from "@/app/(dashboard)/staff/server/staff";
+import { checkIn, checkOut, getAttendance, isStaffOnLeave } from "@/app/(dashboard)/staff/server/attendance";
+import { getKPIData } from "@/app/(dashboard)/reports/server/kpi-data";
+import { createFeedUsageAction } from "@/app/(dashboard)/feed/server/feed-usage";
 import { PageBanner } from "@/components/ui/page-banner";
 
 type DashboardSummary = {

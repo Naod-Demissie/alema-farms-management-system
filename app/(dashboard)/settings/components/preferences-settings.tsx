@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import { updateUserPreferences, getUserPreferences } from "@/server/settings";
+import { updateUserPreferences, getUserPreferences } from "@/app/(dashboard)/settings/server/settings";
 
 interface PreferencesSettingsProps {}
 

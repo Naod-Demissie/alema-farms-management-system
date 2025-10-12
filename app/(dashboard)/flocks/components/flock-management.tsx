@@ -60,7 +60,7 @@ import {
   deleteFlock, 
   generateBatchCode,
   Flock,
-} from "@/server/flocks";
+} from "@/app/(dashboard)/flocks/server/flocks";
 import { FlockFormData } from "./flock-types";
 import { format } from "date-fns";
 import { FlockTable } from "./flock-table";

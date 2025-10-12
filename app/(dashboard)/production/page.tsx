@@ -9,9 +9,9 @@ import {
   eggProductionColumns, 
   broilerProductionColumns, 
   manureProductionColumns 
-} from "./components/production-columns";
-import { ProductionTableToolbar } from "./components/production-table-toolbar";
-import { ProductionTable } from "./components/production-table";
+} from "./components/table/production-columns";
+import { ProductionTableToolbar } from "./components/table/production-table-toolbar";
+import { ProductionTable } from "./components/table/production-table";
 import { 
   getEggProduction, 
   getBroilerProduction, 
@@ -22,12 +22,12 @@ import {
   updateEggProduction,
   updateBroilerProduction,
   updateManureProduction
-} from "@/server/production";
-import { getFlocks } from "@/server/flocks";
+} from "@/app/(dashboard)/production/server/production";
+import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { ProductionDialog } from "@/components/dialogs/production-dialog";
+import { ProductionDialog } from "@/app/(dashboard)/production/components/dialogs/production-dialog";
 import { format } from "date-fns";
 import { PageBanner } from "@/components/ui/page-banner";
 

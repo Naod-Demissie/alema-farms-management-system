@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { FlockManagementMerged } from "./components/flock-management";
-import { getFlocks } from "@/server/flocks";
+import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 import { Flock } from "./components/flock-types";
 import { PageBanner } from "@/components/ui/page-banner";
 

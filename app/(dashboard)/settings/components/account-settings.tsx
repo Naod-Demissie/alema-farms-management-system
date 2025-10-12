@@ -22,7 +22,7 @@ import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import {
   changePassword,
-} from "@/server/settings";
+} from "@/app/(dashboard)/settings/server/settings";
 import { authClient } from "@/lib/auth-client";
 
 interface AccountSettingsProps {}

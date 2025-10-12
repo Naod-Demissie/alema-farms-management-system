@@ -25,12 +25,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { PieChart, Pie, Cell, Label } from "recharts";
-import { ProductionFilters } from "../../production/components/production-types";
+import { ProductionFilters } from "../../production/components/shared/production-types";
 import {
   getProductionSummary,
   getDailyProductionData,
   DailyProductionData,
-} from "@/server/production";
+} from "@/app/(dashboard)/production/server/production";
 import { toast } from "sonner";
 
 interface ProductionAnalyticsProps {

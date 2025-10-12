@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { StaffDirectory } from "./components/staff-directory";
-import { AttendanceManagement } from "./components/attendance-management";
-import { PayrollManagement } from "./components/payroll-management";
-import { LeaveManagement } from "./components/leave-management";
-import { StaffInvitations } from "./components/staff-invitations";
-import StaffProvider from "@/features/staff/context/staff-context";
+import { StaffDirectory } from "./components/directory/staff-directory";
+import { AttendanceManagement } from "./components/attendance/attendance-management";
+import { PayrollManagement } from "./components/payroll/payroll-management";
+import { LeaveManagement } from "./components/leave/leave-management";
+import { StaffInvitations } from "./components/invitations/staff-invitations";
+import StaffProvider from "./context/staff-context";
 import { PageBanner } from "@/components/ui/page-banner";
 
 export default function StaffManagementPage() {

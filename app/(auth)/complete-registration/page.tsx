@@ -25,7 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { validateInvite, completeStaffRegistration } from "@/server/staff";
+import { validateInvite, completeStaffRegistration } from "@/app/(dashboard)/staff/server/staff";
 import { toast } from "sonner";
 import { Upload, User, Mail, Phone, Lock, Eye, EyeOff, X } from "lucide-react";
 

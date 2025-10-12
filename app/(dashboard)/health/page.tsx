@@ -22,9 +22,9 @@ import {
 } from "lucide-react";
 
 // Import components (we'll create these)
-import { VaccinationRecords } from "./components/vaccination-records";
-import { DiseaseTreatment } from "./components/disease-treatment";
-import { MortalityManagement } from "./components/mortality-management";
+import { VaccinationRecords } from "./components/vaccination/vaccination-records";
+import { DiseaseTreatment } from "./components/treatment/disease-treatment";
+import { MortalityManagement } from "./components/mortality/mortality-management";
 import { PageBanner } from "@/components/ui/page-banner";
 
 export default function HealthManagementPage() {

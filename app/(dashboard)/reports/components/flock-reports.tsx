@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { Area, AreaChart, Pie, PieChart, XAxis, YAxis, CartesianGrid, Label } from "recharts";
-import { getFlocks } from "@/server/flocks";
+import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 import { Flock } from "../../flocks/components/flock-types";
 
 interface FlockData {

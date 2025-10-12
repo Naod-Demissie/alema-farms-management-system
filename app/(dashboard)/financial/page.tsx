@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ExpenseTracking } from "./components/expense-tracking";
-import { RevenueManagement } from "./components/revenue-management";
+import { ExpenseTracking } from "./components/expenses/expense-tracking";
+import { RevenueManagement } from "./components/revenue/revenue-management";
 import { PageBanner } from "@/components/ui/page-banner";
 
 export default function FinancialManagementPage() {

@@ -33,7 +33,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { getStaffById, updateStaff } from "@/server/staff";
+import { getStaffById, updateStaff } from "@/app/(dashboard)/staff/server/staff";
 import { toast } from "sonner";
 import { format } from "date-fns";
 

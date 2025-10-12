@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Download,
   FileText,
   Activity,
   DollarSign,
@@ -21,7 +20,6 @@ import {
   Package,
   RefreshCw,
 } from "lucide-react";
-import { exportData } from "@/lib/export-utils";
 
 // Import report components
 import { FinancialReports } from "./components/financial-reports";
@@ -41,7 +39,6 @@ interface ReportFilters {
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("financial");
-  const [isExporting, setIsExporting] = useState(false);
 
   // Default filters - no longer editable since filter card is removed
   const filters = {
@@ -61,31 +58,6 @@ export default function ReportsPage() {
     },
     flockId: filters.flockId,
     reportType: filters.reportType,
-  };
-
-  const handleExport = async (format: "csv" | "pdf") => {
-    setIsExporting(true);
-    try {
-      // Mock data for export - in a real app, this would come from the current tab's data
-      const mockData = [
-        { date: "2024-01-01", value: 100, category: "Sample" },
-        { date: "2024-01-02", value: 150, category: "Sample" },
-        { date: "2024-01-03", value: 200, category: "Sample" },
-      ];
-
-      exportData({
-        format,
-        filename: `${activeTab}-report-${
-          new Date().toISOString().split("T")[0]
-        }`,
-        data: mockData,
-        columns: ["date", "value", "category"],
-      });
-    } catch (error) {
-      console.error("Export failed:", error);
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   const reportTabs = [

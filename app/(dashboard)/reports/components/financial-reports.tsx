@@ -30,7 +30,7 @@ import {
   MonthlyFinancialData,
   ExpenseSummary,
   RevenueSummary,
-} from "@/features/financial/types";
+} from "@/app/(dashboard)/financial/types/types";
 import {
   getFlockFinancialSummaries,
   getMonthlyFinancialData,
@@ -38,7 +38,7 @@ import {
   getExpenseSummary,
   getRevenueSummary,
   getFinancialSummary,
-} from "@/server/financial";
+} from "@/app/(dashboard)/financial/server/financial";
 import { toast } from "sonner";
 import {
   ChartContainer,
@@ -228,37 +228,6 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
     };
     fetchAreaChartData();
   }, [areaChartTimeFilter]);
-
-  // Export handler
-  const handleExport = async (format: "csv" | "pdf") => {
-    try {
-      const queryParams = new URLSearchParams();
-      if (dateRange.startDate)
-        queryParams.append("startDate", dateRange.startDate.toISOString());
-      if (dateRange.endDate)
-        queryParams.append("endDate", dateRange.endDate.toISOString());
-      queryParams.append("format", format);
-
-      const response = await fetch(
-        `/api/financial/reports/export?${queryParams}`
-      );
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `financial-report-${
-          new Date().toISOString().split("T")[0]
-        }.${format}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-    } catch (error) {
-      console.error("Error exporting report:", error);
-    }
-  };
 
   // Summary numbers
   const totalExpenses = financialSummary?.totalExpenses || 0;
