@@ -690,6 +690,10 @@
     "inventory": {
       "title": "የመኖ እቃ",
       "description": "የመኖ እቃን ያስተዳድሩ እና የእቃ ደረጃዎችን ይከታተሉ",
+      "tabs": {
+        "inventory": "የመኖ እቃ",
+        "suppliers": "የመኖ አቅራቢዎች"
+      },
       "addInventory": "እቃ መዝግብ",
       "editInventory": "እቃ አርትዕ",
       "deleteInventory": "እቃ ሰርዝ",
@@ -885,6 +889,11 @@
     },
     "planning": {
       "title": "የመኖ እቅድ",
+      "description": "የመኖ መስፈርቶችን ያቅዱ እና የመመገቢያ መርሃግብሮችን ያስተዳድሩ",
+      "tabs": {
+        "planning": "የመኖ እቅድ",
+        "program": "የመኖ መርሃግብር"
+      },
       "createPlan": "እቅድ ፍጠር",
       "noPlan": "ምንም የመኖ እቅዶች አልተገኙም",
       "cards": {

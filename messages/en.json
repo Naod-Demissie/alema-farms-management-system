@@ -693,6 +693,10 @@
     "inventory": {
       "title": "Feed Inventory",
       "description": "Manage feed inventory and track stock levels",
+      "tabs": {
+        "inventory": "Feed Inventory",
+        "suppliers": "Feed Suppliers"
+      },
       "addInventory": "Add Inventory",
       "editInventory": "Edit Inventory",
       "deleteInventory": "Delete Inventory",
@@ -888,6 +892,11 @@
     },
     "planning": {
       "title": "Feed Planning",
+      "description": "Plan feed requirements and manage feeding schedules",
+      "tabs": {
+        "planning": "Feed Planning",
+        "program": "Feed Program"
+      },
       "createPlan": "Create Plan",
       "noPlan": "No feed plans found",
       "cards": {
