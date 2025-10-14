@@ -25,15 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const feedTypeLabels = {
-  LAYER_STARTER: "Layer Starter",
-  REARING: "Rearing",
-  PULLET_FEED: "Pullet Feed",
-  LAYER: "Layer",
-  LAYER_PHASE_1: "Layer Phase 1",
-  CUSTOM: "Custom"
-};
-
 const feedTypeColors = {
   LAYER_STARTER: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   REARING: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
@@ -46,17 +37,19 @@ const feedTypeColors = {
 export const usageColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
-  onDelete: (record: any) => void
+  onDelete: (record: any) => void,
+  t: any,
+  tCommon: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flock",
-    header: "Flock ID",
+    header: t('columns.flockId'),
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Bird className="h-4 w-4 text-muted-foreground" />
-          <div className="font-medium">{record.flock?.batchCode || "Unknown"}</div>
+          <div className="font-medium">{record.flock?.batchCode || tCommon('unknown')}</div>
         </div>
       );
     },
@@ -64,14 +57,15 @@ export const usageColumns = (
   {
     accessorKey: "feed.feedType",
     id: "feed",
-    header: "Feed Type",
+    header: t('columns.feedType'),
     cell: ({ row }) => {
       const record = row.original;
+      const feedType = record.feed?.feedType;
       return (
         <div className="flex items-center space-x-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="outline" className={feedTypeColors[record.feed?.feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
-            {feedTypeLabels[record.feed?.feedType as keyof typeof feedTypeLabels] || record.feed?.feedType || "Unknown"}
+          <Badge variant="outline" className={feedTypeColors[feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
+            {feedType ? t(`feedTypes.${feedType}`, { defaultValue: feedType }) : tCommon('unknown')}
           </Badge>
         </div>
       );
@@ -79,7 +73,7 @@ export const usageColumns = (
   },
   {
     accessorKey: "date",
-    header: "Date",
+    header: t('columns.date'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -94,7 +88,7 @@ export const usageColumns = (
   },
   {
     accessorKey: "amountUsed",
-    header: "Amount Used",
+    header: t('columns.amountUsed'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -107,7 +101,7 @@ export const usageColumns = (
   {
     accessorKey: "unit",
     id: "unit",
-    header: "Unit",
+    header: t('columns.unit'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -121,7 +115,7 @@ export const usageColumns = (
   },
   {
     accessorKey: "recordedBy",
-    header: "Recorded By",
+    header: t('columns.recordedBy'),
     cell: ({ row }) => {
       const record = row.original;
       return record.recordedBy ? (
@@ -141,19 +135,19 @@ export const usageColumns = (
           </div>
         </div>
       ) : (
-        <span className="text-muted-foreground text-sm">Unknown</span>
+        <span className="text-muted-foreground text-sm">{tCommon('unknown')}</span>
       );
     },
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t('columns.notes'),
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="text-sm">
           <div className="truncate max-w-48" title={record.notes}>
-            {record.notes || "N/A"}
+            {record.notes || tCommon('na')}
           </div>
         </div>
       );
@@ -161,7 +155,7 @@ export const usageColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('columns.actions'),
     cell: ({ row }) => {
       const record = row.original;
       
@@ -174,22 +168,22 @@ export const usageColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onView(record)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
+              {tCommon('viewDetails')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(record)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Record
+              {tCommon('editRecord')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onDelete(record)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Record
+              {tCommon('deleteRecord')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

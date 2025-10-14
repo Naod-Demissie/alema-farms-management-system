@@ -30,11 +30,13 @@ export const supplierColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
   onDelete: (record: any) => void,
-  getStatusBadge: (isActive: boolean) => React.ReactNode
+  getStatusBadge: (isActive: boolean) => React.ReactNode,
+  t: any,
+  tCommon: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "name",
-    header: "Supplier Name",
+    header: t('columns.supplierName'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -47,20 +49,20 @@ export const supplierColumns = (
   },
   {
     accessorKey: "contactName",
-    header: "Contact Person",
+    header: t('columns.contactPerson'),
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="flex items-center space-x-2">
           <User className="h-4 w-4 text-muted-foreground" />
-          <span>{record.contactName || "N/A"}</span>
+          <span>{record.contactName || tCommon('na')}</span>
         </div>
       );
     },
   },
   {
     accessorKey: "phone",
-    header: "Phone",
+    header: t('columns.phone'),
     cell: ({ row }) => {
       const record = row.original;
       return record.phone ? (
@@ -74,13 +76,13 @@ export const supplierColumns = (
           </a>
         </div>
       ) : (
-        <span className="text-muted-foreground">N/A</span>
+        <span className="text-muted-foreground">{tCommon('na')}</span>
       );
     },
   },
   {
     accessorKey: "address",
-    header: "Address",
+    header: t('columns.address'),
     cell: ({ row }) => {
       const record = row.original;
       return record.address ? (
@@ -91,13 +93,13 @@ export const supplierColumns = (
           </span>
         </div>
       ) : (
-        <span className="text-muted-foreground">N/A</span>
+        <span className="text-muted-foreground">{tCommon('na')}</span>
       );
     },
   },
   {
     accessorKey: "createdAt",
-    header: "Created",
+    header: t('columns.created'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -112,13 +114,13 @@ export const supplierColumns = (
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t('columns.notes'),
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="text-sm">
           <div className="truncate max-w-48" title={record.notes}>
-            {record.notes || "N/A"}
+            {record.notes || tCommon('na')}
           </div>
         </div>
       );
@@ -126,7 +128,7 @@ export const supplierColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('columns.actions'),
     cell: ({ row }) => {
       const record = row.original;
       
@@ -139,22 +141,22 @@ export const supplierColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onView(record)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
+              {tCommon('viewDetails')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(record)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Supplier
+              {tCommon('editRecord')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onDelete(record)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Supplier
+              {tCommon('deleteRecord')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

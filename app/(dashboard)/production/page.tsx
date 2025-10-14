@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ interface Flock {
 
 export default function ProductionManagementPage() {
   const [activeTab, setActiveTab] = useState("eggs");
+  const t = useTranslations('production');
   const [flocks, setFlocks] = useState<Flock[]>([]);
   const [loading, setLoading] = useState(true);
   const [flocksLoading, setFlocksLoading] = useState(true);
@@ -73,19 +75,19 @@ export default function ProductionManagementPage() {
           })));
         } else {
           console.error("Failed to fetch flocks:", result.message);
-          toast.error("Failed to fetch flocks");
+          toast.error(t('toast.fetchFlocksFailed'));
           setFlocks([]);
         }
       } catch (error) {
         console.error("Error fetching flocks:", error);
-        toast.error("Error fetching flocks");
+        toast.error(t('toast.fetchFlocksError'));
         setFlocks([]);
       } finally {
         setFlocksLoading(false);
       }
     };
     fetchFlocks();
-  }, []);
+  }, [t]);
 
   // Fetch production data
   const fetchData = async () => {
@@ -109,12 +111,12 @@ export default function ProductionManagementPage() {
       if (result.success) {
         setData(result.data || []);
       } else {
-        toast.error("Failed to fetch production data");
+        toast.error(t('toast.fetchFailed'));
         setData([]);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to fetch production data");
+      toast.error(t('toast.fetchFailed'));
       setData([]);
     } finally {
       setLoading(false);
@@ -164,16 +166,16 @@ export default function ProductionManagementPage() {
       }
 
       if (result.success) {
-        toast.success("Record deleted successfully");
+        toast.success(t('toast.deleteSuccess'));
         // Refresh data after successful deletion
         fetchData();
         setConfirmDialog({ open: false, type: null, record: null });
       } else {
-        toast.error(result.message || "Failed to delete record");
+        toast.error(result.message || t('toast.deleteFailed'));
       }
     } catch (error) {
       console.error("Error deleting record:", error);
-      toast.error("Failed to delete record");
+      toast.error(t('toast.deleteFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -190,13 +192,13 @@ export default function ProductionManagementPage() {
   const getColumns = () => {
     switch (activeTab) {
       case "eggs":
-        return eggProductionColumns(handleView, handleEdit, handleDeleteClick);
+        return eggProductionColumns(handleView, handleEdit, handleDeleteClick, t);
       case "broiler":
-        return broilerProductionColumns(handleView, handleEdit, handleDeleteClick);
+        return broilerProductionColumns(handleView, handleEdit, handleDeleteClick, t);
       case "manure":
-        return manureProductionColumns(handleView, handleEdit, handleDeleteClick);
+        return manureProductionColumns(handleView, handleEdit, handleDeleteClick, t);
       default:
-        return eggProductionColumns(handleView, handleEdit, handleDeleteClick);
+        return eggProductionColumns(handleView, handleEdit, handleDeleteClick, t);
     }
   };
 
@@ -216,13 +218,13 @@ export default function ProductionManagementPage() {
   const getTabTitle = () => {
     switch (activeTab) {
       case "eggs":
-        return "Egg Production";
+        return t('tabs.eggs');
       case "broiler":
-        return "Broiler Production";
+        return t('tabs.broiler');
       case "manure":
-        return "Manure Production";
+        return t('tabs.manure');
       default:
-        return "Egg Production";
+        return t('tabs.eggs');
     }
   };
 
@@ -230,8 +232,8 @@ export default function ProductionManagementPage() {
     <div className="space-y-6">
       {/* Banner Header */}
       <PageBanner
-        title="Production Management"
-        description="Track and manage egg production, broiler production, and manure production for your poultry operation"
+        title={t('title')}
+        description={t('description')}
         imageSrc="/banner-bg-image.webp"
       />
 
@@ -242,21 +244,21 @@ export default function ProductionManagementPage() {
             className="flex items-center gap-2"
           >
             <Egg className="h-4 w-4" />
-            Egg Production
+            {t('tabs.eggs')}
           </TabsTrigger>
           <TabsTrigger 
             value="broiler" 
             className="flex items-center gap-2"
           >
             <Bird className="h-4 w-4" />
-            Broiler Production
+            {t('tabs.broiler')}
           </TabsTrigger>
           <TabsTrigger 
             value="manure" 
             className="flex items-center gap-2"
           >
             <Droplets className="h-4 w-4" />
-            Manure Production
+            {t('tabs.manure')}
           </TabsTrigger>
         </TabsList>
 
@@ -265,7 +267,7 @@ export default function ProductionManagementPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Today's Production</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('cards.todayProduction')}</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -295,9 +297,9 @@ export default function ProductionManagementPage() {
                       })()}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {activeTab === "eggs" ? "Eggs collected today" : 
-                       activeTab === "broiler" ? "Birds available today" : 
-                       "bags produced today"}
+                      {activeTab === "eggs" ? t('cards.eggsCollectedToday') : 
+                       activeTab === "broiler" ? t('cards.birdsAvailableToday') : 
+                       t('cards.bagsProducedToday')}
                     </p>
                   </>
                 )}
@@ -306,7 +308,7 @@ export default function ProductionManagementPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Week's Production</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('cards.weekProduction')}</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -335,9 +337,9 @@ export default function ProductionManagementPage() {
                       })()}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {activeTab === "eggs" ? "Eggs collected this week" : 
-                       activeTab === "broiler" ? "Birds available this week" : 
-                       "bags produced this week"}
+                      {activeTab === "eggs" ? t('cards.eggsCollectedWeek') : 
+                       activeTab === "broiler" ? t('cards.birdsAvailableWeek') : 
+                       t('cards.bagsProducedWeek')}
                     </p>
                   </>
                 )}
@@ -346,7 +348,7 @@ export default function ProductionManagementPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Month's Production</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('cards.monthProduction')}</CardTitle>
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -375,9 +377,9 @@ export default function ProductionManagementPage() {
                       })()}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {activeTab === "eggs" ? "Eggs collected this month" : 
-                       activeTab === "broiler" ? "Birds available this month" : 
-                       "bags produced this month"}
+                      {activeTab === "eggs" ? t('cards.eggsCollectedMonth') : 
+                       activeTab === "broiler" ? t('cards.birdsAvailableMonth') : 
+                       t('cards.bagsProducedMonth')}
                     </p>
                   </>
                 )}
@@ -387,7 +389,7 @@ export default function ProductionManagementPage() {
             {activeTab === "eggs" && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Quality Rate</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('cards.qualityRate')}</CardTitle>
                   <Egg className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -408,7 +410,7 @@ export default function ProductionManagementPage() {
                         })()}%
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Normal quality eggs
+                        {t('cards.normalQualityEggs')}
                       </p>
                     </>
                   )}
@@ -420,7 +422,7 @@ export default function ProductionManagementPage() {
             {activeTab === "manure" && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Daily</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('cards.avgDaily')}</CardTitle>
                   <Droplets className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -435,10 +437,10 @@ export default function ProductionManagementPage() {
                           const totalManure = data.reduce((sum, record) => sum + (record.quantity || 0), 0);
                           const days = data.length || 1;
                           return (totalManure / days).toFixed(1);
-                        })()} bags
+                        })()} {t('cards.bags')}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Average daily production
+                        {t('cards.avgDailyProduction')}
                       </p>
                     </>
                   )}
@@ -456,12 +458,12 @@ export default function ProductionManagementPage() {
                     {getTabTitle()}
                   </CardTitle>
                   <CardDescription>
-                    Manage and track {activeTab} records
+                    {t('table.manageAndTrack', { type: activeTab })}
                   </CardDescription>
                 </div>
                 <Button onClick={() => setIsFormOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Record
+                  {t('buttons.addRecord')}
                 </Button>
               </div>
             </CardHeader>
@@ -470,7 +472,7 @@ export default function ProductionManagementPage() {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('loading.data')}</p>
                   </div>
                 </div>
               ) : (
@@ -527,22 +529,22 @@ export default function ProductionManagementPage() {
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Production Record Details</DialogTitle>
+            <DialogTitle>{t('dialogs.viewTitle')}</DialogTitle>
             <DialogDescription>
-              View detailed information about this {activeTab} record
+              {t('dialogs.viewDescription', { type: activeTab })}
             </DialogDescription>
           </DialogHeader>
           {selectedRecord && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Flock</label>
+                  <label className="text-sm font-medium">{t('fields.flock')}</label>
                   <p className="text-sm text-muted-foreground">
                     {selectedRecord.flock?.batchCode || selectedRecord.flockId}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Date</label>
+                  <label className="text-sm font-medium">{t('fields.date')}</label>
                   <p className="text-sm text-muted-foreground">
                     {format(new Date(selectedRecord.date), "MMM dd, yyyy")}
                   </p>
@@ -550,36 +552,36 @@ export default function ProductionManagementPage() {
                 {activeTab === "eggs" ? (
                   <>
                     <div>
-                      <label className="text-sm font-medium">Total Count</label>
-                      <p className="text-sm text-muted-foreground">{selectedRecord.totalCount} eggs</p>
+                      <label className="text-sm font-medium">{t('fields.totalCount')}</label>
+                      <p className="text-sm text-muted-foreground">{selectedRecord.totalCount} {t('fields.eggs')}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Grade Breakdown</label>
+                      <label className="text-sm font-medium">{t('fields.gradeBreakdown')}</label>
                       <div className="flex gap-2 text-sm">
                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                          Normal: {selectedRecord.gradeCounts?.normal || 0}
+                          {t('grades.normal')}: {selectedRecord.gradeCounts?.normal || 0}
                         </span>
                         <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">
-                          Cracked: {selectedRecord.gradeCounts?.cracked || 0}
+                          {t('grades.cracked')}: {selectedRecord.gradeCounts?.cracked || 0}
                         </span>
                         <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
-                          Spoiled: {selectedRecord.gradeCounts?.spoiled || 0}
+                          {t('grades.spoiled')}: {selectedRecord.gradeCounts?.spoiled || 0}
                         </span>
                       </div>
                     </div>
                   </>
                 ) : (
                   <div>
-                    <label className="text-sm font-medium">Quantity</label>
+                    <label className="text-sm font-medium">{t('fields.quantity')}</label>
                     <p className="text-sm text-muted-foreground">
-                      {selectedRecord.quantity} {activeTab === "broiler" ? "birds" : activeTab === "manure" ? "bags" : "units"}
+                      {selectedRecord.quantity} {activeTab === "broiler" ? t('fields.birds') : activeTab === "manure" ? t('fields.bags') : t('fields.units')}
                     </p>
                   </div>
                 )}
               </div>
               {selectedRecord.notes && (
                 <div>
-                  <label className="text-sm font-medium">Notes</label>
+                  <label className="text-sm font-medium">{t('fields.notes')}</label>
                   <p className="text-sm text-muted-foreground">{selectedRecord.notes}</p>
                 </div>
               )}
@@ -592,10 +594,10 @@ export default function ProductionManagementPage() {
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title="Delete Record"
-        desc="Are you sure you want to delete this record? This action cannot be undone."
-        confirmText="Delete"
-        cancelBtnText="Cancel"
+        title={t('dialogs.deleteTitle')}
+        desc={t('dialogs.deleteDescription')}
+        confirmText={t('dialogs.deleteButton')}
+        cancelBtnText={t('dialogs.cancelButton')}
         destructive={confirmDialog.type === 'delete'}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.record?.id}

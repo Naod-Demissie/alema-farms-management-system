@@ -48,6 +48,7 @@ import { checkIn, checkOut, getAttendance, isStaffOnLeave } from "@/app/(dashboa
 import { getKPIData } from "@/app/(dashboard)/reports/server/kpi-data";
 import { createFeedUsageAction } from "@/app/(dashboard)/feed/server/feed-usage";
 import { PageBanner } from "@/components/ui/page-banner";
+import { useTranslations } from 'next-intl';
 
 type DashboardSummary = {
   eggsToday: number;
@@ -77,6 +78,8 @@ interface AttendanceRecord {
 
 export default function HomeClient({ summary, inventoryCounts }: { summary: DashboardSummary; inventoryCounts: InventoryCounts }) {
   const router = useRouter();
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
   const [isFlockDialogOpen, setIsFlockDialogOpen] = useState(false);
@@ -208,19 +211,15 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
   // Time period options for each card type
   const getTimePeriodOptions = (cardType: 'production' | 'expenses' | 'revenue') => {
-    const baseLabels = {
-      production: 'Production',
-      expenses: 'Expenses', 
-      revenue: 'Revenue'
-    };
+    const keyPrefix = cardType === 'production' ? 'Production' : cardType === 'expenses' ? 'Expenses' : 'Revenue';
     
     return [
-      { value: "today", label: `Today's ${baseLabels[cardType]}` },
-      { value: "week", label: `This Week's ${baseLabels[cardType]}` },
-      { value: "month", label: `This Month's ${baseLabels[cardType]}` },
-      { value: "3months", label: `3 Months' ${baseLabels[cardType]}` },
-      { value: "6months", label: `6 Months' ${baseLabels[cardType]}` },
-      { value: "year", label: `This Year's ${baseLabels[cardType]}` }
+      { value: "today", label: t(`timePeriods.today${keyPrefix}`) },
+      { value: "week", label: t(`timePeriods.week${keyPrefix}`) },
+      { value: "month", label: t(`timePeriods.month${keyPrefix}`) },
+      { value: "3months", label: t(`timePeriods.3months${keyPrefix}`) },
+      { value: "6months", label: t(`timePeriods.6months${keyPrefix}`) },
+      { value: "year", label: t(`timePeriods.year${keyPrefix}`) }
     ];
   };
 
@@ -238,7 +237,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
   const kpiStats = [
     { 
-      title: "Egg Production", 
+      title: t('kpiStats.eggProduction'), 
       value: dynamicData.production.toLocaleString(), 
       icon: Egg, 
       color: "bg-yellow-500",
@@ -253,8 +252,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       cardType: 'production' as const
     },
     { 
-      title: "Expenses", 
-      value: `ETB ${dynamicData.expenses.toLocaleString()}`, 
+      title: t('kpiStats.expenses'), 
+      value: `${tCommon('currency')} ${dynamicData.expenses.toLocaleString()}`, 
       icon: Minus, 
       color: "bg-rose-500",
       hasDropdown: true,
@@ -268,8 +267,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       cardType: 'expenses' as const
     },
     { 
-      title: "Revenue", 
-      value: `ETB ${dynamicData.revenue.toLocaleString()}`, 
+      title: t('kpiStats.revenue'), 
+      value: `${tCommon('currency')} ${dynamicData.revenue.toLocaleString()}`, 
       icon: DollarSign, 
       color: "bg-purple-500",
       hasDropdown: true,
@@ -282,7 +281,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       },
       cardType: 'revenue' as const
     },
-    { title: "Feed Left in Stock", value: `${(summary.feedLeft || 0).toLocaleString()} kg`, icon: Zap, color: "bg-green-500" },
+    { title: t('kpiStats.feedLeftInStock'), value: `${(summary.feedLeft || 0).toLocaleString()} ${t('kpiStats.kg')}`, icon: Zap, color: "bg-green-500" },
   ];
 
   const handleQuickAction = (action: any) => {
@@ -307,16 +306,16 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     try {
       const result = await createFeedUsageAction(data);
       if (result.success) {
-        toast.success("Feed usage recorded successfully!");
+        toast.success(t('dialogs.feedUsageRecorded'));
         setIsFeedUsageDialogOpen(false);
       } else {
-        toast.error("Failed to record feed usage", {
+        toast.error(t('dialogs.feedUsageFailed'), {
           description: result.error || "An unexpected error occurred",
         });
       }
     } catch (error) {
       console.error("Error recording feed usage:", error);
-      toast.error("Failed to record feed usage", {
+      toast.error(t('dialogs.feedUsageFailed'), {
         description: error instanceof Error ? error.message : "An unexpected error occurred",
       });
     }
@@ -327,7 +326,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     try {
       const result = await checkIn(staffId);
       if (result.success) {
-        toast.success("Checked in successfully");
+        toast.success(t('attendance.checkedInSuccess'));
         // Update button state to checkout
         setButtonStates(prev => ({ ...prev, [staffId]: 'checkout' }));
         // Reload attendance data
@@ -349,11 +348,11 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
           setAttendanceRecords(attendanceResult.data);
         }
       } else {
-        toast.error(result.message || "Failed to check in");
+        toast.error(result.message || t('attendance.checkInFailed'));
       }
     } catch (error) {
       console.error('Error checking in:', error);
-      toast.error("Failed to check in");
+      toast.error(t('attendance.checkInFailed'));
     }
   };
 
@@ -361,7 +360,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     try {
       const result = await checkOut(staffId);
       if (result.success) {
-        toast.success("Checked out successfully");
+        toast.success(t('attendance.checkedOutSuccess'));
         // Update button state to checkedout
         setButtonStates(prev => ({ ...prev, [staffId]: 'checkedout' }));
         // Reload attendance data
@@ -383,11 +382,11 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
           setAttendanceRecords(attendanceResult.data);
         }
       } else {
-        toast.error(result.message || "Failed to check out");
+        toast.error(result.message || t('attendance.checkOutFailed'));
       }
     } catch (error) {
       console.error('Error checking out:', error);
-      toast.error("Failed to check out");
+      toast.error(t('attendance.checkOutFailed'));
     }
   };
 
@@ -420,7 +419,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       setDialogLoading(true);
       
       // Import the createFlock function dynamically to avoid SSR issues
-      const { createFlock } = await import("@/server/flocks");
+      const { createFlock } = await import("@/app/(dashboard)/flocks/server/flocks");
       
       const result = await createFlock({
         batchCode: data.batchCode,
@@ -432,21 +431,21 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       });
       
       if (result.success) {
-        toast.success("Flock created successfully!", {
-          description: `Batch ${data.batchCode} has been added to your flocks.`
+        toast.success(t('dialogs.flockCreatedSuccess'), {
+          description: `${data.batchCode} ${t('dialogs.flockCreatedDescription')}`
         });
         
         setIsFlockDialogOpen(false);
         // Refresh the page to show updated data
         router.refresh();
       } else {
-        toast.error("Failed to create flock", {
+        toast.error(t('dialogs.flockCreateFailed'), {
           description: result.message || "An unexpected error occurred."
         });
       }
     } catch (error) {
       console.error('Error creating flock:', error);
-      toast.error("Failed to create flock", {
+      toast.error(t('dialogs.flockCreateFailed'), {
         description: "An unexpected error occurred. Please try again."
       });
     } finally {
@@ -457,7 +456,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   const handleGenerateBatchCode = async (breed: string) => {
     try {
       // Import the generateBatchCode function dynamically to avoid SSR issues
-      const { generateBatchCode } = await import("@/server/flocks");
+      const { generateBatchCode } = await import("@/app/(dashboard)/flocks/server/flocks");
       
       const result = await generateBatchCode(breed);
       
@@ -488,7 +487,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   if (inventoryCounts.eggs > 0) {
     inventoryAlerts.push({
       id: 1,
-      message: `${inventoryCounts.eggs.toLocaleString()} eggs available in inventory`,
+      message: `${inventoryCounts.eggs.toLocaleString()} ${t('alerts.eggsAvailable')}`,
       priority: "medium"
     });
   }
@@ -496,7 +495,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   if (inventoryCounts.feed > 0) {
     inventoryAlerts.push({
       id: 2,
-      message: `${inventoryCounts.feed.toLocaleString()} kg of feed available in inventory`,
+      message: `${inventoryCounts.feed.toLocaleString()} ${t('alerts.feedAvailable')}`,
       priority: "medium"
     });
   }
@@ -504,7 +503,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   if (inventoryCounts.medicine > 0) {
     inventoryAlerts.push({
       id: 3,
-      message: `${inventoryCounts.medicine.toLocaleString()} units of medicine available in inventory`,
+      message: `${inventoryCounts.medicine.toLocaleString()} ${t('alerts.medicineAvailable')}`,
       priority: "medium"
     });
   }
@@ -512,7 +511,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   if (inventoryCounts.broilers > 0) {
     inventoryAlerts.push({
       id: 4,
-      message: `${inventoryCounts.broilers.toLocaleString()} broilers available in inventory`,
+      message: `${inventoryCounts.broilers.toLocaleString()} ${t('alerts.broilersAvailable')}`,
       priority: "medium"
     });
   }
@@ -520,7 +519,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   if (inventoryCounts.manure > 0) {
     inventoryAlerts.push({
       id: 5,
-      message: `${inventoryCounts.manure.toLocaleString()} kg of manure available in inventory`,
+      message: `${inventoryCounts.manure.toLocaleString()} ${t('alerts.manureAvailable')}`,
       priority: "low"
     });
   }
@@ -532,7 +531,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading dashboard...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('loadingDashboard')}</p>
         </div>
       </div>
     );
@@ -542,8 +541,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     <div className="space-y-6">
       {/* Banner Header */}
       <PageBanner
-        title="Dashboard"
-        description="Welcome to your poultry management system. Quick access to all features."
+        title={t('title')}
+        description={t('description')}
         imageSrc="/hero-bg-image.webp"
       />
 
@@ -585,10 +584,10 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                   <>
                     <div className="text-2xl font-bold">{stat.value}</div>
                     <p className="text-xs text-muted-foreground">
-                      {stat.title === "Egg Production" && "eggs"}
-                      {stat.title === "Expenses" && "total spent"}
-                      {stat.title === "Revenue" && "total earned"}
-                      {stat.title === "Feed Left in Stock" && "remaining"}
+                      {stat.title === t('kpiStats.eggProduction') && t('kpiStats.eggs')}
+                      {stat.title === t('kpiStats.expenses') && t('kpiStats.totalSpent')}
+                      {stat.title === t('kpiStats.revenue') && t('kpiStats.totalEarned')}
+                      {stat.title === t('kpiStats.feedLeftInStock') && t('kpiStats.remaining')}
                     </p>
                   </>
                 )}
@@ -603,20 +602,20 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
         {/* Quick Actions */}
         <Card className="min-h-[420px]">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks across the system</CardDescription>
+            <CardTitle>{t('quickActions.title')}</CardTitle>
+            <CardDescription>{t('quickActions.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
               {[
-                { id: "record-feed-usage", title: "Record Feed Usage", icon: Calculator, color: "bg-yellow-600" },
-                { id: "record-production", title: "Record Egg Production", icon: Egg, color: "bg-green-500" },
-                { id: "record-broiler-production", title: "Record Broiler Production", icon: Bird, color: "bg-orange-500" },
-                { id: "record-manure-production", title: "Record Manure Production", icon: Droplets, color: "bg-green-700" },
-                { id: "add-expense", title: "Add Expense", icon: Minus, color: "bg-purple-500" },
-                { id: "add-revenue", title: "Add Revenue", icon: DollarSign, color: "bg-green-600" },
-                { id: "add-staff", title: "Add Staff Member", icon: UserPlus, color: "bg-indigo-500" },
-                { id: "add-flock", title: "Add New Flock", icon: Bird, color: "bg-blue-500" },
+                { id: "record-feed-usage", title: t('quickActions.recordFeedUsage'), icon: Calculator, color: "bg-yellow-600" },
+                { id: "record-production", title: t('quickActions.recordEggProduction'), icon: Egg, color: "bg-green-500" },
+                { id: "record-broiler-production", title: t('quickActions.recordBroilerProduction'), icon: Bird, color: "bg-orange-500" },
+                { id: "record-manure-production", title: t('quickActions.recordManureProduction'), icon: Droplets, color: "bg-green-700" },
+                { id: "add-expense", title: t('quickActions.addExpense'), icon: Minus, color: "bg-purple-500" },
+                { id: "add-revenue", title: t('quickActions.addRevenue'), icon: DollarSign, color: "bg-green-600" },
+                { id: "add-staff", title: t('quickActions.addStaffMember'), icon: UserPlus, color: "bg-indigo-500" },
+                { id: "add-flock", title: t('quickActions.addNewFlock'), icon: Bird, color: "bg-blue-500" },
               ].map((action: any) => {
                 const Icon = action.icon as any;
                 return (
@@ -639,9 +638,9 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
               <div>
                 <CardTitle className="flex items-center">
                   <Bell className="h-5 w-5 mr-2" />
-                  Alerts & Notifications
+                  {t('alerts.title')}
                 </CardTitle>
-                <CardDescription>Important reminders across the system</CardDescription>
+                <CardDescription>{t('alerts.description')}</CardDescription>
               </div>
               {/* Removed refresh button as requested */}
             </div>
@@ -649,8 +648,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
           <CardContent>
             <Tabs defaultValue="alerts" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="alerts">Alerts</TabsTrigger>
-                <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                <TabsTrigger value="alerts">{t('alerts.tabAlerts')}</TabsTrigger>
+                <TabsTrigger value="attendance">{t('alerts.tabAttendance')}</TabsTrigger>
               </TabsList>
               <TabsContent value="alerts" className="mt-4 space-y-2">
                 {alerts.length === 0 && (
@@ -658,9 +657,9 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                     <div className="rounded-full bg-muted/50 p-6 mb-4">
                       <Bell className="h-12 w-12 text-muted-foreground" />
                     </div>
-                    <h3 className="text-base font-medium text-muted-foreground mb-2">No alerts yet</h3>
+                    <h3 className="text-base font-medium text-muted-foreground mb-2">{t('alerts.noAlertsTitle')}</h3>
                     <p className="text-sm text-muted-foreground text-center max-w-sm">
-                      New alerts will appear here when they're available.
+                      {t('alerts.noAlertsDescription')}
                     </p>
                   </div>
                 )}
@@ -678,11 +677,11 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                      <p className="mt-2 text-sm text-muted-foreground">Loading staff attendance...</p>
+                      <p className="mt-2 text-sm text-muted-foreground">{t('attendance.loadingStaff')}</p>
                     </div>
                   </div>
                 ) : staff.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No staff members found.</div>
+                  <div className="text-sm text-muted-foreground">{t('attendance.noStaff')}</div>
                 ) : (
                   <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
                     {staff.filter(member => member.isActive && member.role === 'WORKER').map((member) => {
@@ -707,7 +706,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                               {todayRecord?.checkIn && (
                                 <div className="text-xs text-green-600 dark:text-green-400 flex items-center mt-1">
                                   <CheckCircle className="h-3 w-3 mr-1" />
-                                  In: {new Date(todayRecord.checkIn).toLocaleTimeString('en-US', { 
+                                  {t('attendance.in')}: {new Date(todayRecord.checkIn).toLocaleTimeString('en-US', { 
                                     hour: '2-digit', 
                                     minute: '2-digit',
                                     hour12: true 
@@ -717,7 +716,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                               {todayRecord?.checkOut && (
                                 <div className="text-xs text-red-600 dark:text-red-400 flex items-center mt-1">
                                   <XCircle className="h-3 w-3 mr-1" />
-                                  Out: {new Date(todayRecord.checkOut).toLocaleTimeString('en-US', { 
+                                  {t('attendance.out')}: {new Date(todayRecord.checkOut).toLocaleTimeString('en-US', { 
                                     hour: '2-digit', 
                                     minute: '2-digit',
                                     hour12: true 
@@ -733,7 +732,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                               if (buttonState === 'onleave') {
                                 return (
                                   <Badge className="bg-blue-100 text-blue-800">
-                                    On Leave
+                                    {t('attendance.onLeave')}
                                   </Badge>
                                 );
                               }
@@ -747,7 +746,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                                     className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20"
                                   >
                                     <XCircle className="h-3 w-3 mr-1" />
-                                    Check Out
+                                    {t('attendance.checkOut')}
                                   </Button>
                                 );
                               }
@@ -755,7 +754,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                               if (buttonState === 'checkedout') {
                                 return (
                                   <Badge className="bg-purple-100 text-purple-800">
-                                    Checked Out
+                                    {t('attendance.checkedOut')}
                                   </Badge>
                                 );
                               }
@@ -769,7 +768,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                                   className="text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950/20"
                                 >
                                   <CheckCircle className="h-3 w-3 mr-1" />
-                                  Check In
+                                  {t('attendance.checkIn')}
                                 </Button>
                               );
                             })()}
@@ -807,9 +806,9 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
             ageInDays: 0,
             notes: "",
           },
-          title: "Add New Flock",
-          description: "Create a new flock with unique batch code and tracking information",
-          submitText: "Create Flock",
+          title: t('dialogs.addNewFlock'),
+          description: t('dialogs.addFlockDescription'),
+          submitText: t('dialogs.createFlock'),
           onSubmit: handleCreateFlock,
           maxWidth: "max-w-3xl",
           children: (form) => (
@@ -828,9 +827,9 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
         isOpen={isFeedUsageDialogOpen}
         onClose={() => setIsFeedUsageDialogOpen(false)}
         onSubmit={handleFeedUsageSubmit}
-        title="Record Feed Usage"
-        description="Quickly record feed usage for any flock from the home page."
-        submitButtonText="Record Usage"
+        title={t('dialogs.recordFeedUsageTitle')}
+        description={t('dialogs.recordFeedUsageDescription')}
+        submitButtonText={t('dialogs.recordUsage')}
       />
     </div>
   );

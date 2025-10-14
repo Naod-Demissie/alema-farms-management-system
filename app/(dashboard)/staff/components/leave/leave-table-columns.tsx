@@ -43,6 +43,7 @@ interface LeaveTableColumnsProps {
   onReject?: (leaveRequest: LeaveRequest) => void;
   onStatusChange?: (leaveRequest: LeaveRequest, newStatus: string) => void;
   currentUserRole?: string;
+  t: any; // Translation function
 }
 
 const statusColors = {
@@ -68,12 +69,13 @@ export const createLeaveTableColumns = ({
   onReject,
   onStatusChange,
   currentUserRole = "WORKER",
+  t,
 }: LeaveTableColumnsProps): ColumnDef<LeaveRequest>[] => [
   {
     id: "staffName",
     accessorFn: (row) => row.staff.name,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Staff Member" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.staffMember')} />
     ),
     cell: ({ row }) => {
       const staff = row.original.staff;
@@ -105,13 +107,21 @@ export const createLeaveTableColumns = ({
   {
     accessorKey: "leaveType",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Leave Type" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.leaveType')} />
     ),
     cell: ({ row }) => {
       const leaveType = row.getValue("leaveType") as string;
+      const leaveTypeTranslations: Record<string, string> = {
+        ANNUAL: t('leave.leaveTypes.annual'),
+        SICK: t('leave.leaveTypes.sick'),
+        CASUAL: t('leave.leaveTypes.casual'),
+        MATERNITY: t('leave.leaveTypes.maternity'),
+        PATERNITY: t('leave.leaveTypes.paternity'),
+        UNPAID: t('leave.leaveTypes.unpaid'),
+      };
       return (
         <Badge className={leaveTypeColors[leaveType as keyof typeof leaveTypeColors]}>
-          {leaveType}
+          {leaveTypeTranslations[leaveType] || leaveType}
         </Badge>
       );
     },
@@ -122,7 +132,7 @@ export const createLeaveTableColumns = ({
   {
     accessorKey: "startDate",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Start Date" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.startDate')} />
     ),
     cell: ({ row }) => {
       const dateValue = row.getValue("startDate");
@@ -132,7 +142,7 @@ export const createLeaveTableColumns = ({
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {isValidDate ? EthiopianDateFormatter.formatForTable(date) : "Invalid date"}
+            {isValidDate ? EthiopianDateFormatter.formatForTable(date) : t('leave.table.columns.invalidDate')}
           </div>
         </div>
       );
@@ -141,7 +151,7 @@ export const createLeaveTableColumns = ({
   {
     accessorKey: "endDate",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="End Date" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.endDate')} />
     ),
     cell: ({ row }) => {
       const dateValue = row.getValue("endDate");
@@ -151,7 +161,7 @@ export const createLeaveTableColumns = ({
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {isValidDate ? EthiopianDateFormatter.formatForTable(date) : "Invalid date"}
+            {isValidDate ? EthiopianDateFormatter.formatForTable(date) : t('leave.table.columns.invalidDate')}
           </div>
         </div>
       );
@@ -172,7 +182,7 @@ export const createLeaveTableColumns = ({
       return Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     },
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Days" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.leaveDays')} />
     ),
     cell: ({ row }) => {
       const startDate = new Date(row.original.startDate as string | Date);
@@ -185,7 +195,7 @@ export const createLeaveTableColumns = ({
           <div className="flex items-center space-x-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <div className="text-sm font-medium text-red-500">
-              Invalid dates
+              {t('leave.table.columns.invalidDate')}
             </div>
           </div>
         );
@@ -196,7 +206,7 @@ export const createLeaveTableColumns = ({
         <div className="flex items-center space-x-2">
           <Clock className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm font-medium">
-            {days} {days === 1 ? 'day' : 'days'}
+            {days} {t('leave.table.columns.days')}
           </div>
         </div>
       );
@@ -205,7 +215,7 @@ export const createLeaveTableColumns = ({
   {
     accessorKey: "status",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.status')} />
     ),
     cell: ({ row, table }) => {
       const status = row.getValue("status") as string;
@@ -218,6 +228,13 @@ export const createLeaveTableColumns = ({
 
       const onStatusChange = (table.options.meta as any)?.onStatusChange;
 
+      const statusTranslations: Record<string, string> = {
+        PENDING: t('leave.statuses.pending'),
+        APPROVED: t('leave.statuses.approved'),
+        REJECTED: t('leave.statuses.rejected'),
+        CANCELLED: t('leave.statuses.cancelled'),
+      };
+
       if (onStatusChange) {
         return (
           <Select
@@ -228,7 +245,7 @@ export const createLeaveTableColumns = ({
               <SelectValue>
                 <div className="flex items-center space-x-1">
                   {statusIcons[status as keyof typeof statusIcons]}
-                  <span>{status}</span>
+                  <span>{statusTranslations[status] || status}</span>
                 </div>
               </SelectValue>
             </SelectTrigger>
@@ -236,25 +253,25 @@ export const createLeaveTableColumns = ({
               <SelectItem value="PENDING">
                 <div className="flex items-center space-x-2">
                   <Clock className="h-3 w-3" />
-                  <span>Pending</span>
+                  <span>{t('leave.statuses.pending')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="APPROVED">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-3 w-3" />
-                  <span>Approved</span>
+                  <span>{t('leave.statuses.approved')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="REJECTED">
                 <div className="flex items-center space-x-2">
                   <XCircle className="h-3 w-3" />
-                  <span>Rejected</span>
+                  <span>{t('leave.statuses.rejected')}</span>
                 </div>
               </SelectItem>
               <SelectItem value="CANCELLED">
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="h-3 w-3" />
-                  <span>Cancelled</span>
+                  <span>{t('leave.statuses.cancelled')}</span>
                 </div>
               </SelectItem>
             </SelectContent>
@@ -266,7 +283,7 @@ export const createLeaveTableColumns = ({
         <Badge className={statusColors[status as keyof typeof statusColors]}>
           <div className="flex items-center space-x-1">
             {statusIcons[status as keyof typeof statusIcons]}
-            <span>{status}</span>
+            <span>{statusTranslations[status] || status}</span>
           </div>
         </Badge>
       );
@@ -278,28 +295,28 @@ export const createLeaveTableColumns = ({
   {
     accessorKey: "reason",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Reason" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.reason')} />
     ),
     cell: ({ row }) => {
       const reason = row.getValue("reason") as string | null;
       return (
         <div className="text-sm max-w-[200px] truncate">
-          {reason || "No reason provided"}
+          {reason || t('leave.table.columns.noReason')}
         </div>
       );
     },
   },
   {
     id: "approver",
-    accessorFn: (row) => row.approver?.name || "N/A",
+    accessorFn: (row) => row.approver?.name || t('leave.table.columns.notApproved'),
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Approved By" />
+      <DataTableColumnHeader column={column} title={t('leave.table.columns.approvedBy')} />
     ),
     cell: ({ row }) => {
       const approver = row.original.approver;
       return (
         <div className="text-sm">
-          {approver ? approver.name : "N/A"}
+          {approver ? approver.name : t('leave.table.columns.notApproved')}
         </div>
       );
     },
@@ -314,12 +331,12 @@ export const createLeaveTableColumns = ({
         additionalActions={
           currentUserRole === "ADMIN" && row.original.status === "PENDING" ? [
             {
-              label: "Approve",
+              label: t('leave.statuses.approved'),
               onClick: () => onApprove?.(row.original),
               icon: CheckCircle,
             },
             {
-              label: "Reject",
+              label: t('leave.statuses.rejected'),
               onClick: () => onReject?.(row.original),
               icon: XCircle,
             },

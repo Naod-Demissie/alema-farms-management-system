@@ -24,10 +24,12 @@ import {
   changePassword,
 } from "@/app/(dashboard)/settings/server/settings";
 import { authClient } from "@/lib/auth-client";
+import { useTranslations } from 'next-intl';
 
 interface AccountSettingsProps {}
 
 export function AccountSettings({}: AccountSettingsProps) {
+  const t = useTranslations('settings.account');
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -69,37 +71,37 @@ export function AccountSettings({}: AccountSettingsProps) {
   const handlePasswordChange = async () => {
     // Validate current password
     if (!formData.currentPassword.trim()) {
-      toast.error("Current password is required");
+      toast.error(t('currentPasswordRequired'));
       return;
     }
 
     // Validate new password
     if (!formData.newPassword.trim()) {
-      toast.error("New password is required");
+      toast.error(t('newPasswordRequired'));
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long");
+      toast.error(t('passwordMinLength'));
       return;
     }
 
     // Check if new password is different from current
     if (formData.currentPassword === formData.newPassword) {
-      toast.error("New password must be different from current password");
+      toast.error(t('passwordDifferent'));
       return;
     }
 
     // Validate password confirmation
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("New passwords don't match");
+      toast.error(t('passwordsNoMatch'));
       return;
     }
 
     // Additional password strength validation
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
     if (!passwordRegex.test(formData.newPassword)) {
-      toast.error("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
+      toast.error(t('passwordStrength'));
       return;
     }
 
@@ -113,7 +115,7 @@ export function AccountSettings({}: AccountSettingsProps) {
       });
 
       if (result.success) {
-        toast.success("Password updated successfully!");
+        toast.success(t('passwordUpdateSuccess'));
         setFormData({
           currentPassword: "",
           newPassword: "",
@@ -130,9 +132,9 @@ export function AccountSettings({}: AccountSettingsProps) {
           });
 
           if (clientResult.error) {
-            toast.error(clientResult.error.message || "Failed to update password");
+            toast.error(clientResult.error.message || t('passwordUpdateError'));
           } else {
-            toast.success("Password updated successfully!");
+            toast.success(t('passwordUpdateSuccess'));
             setFormData({
               currentPassword: "",
               newPassword: "",
@@ -141,11 +143,11 @@ export function AccountSettings({}: AccountSettingsProps) {
             setHasChanges(false);
           }
         } catch (clientError) {
-          toast.error(result.message || "Failed to update password");
+          toast.error(result.message || t('passwordUpdateError'));
         }
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      toast.error(t('unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -158,22 +160,22 @@ export function AccountSettings({}: AccountSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Password & Security
+            {t('passwordTitle')}
           </CardTitle>
           <CardDescription>
-            Update your password and security settings
+            {t('passwordDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="currentPassword">Current Password</Label>
+            <Label htmlFor="currentPassword">{t('currentPassword')}</Label>
             <div className="relative">
               <Input
                 id="currentPassword"
                 type={showCurrentPassword ? "text" : "password"}
                 value={formData.currentPassword}
                 onChange={(e) => handleInputChange("currentPassword", e.target.value)}
-                placeholder="Enter current password"
+                placeholder={t('currentPasswordPlaceholder')}
               />
               <Button
                 type="button"
@@ -192,14 +194,14 @@ export function AccountSettings({}: AccountSettingsProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password</Label>
+            <Label htmlFor="newPassword">{t('newPassword')}</Label>
             <div className="relative">
               <Input
                 id="newPassword"
                 type={showNewPassword ? "text" : "password"}
                 value={formData.newPassword}
                 onChange={(e) => handleInputChange("newPassword", e.target.value)}
-                placeholder="Enter new password"
+                placeholder={t('newPasswordPlaceholder')}
               />
               <Button
                 type="button"
@@ -219,7 +221,7 @@ export function AccountSettings({}: AccountSettingsProps) {
             {/* Password Requirements */}
             {formData.newPassword && (
               <div className="space-y-2 text-sm">
-                <p className="text-muted-foreground">Password requirements:</p>
+                <p className="text-muted-foreground">{t('passwordRequirements')}</p>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     {passwordStrength.checks.length ? (
@@ -228,7 +230,7 @@ export function AccountSettings({}: AccountSettingsProps) {
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                     <span className={passwordStrength.checks.length ? "text-green-600" : "text-red-600"}>
-                      At least 8 characters
+                      {t('minLength')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -238,7 +240,7 @@ export function AccountSettings({}: AccountSettingsProps) {
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                     <span className={passwordStrength.checks.uppercase ? "text-green-600" : "text-red-600"}>
-                      One uppercase letter
+                      {t('uppercase')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -248,7 +250,7 @@ export function AccountSettings({}: AccountSettingsProps) {
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                     <span className={passwordStrength.checks.lowercase ? "text-green-600" : "text-red-600"}>
-                      One lowercase letter
+                      {t('lowercase')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -258,7 +260,7 @@ export function AccountSettings({}: AccountSettingsProps) {
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                     <span className={passwordStrength.checks.number ? "text-green-600" : "text-red-600"}>
-                      One number
+                      {t('number')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -268,7 +270,7 @@ export function AccountSettings({}: AccountSettingsProps) {
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                     <span className={passwordStrength.checks.special ? "text-green-600" : "text-red-600"}>
-                      One special character (@$!%*?&)
+                      {t('specialChar')}
                     </span>
                   </div>
                 </div>
@@ -277,14 +279,14 @@ export function AccountSettings({}: AccountSettingsProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+            <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 value={formData.confirmPassword}
                 onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                placeholder="Confirm new password"
+                placeholder={t('confirmPasswordPlaceholder')}
               />
               <Button
                 type="button"
@@ -306,7 +308,7 @@ export function AccountSettings({}: AccountSettingsProps) {
             onClick={handlePasswordChange} 
             disabled={isLoading || !hasChanges || passwordStrength.score < 5 || !formData.currentPassword || !formData.confirmPassword}
           >
-            {isLoading ? "Updating..." : "Update Password"}
+            {isLoading ? t('updating') : t('updatePassword')}
           </Button>
         </CardContent>
       </Card>

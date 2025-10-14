@@ -33,11 +33,13 @@ interface Revenue {
 export const getRevenueColumns = (
   onView: (record: Revenue) => void,
   onEdit: (record: Revenue) => void,
-  onDelete: (record: Revenue) => void
+  onDelete: (record: Revenue) => void,
+  t: any,
+  tCommon: any
 ): ColumnDef<Revenue>[] => [
   {
     accessorKey: "date",
-    header: "Date",
+    header: t('columns.date'),
     cell: ({ row }: { row: any }) => {
       return EthiopianDateFormatter.formatForTable(new Date(row.getValue("date")));
     },
@@ -72,7 +74,7 @@ export const getRevenueColumns = (
   },
   {
     accessorKey: "source",
-    header: "Source",
+    header: t('columns.source'),
     cell: ({ row }: { row: any }) => {
       const source = row.getValue("source") as RevenueSource;
       const sourceConfig = REVENUE_SOURCES.find(s => s.value === source);
@@ -86,7 +88,7 @@ export const getRevenueColumns = (
   },
   {
     accessorKey: "quantity",
-    header: "Quantity",
+    header: t('columns.quantity'),
     cell: ({ row }: { row: any }) => {
       const quantity = row.getValue("quantity") as number | null;
       return quantity ? quantity.toLocaleString() : "-";
@@ -94,7 +96,7 @@ export const getRevenueColumns = (
   },
   {
     accessorKey: "costPerQuantity",
-    header: "Cost/Unit",
+    header: t('columns.pricePerUnit'),
     cell: ({ row }: { row: any }) => {
       const costPerQuantity = row.getValue("costPerQuantity") as number | null;
       return costPerQuantity ? new Intl.NumberFormat("en-ET", {
@@ -105,7 +107,7 @@ export const getRevenueColumns = (
   },
   {
     accessorKey: "amount",
-    header: "Total Amount",
+    header: t('columns.amount'),
     cell: ({ row }: { row: any }) => {
       const amount = parseFloat(row.getValue("amount"));
       const revenue = row.original;
@@ -128,7 +130,7 @@ export const getRevenueColumns = (
   },
   {
     accessorKey: "description",
-    header: "Description",
+    header: t('columns.description'),
     cell: ({ row }: { row: any }) => {
       const description = row.getValue("description") as string | null;
       return description || "-";
@@ -136,7 +138,7 @@ export const getRevenueColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: tCommon('actions'),
     cell: ({ row }: { row: any }) => {
       const revenue = row.original;
       
@@ -148,22 +150,22 @@ export const getRevenueColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onView(revenue)}>
               <Eye className="h-4 w-4 mr-2" />
-              View Details
+              {tCommon('view')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(revenue)}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {tCommon('edit')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(revenue)}
               className="text-red-600"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {tCommon('delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

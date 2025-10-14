@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Invite, computeInviteStatus } from "@/app/(dashboard)/staff/types/invite-schema";
+import { useTranslations } from 'next-intl';
 
 interface InviteTableRowActionsProps {
   row: Row<Invite>;
@@ -28,6 +29,7 @@ export function InviteTableRowActions({
   onCopyLink,
   actionLoading,
 }: InviteTableRowActionsProps) {
+  const t = useTranslations('staff');
   const invite = row.original;
   const status = computeInviteStatus(invite);
   const isLoading = actionLoading === invite.id;
@@ -59,7 +61,7 @@ export function InviteTableRowActions({
             disabled={isLoading}
           >
             <Copy size={16} className="mr-2" />
-            Copy Link
+            {t('directory.actions.copyLink')}
           </DropdownMenuItem>
           
           {status === "PENDING" && (
@@ -73,7 +75,7 @@ export function InviteTableRowActions({
                 disabled={isLoading}
               >
                 <Send size={16} className="mr-2" />
-                Resend Invitation
+                {t('directory.actions.resendInvitation')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -85,7 +87,7 @@ export function InviteTableRowActions({
                 className="text-red-500 focus:text-red-500"
               >
                 <XCircle size={16} className="mr-2" />
-                Cancel Invitation
+                {t('directory.actions.cancelInvitation')}
               </DropdownMenuItem>
             </>
           )}

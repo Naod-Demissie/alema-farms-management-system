@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { Loader2 } from "lucide-react";
 import { FlockManagementMerged } from "./components/flock-management";
 import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
@@ -11,6 +12,7 @@ export default function FlocksPage() {
   const [flocks, setFlocks] = useState<Flock[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const t = useTranslations('flocks');
 
   // Load initial data
   useEffect(() => {
@@ -61,8 +63,8 @@ export default function FlocksPage() {
     <div className="space-y-6">
       {/* Banner Header */}
       <PageBanner
-        title="Flock Management"
-        description="Manage your poultry flocks, track growth, and monitor health"
+        title={t('title')}
+        description={t('description')}
         imageSrc="/banner-bg-image.webp"
       />
 

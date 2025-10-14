@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import {
   Card,
   CardContent,
@@ -89,6 +90,7 @@ interface FeedData {
 }
 
 export function FeedReports({ filters }: FeedReportsProps) {
+  const t = useTranslations('reports');
   const [data, setData] = useState<FeedData | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -211,7 +213,7 @@ export function FeedReports({ filters }: FeedReportsProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Feed Used</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('feed.totalFeedUsed')}</CardTitle>
             <Wheat className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -235,7 +237,7 @@ export function FeedReports({ filters }: FeedReportsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('feed.totalFeedCost')}</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -259,7 +261,7 @@ export function FeedReports({ filters }: FeedReportsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Feed Efficiency</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('feed.feedEfficiency')}</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -312,14 +314,14 @@ export function FeedReports({ filters }: FeedReportsProps) {
             <Select value={feedUsageTimeFilter} onValueChange={setFeedUsageTimeFilter}>
               <SelectTrigger
                 className="w-[160px] rounded-lg sm:ml-auto"
-                aria-label="Select a time range"
+                aria-label={t('common.selectTimeRange')}
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder={t('common.last3Months')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="3months" className="rounded-lg">Last 3 months</SelectItem>
-                <SelectItem value="month" className="rounded-lg">This month</SelectItem>
-                <SelectItem value="7days" className="rounded-lg">Last 7 days</SelectItem>
+                <SelectItem value="3months" className="rounded-lg">{t('common.last3Months')}</SelectItem>
+                <SelectItem value="month" className="rounded-lg">{t('common.last30Days')}</SelectItem>
+                <SelectItem value="7days" className="rounded-lg">{t('common.last7Days')}</SelectItem>
               </SelectContent>
             </Select>
           </CardHeader>
@@ -411,20 +413,20 @@ export function FeedReports({ filters }: FeedReportsProps) {
         <Card>
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Feed by Type</CardTitle>
-              <CardDescription>Distribution of feed consumption by type</CardDescription>
+              <CardTitle>{t('feed.feedUsageByType')}</CardTitle>
+              <CardDescription>{t('feed.feedUsageByTypeDesc')}</CardDescription>
             </div>
             <Select value={feedTypeTimeFilter} onValueChange={setFeedTypeTimeFilter}>
               <SelectTrigger
                 className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                aria-label="Select a time range"
+                aria-label={t('common.selectTimeRange')}
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder={t('common.last3Months')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="3months" className="rounded-lg">Last 3 months</SelectItem>
-                <SelectItem value="month" className="rounded-lg">This month</SelectItem>
-                <SelectItem value="7days" className="rounded-lg">Last 7 days</SelectItem>
+                <SelectItem value="3months" className="rounded-lg">{t('common.last3Months')}</SelectItem>
+                <SelectItem value="month" className="rounded-lg">{t('common.last30Days')}</SelectItem>
+                <SelectItem value="7days" className="rounded-lg">{t('common.last7Days')}</SelectItem>
               </SelectContent>
             </Select>
           </CardHeader>
@@ -514,20 +516,20 @@ export function FeedReports({ filters }: FeedReportsProps) {
         <Card>
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Supplier Analysis</CardTitle>
-              <CardDescription>Distribution of feed by supplier</CardDescription>
+              <CardTitle>{t('feed.feedUsageBySupplier')}</CardTitle>
+              <CardDescription>{t('feed.feedUsageBySupplierDesc')}</CardDescription>
             </div>
             <Select value={supplierTimeFilter} onValueChange={setSupplierTimeFilter}>
               <SelectTrigger
                 className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                aria-label="Select a time range"
+                aria-label={t('common.selectTimeRange')}
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder={t('common.last3Months')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="3months" className="rounded-lg">Last 3 months</SelectItem>
-                <SelectItem value="month" className="rounded-lg">This month</SelectItem>
-                <SelectItem value="7days" className="rounded-lg">Last 7 days</SelectItem>
+                <SelectItem value="3months" className="rounded-lg">{t('common.last3Months')}</SelectItem>
+                <SelectItem value="month" className="rounded-lg">{t('common.last30Days')}</SelectItem>
+                <SelectItem value="7days" className="rounded-lg">{t('common.last7Days')}</SelectItem>
               </SelectContent>
             </Select>
           </CardHeader>

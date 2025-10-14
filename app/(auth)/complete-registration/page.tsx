@@ -28,24 +28,24 @@ import {
 import { validateInvite, completeStaffRegistration } from "@/app/(dashboard)/staff/server/staff";
 import { toast } from "sonner";
 import { Upload, User, Mail, Phone, Lock, Eye, EyeOff, X } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
-const registrationSchema = z
+const getRegistrationSchema = (t: any) => z
   .object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    firstName: z.string().min(1, t('validation.firstNameRequired')),
+    lastName: z.string().min(1, t('validation.lastNameRequired')),
+    password: z.string().min(8, t('validation.passwordMinLength')),
     confirmPassword: z.string(),
     phoneNumber: z.string().optional(),
     image: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: t('validation.passwordsDontMatch'),
     path: ["confirmPassword"],
   });
 
-type RegistrationFormValues = z.infer<typeof registrationSchema>;
-
 function CompleteRegistrationContent() {
+  const t = useTranslations('auth');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +57,9 @@ function CompleteRegistrationContent() {
 
   const token = searchParams.get("token");
   const email = searchParams.get("email");
+
+  const registrationSchema = getRegistrationSchema(t);
+  type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -73,7 +76,7 @@ function CompleteRegistrationContent() {
   useEffect(() => {
     const validateInvitation = async () => {
       if (!token || !email) {
-        toast.error("Invalid invitation link");
+        toast.error(t('invalidInvitationLink'));
         router.push("/");
         return;
       }
@@ -84,11 +87,11 @@ function CompleteRegistrationContent() {
         if (result.success) {
           setInviteData(result.data);
         } else {
-          toast.error(result.message || "Invalid invitation");
+          toast.error(result.message || t('invalidInvitation'));
           router.push("/");
         }
       } catch {
-        toast.error("Failed to validate invitation");
+        toast.error(t('failedToValidate'));
         router.push("/");
       } finally {
         setIsLoading(false);
@@ -96,21 +99,21 @@ function CompleteRegistrationContent() {
     };
 
     validateInvitation();
-  }, [token, email, router]);
+  }, [token, email, router, t]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast.error("Please select a valid image file");
+        toast.error(t('pleaseSelectValidImage'));
         return;
       }
 
       // Validate file size (2MB limit)
       const maxSize = 2 * 1024 * 1024; // 2MB in bytes
       if (file.size > maxSize) {
-        toast.error("Image size must be less than 2MB");
+        toast.error(t('imageSizeTooLarge'));
         return;
       }
 
@@ -141,12 +144,12 @@ function CompleteRegistrationContent() {
           form.setValue("image", compressedImage);
         };
         img.onerror = () => {
-          toast.error("Failed to process image");
+          toast.error(t('failedToProcessImage'));
         };
         img.src = result;
       };
       reader.onerror = () => {
-        toast.error("Failed to read image file");
+        toast.error(t('failedToReadImage'));
       };
       reader.readAsDataURL(file);
     }
@@ -159,7 +162,7 @@ function CompleteRegistrationContent() {
 
   const onSubmit = async (data: RegistrationFormValues) => {
     if (!token || !email) {
-      toast.error("Invalid invitation data");
+      toast.error(t('invalidInvitationData'));
       return;
     }
 
@@ -174,17 +177,15 @@ function CompleteRegistrationContent() {
       });
 
       if (result.success) {
-        toast.success(
-          "Registration completed successfully! Redirecting to dashboard..."
-        );
+        toast.success(t('registrationSuccess'));
         setTimeout(() => {
           router.push("/home");
         }, 2000);
       } else {
-        toast.error(result.message || "Failed to complete registration");
+        toast.error(result.message || t('registrationFailed'));
       }
     } catch {
-      toast.error("An unexpected error occurred");
+      toast.error(t('unexpectedError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -206,7 +207,7 @@ function CompleteRegistrationContent() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Validating invitation...
+            {t('validatingInvitation')}
           </p>
         </div>
       </div>
@@ -218,14 +219,14 @@ function CompleteRegistrationContent() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-destructive">Invalid Invitation</CardTitle>
+            <CardTitle className="text-destructive">{t('invalidInvitationTitle')}</CardTitle>
             <CardDescription>
-              This invitation link is invalid or has expired.
+              {t('invalidInvitationDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => router.push("/")} className="w-full">
-              Go to Home
+              {t('goToHome')}
             </Button>
           </CardContent>
         </Card>
@@ -238,12 +239,12 @@ function CompleteRegistrationContent() {
       <div className="max-w-xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground">
-            Complete Your Registration
+            {t('completeRegistration')}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            You&apos;ve been invited to join{" "}
-            {process.env.NEXT_PUBLIC_FARM_NAME || "our clinic"} as a staff
-            member
+            {t('completeRegistrationSubtitle', { 
+              farmName: process.env.NEXT_PUBLIC_FARM_NAME || t('ourClinic')
+            })}
           </p>
         </div>
 
@@ -251,15 +252,15 @@ function CompleteRegistrationContent() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Mail className="h-5 w-5" />
-              <span>Invitation Details</span>
+              <span>{t('invitationDetails')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">Email: {email}</p>
+                <p className="text-sm font-medium">{t('email')}: {email}</p>
                 <p className="text-sm text-muted-foreground">
-                  Role:{" "}
+                  {t('role')}:{" "}
                   <Badge className={getRoleColor(inviteData.role)}>
                     {inviteData.role}
                   </Badge>
@@ -267,7 +268,7 @@ function CompleteRegistrationContent() {
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">
-                  Expires: {new Date(inviteData.expiresAt).toLocaleDateString()}
+                  {t('expires')}: {new Date(inviteData.expiresAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -276,9 +277,9 @@ function CompleteRegistrationContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
+            <CardTitle>{t('personalInformation')}</CardTitle>
             <CardDescription>
-              Please fill in your details to complete your registration
+              {t('personalInformationDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -299,7 +300,7 @@ function CompleteRegistrationContent() {
                     <Label htmlFor="image-upload" className="cursor-pointer">
                       <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
                         <Upload className="h-4 w-4" />
-                        <span>Upload Profile Picture</span>
+                        <span>{t('uploadProfilePicture')}</span>
                       </div>
                     </Label>
                     <Input
@@ -318,11 +319,11 @@ function CompleteRegistrationContent() {
                         className="text-red-600 hover:text-red-700"
                       >
                         <X className="mr-2 h-4 w-4" />
-                        Remove Picture
+                        {t('removePicture')}
                       </Button>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      JPG, PNG or GIF. Max size 2MB.
+                      {t('imageFormatHelp')}
                     </p>
                   </div>
                 </div>
@@ -336,11 +337,11 @@ function CompleteRegistrationContent() {
                       <FormItem>
                         <FormLabel className="flex items-center space-x-2">
                           <User className="h-4 w-4" />
-                          <span>First Name <span className="text-red-500">*</span></span>
+                          <span>{t('firstName')} <span className="text-red-500">{t('required')}</span></span>
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your first name"
+                            placeholder={t('firstNamePlaceholder')}
                             {...field}
                           />
                         </FormControl>
@@ -353,10 +354,10 @@ function CompleteRegistrationContent() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel>{t('lastName')} <span className="text-red-500">{t('required')}</span></FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your last name"
+                            placeholder={t('lastNamePlaceholder')}
                             {...field}
                           />
                         </FormControl>
@@ -374,11 +375,11 @@ function CompleteRegistrationContent() {
                     <FormItem>
                       <FormLabel className="flex items-center space-x-2">
                         <Phone className="h-4 w-4" />
-                        <span>Phone Number</span>
+                        <span>{t('phoneNumber')}</span>
                       </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter your phone number"
+                          placeholder={t('phoneNumberPlaceholder')}
                           {...field}
                         />
                       </FormControl>
@@ -396,13 +397,13 @@ function CompleteRegistrationContent() {
                       <FormItem>
                         <FormLabel className="flex items-center space-x-2">
                           <Lock className="h-4 w-4" />
-                          <span>Password <span className="text-red-500">*</span></span>
+                          <span>{t('password')} <span className="text-red-500">{t('required')}</span></span>
                         </FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
                               type={showPassword ? "text" : "password"}
-                              placeholder="Create a secure password"
+                              placeholder={t('createPasswordPlaceholder')}
                               {...field}
                             />
                             <Button
@@ -429,12 +430,12 @@ function CompleteRegistrationContent() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel>{t('confirmPassword')} <span className="text-red-500">{t('required')}</span></FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
                               type={showConfirmPassword ? "text" : "password"}
-                              placeholder="Confirm your password"
+                              placeholder={t('confirmPasswordPlaceholder')}
                               {...field}
                             />
                             <Button
@@ -464,8 +465,8 @@ function CompleteRegistrationContent() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting
-                    ? "Completing Registration..."
-                    : "Complete Registration & Sign In"}
+                    ? t('completingRegistration')
+                    : t('completeRegistrationButton')}
                 </Button>
               </form>
             </Form>
@@ -476,20 +477,23 @@ function CompleteRegistrationContent() {
   );
 }
 
+function LoadingFallback() {
+  const t = useTranslations('auth');
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t('loadingRegistration')}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function CompleteRegistrationPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Loading registration...
-            </p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingFallback />}>
       <CompleteRegistrationContent />
     </Suspense>
   );

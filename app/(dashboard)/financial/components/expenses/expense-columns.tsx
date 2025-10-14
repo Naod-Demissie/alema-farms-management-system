@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { useTranslations } from 'next-intl';
 import { ColumnDef } from "@tanstack/react-table";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
@@ -38,11 +39,13 @@ interface Expense {
 export const getExpenseColumns = (
   onView: (record: Expense) => void,
   onEdit: (record: Expense) => void,
-  onDelete: (record: Expense) => void
+  onDelete: (record: Expense) => void,
+  t: any,
+  tCommon: any
 ): ColumnDef<Expense>[] => [
   {
     accessorKey: "date",
-    header: "Date",
+    header: t('columns.date'),
     cell: ({ row }) => {
       return EthiopianDateFormatter.formatForTable(new Date(row.getValue("date")));
     },
@@ -77,7 +80,7 @@ export const getExpenseColumns = (
   },
   {
     accessorKey: "category",
-    header: "Category",
+    header: t('columns.category'),
     cell: ({ row }) => {
       const category = row.getValue("category") as ExpenseCategory;
       const categoryConfig = EXPENSE_CATEGORIES.find(c => c.value === category);
@@ -91,7 +94,7 @@ export const getExpenseColumns = (
   },
   {
     accessorKey: "quantity",
-    header: "Quantity",
+    header: t('columns.quantity'),
     cell: ({ row }) => {
       const quantity = row.getValue("quantity") as number | null;
       return quantity ? quantity.toLocaleString() : "-";
@@ -99,7 +102,7 @@ export const getExpenseColumns = (
   },
   {
     accessorKey: "costPerQuantity",
-    header: "Cost/Unit",
+    header: t('columns.costPerUnit'),
     cell: ({ row }) => {
       const costPerQuantity = row.getValue("costPerQuantity") as number | null;
       return costPerQuantity ? new Intl.NumberFormat("en-ET", {
@@ -110,7 +113,7 @@ export const getExpenseColumns = (
   },
   {
     accessorKey: "amount",
-    header: "Total Amount",
+    header: t('columns.amount'),
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amount"));
       const expense = row.original;
@@ -133,7 +136,7 @@ export const getExpenseColumns = (
   },
   {
     accessorKey: "description",
-    header: "Description",
+    header: t('columns.description'),
     cell: ({ row }) => {
       const description = row.getValue("description") as string | null;
       return description || "-";
@@ -141,7 +144,7 @@ export const getExpenseColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: tCommon('actions'),
     cell: ({ row }) => {
       const expense = row.original;
       
@@ -153,22 +156,22 @@ export const getExpenseColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onView(expense)}>
               <Eye className="h-4 w-4 mr-2" />
-              View Details
+              {tCommon('view')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(expense)}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {tCommon('edit')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(expense)}
               className="text-red-600"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {tCommon('delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

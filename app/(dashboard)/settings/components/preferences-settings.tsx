@@ -28,10 +28,12 @@ import {
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { updateUserPreferences, getUserPreferences } from "@/app/(dashboard)/settings/server/settings";
+import { useTranslations } from 'next-intl';
 
 interface PreferencesSettingsProps {}
 
 export function PreferencesSettings({}: PreferencesSettingsProps) {
+  const t = useTranslations('settings.preferences');
   const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -69,13 +71,13 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
       const result = await updateUserPreferences(formData);
 
       if (result.success) {
-        toast.success("Preferences updated successfully");
+        toast.success(t('preferencesUpdateSuccess'));
         setHasChanges(false);
       } else {
-        toast.error(result.message || "Failed to update preferences");
+        toast.error(result.message || t('preferencesUpdateError'));
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      toast.error(t('preferencesUpdateError'));
     } finally {
       setIsLoading(false);
     }
@@ -88,15 +90,15 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            Appearance
+            {t('appearanceTitle')}
           </CardTitle>
           <CardDescription>
-            Customize how the application looks and feels
+            {t('appearanceDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="theme">Theme</Label>
+            <Label htmlFor="theme">{t('theme')}</Label>
             <div className="flex gap-2">
               <Button
                 variant={theme === "light" ? "default" : "outline"}
@@ -105,7 +107,7 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
                 className="flex items-center gap-2"
               >
                 <Sun className="h-4 w-4" />
-                Light
+                {t('light')}
               </Button>
               <Button
                 variant={theme === "dark" ? "default" : "outline"}
@@ -114,7 +116,7 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
                 className="flex items-center gap-2"
               >
                 <Moon className="h-4 w-4" />
-                Dark
+                {t('dark')}
               </Button>
               <Button
                 variant={theme === "system" ? "default" : "outline"}
@@ -123,11 +125,11 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
                 className="flex items-center gap-2"
               >
                 <Monitor className="h-4 w-4" />
-                System
+                {t('system')}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Choose your preferred color scheme
+              {t('themeHelp')}
             </p>
           </div>
         </CardContent>
@@ -138,21 +140,21 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Language & Region
+            {t('languageTitle')}
           </CardTitle>
           <CardDescription>
-            Set your preferred language
+            {t('languageDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
+            <Label htmlFor="language">{t('language')}</Label>
             <Select
               value={formData.language}
               onValueChange={(value) => handleInputChange("language", value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select language" />
+                <SelectValue placeholder={t('selectLanguage')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
@@ -161,7 +163,7 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
-              Choose your preferred language
+              {t('languageHelp')}
             </p>
           </div>
         </CardContent>

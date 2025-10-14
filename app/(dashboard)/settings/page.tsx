@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User,
@@ -16,13 +17,14 @@ import { PageBanner } from "@/components/ui/page-banner";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
+  const t = useTranslations('settings');
 
   return (
     <div className="space-y-6">
       {/* Banner Header */}
       <PageBanner
-        title="Settings"
-        description="Manage your account settings and preferences"
+        title={t('title')}
+        description={t('description')}
         imageSrc="/banner-bg-image.webp"
       />
 
@@ -35,15 +37,15 @@ export default function SettingsPage() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            Profile
+            {t('profile.title')}
           </TabsTrigger>
           <TabsTrigger value="account" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            Security
+            {t('account.title')}
           </TabsTrigger>
           <TabsTrigger value="preferences" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
-            Preferences
+            {t('preferences.title')}
           </TabsTrigger>
         </TabsList>
 

@@ -21,10 +21,12 @@ import { toast } from "sonner";
 import { updateProfile, getUserProfile } from "@/app/(dashboard)/settings/server/settings";
 import { authClient } from "@/lib/auth-client";
 import { refreshUserSession } from "@/lib/session-refresh";
+import { useTranslations } from 'next-intl';
 
 interface ProfileSettingsProps {}
 
 export function ProfileSettings({}: ProfileSettingsProps) {
+  const t = useTranslations('settings.profile');
   const { data: session, refetch } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -75,14 +77,14 @@ export function ProfileSettings({}: ProfileSettingsProps) {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast.error("Please select a valid image file");
+        toast.error(t('imageTypeError'));
         return;
       }
 
       // Validate file size (2MB limit)
       const maxSize = 2 * 1024 * 1024; // 2MB in bytes
       if (file.size > maxSize) {
-        toast.error("Image size must be less than 2MB");
+        toast.error(t('imageSizeError'));
         return;
       }
 
@@ -119,7 +121,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
         img.src = result;
       };
       reader.onerror = () => {
-        toast.error("Failed to read image file");
+        toast.error(t('imageReadError'));
       };
       reader.readAsDataURL(file);
     }
@@ -140,7 +142,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
 
       if (result.success) {
         setHasChanges(false);
-        toast.success("Profile updated successfully");
+        toast.success(t('updateSuccess'));
         
         // Refresh the session to get updated user data
         try {
@@ -151,11 +153,11 @@ export function ProfileSettings({}: ProfileSettingsProps) {
           // Still show success since the profile was updated
         }
       } else {
-        toast.error(result.message || "Failed to update profile");
+        toast.error(result.message || t('updateError'));
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error("Failed to update profile");
+      toast.error(t('updateError'));
     } finally {
       setIsLoading(false);
     }
@@ -172,10 +174,10 @@ export function ProfileSettings({}: ProfileSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Profile Picture
+            {t('pictureTitle')}
           </CardTitle>
           <CardDescription>
-            Upload a profile picture to personalize your account.
+            {t('pictureDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -190,7 +192,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
               <Button variant="outline" size="sm" asChild>
                 <label htmlFor="profile-image" className="cursor-pointer">
                   <Camera className="mr-2 h-4 w-4" />
-                  Change Picture
+                  {t('changePicture')}
                 </label>
               </Button>
               {formData.profileImage && (
@@ -201,7 +203,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
                   className="text-red-600 hover:text-red-700"
                 >
                   <X className="mr-2 h-4 w-4" />
-                  Remove Picture
+                  {t('removePicture')}
                 </Button>
               )}
               <input
@@ -212,7 +214,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
                 className="hidden"
               />
               <p className="text-sm text-muted-foreground">
-                JPG, PNG or GIF. Max size 2MB.
+                {t('imageHelp')}
               </p>
             </div>
           </div>
@@ -222,33 +224,33 @@ export function ProfileSettings({}: ProfileSettingsProps) {
       {/* Personal Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle>{t('personalInfo')}</CardTitle>
           <CardDescription>
-            Update your personal details and contact information.
+            {t('personalInfoDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="firstName">
-                First Name <span className="text-red-500">*</span>
+                {t('firstName')} <span className="text-red-500">{t('required')}</span>
               </Label>
               <Input
                 id="firstName"
                 value={formData.firstName}
                 onChange={(e) => handleInputChange('firstName', e.target.value)}
-                placeholder="Enter your first name"
+                placeholder={t('firstNamePlaceholder')}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">
-                Last Name <span className="text-red-500">*</span>
+                {t('lastName')} <span className="text-red-500">{t('required')}</span>
               </Label>
               <Input
                 id="lastName"
                 value={formData.lastName}
                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                placeholder="Enter your last name"
+                placeholder={t('lastNamePlaceholder')}
               />
             </div>
           </div>
@@ -256,7 +258,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="email">
-                Email Address <span className="text-red-500">*</span>
+                {t('email')} <span className="text-red-500">{t('required')}</span>
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -265,13 +267,13 @@ export function ProfileSettings({}: ProfileSettingsProps) {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder={t('emailPlaceholder')}
                   className="pl-10"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Label htmlFor="phoneNumber">{t('phoneNumber')}</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -279,7 +281,7 @@ export function ProfileSettings({}: ProfileSettingsProps) {
                   type="tel"
                   value={formData.phoneNumber}
                   onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                  placeholder="Enter your phone number"
+                  placeholder={t('phonePlaceholder')}
                   className="pl-10"
                 />
               </div>
@@ -299,12 +301,12 @@ export function ProfileSettings({}: ProfileSettingsProps) {
           {isLoading ? (
             <>
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Saving...
+              {t('saving')}
             </>
           ) : (
             <>
               <Save className="mr-2 h-4 w-4" />
-              Save Changes
+              {t('saveChanges')}
             </>
           )}
         </Button>

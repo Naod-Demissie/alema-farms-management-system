@@ -31,6 +31,7 @@ import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Search } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 interface StaffMember {
   id: string;
@@ -74,14 +75,6 @@ const statusColors = {
   CHECKED_OUT: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
 };
 
-const statusLabels = {
-  PRESENT: "Present",
-  ABSENT: "Absent", 
-  CHECKED_IN: "Checked In",
-  ON_LEAVE: "On Leave",
-  CHECKED_OUT: "Checked Out",
-};
-
 // Check-in/out table columns
 const createCheckInOutTableColumns = ({
   onCheckIn,
@@ -90,6 +83,7 @@ const createCheckInOutTableColumns = ({
   attendanceRecords,
   buttonStates,
   leaveStatus,
+  t,
 }: {
   onCheckIn: (staffId: string) => void;
   onCheckOut: (staffId: string) => void;
@@ -97,17 +91,18 @@ const createCheckInOutTableColumns = ({
   attendanceRecords: AttendanceRecord[];
   buttonStates: Record<string, 'checkin' | 'checkout' | 'checkedout' | 'onleave'>;
   leaveStatus: Record<string, boolean>;
+  t: any;
 }): ColumnDef<any>[] => [
   {
     accessorKey: "name",
-    header: "Staff Name",
+    header: t('attendance.checkInOutTab.columns.staffName'),
     meta: {
       className: "font-medium",
     },
   },
   {
     id: "checkIn",
-    header: "Check In Time",
+    header: t('attendance.checkInOutTab.columns.checkInTime'),
     cell: ({ row }) => {
       const staffId = row.original.id;
       const today = new Date();
@@ -134,7 +129,7 @@ const createCheckInOutTableColumns = ({
   },
   {
     id: "checkOut",
-    header: "Check Out Time",
+    header: t('attendance.checkInOutTab.columns.checkOutTime'),
     cell: ({ row }) => {
       const staffId = row.original.id;
       const today = new Date();
@@ -161,7 +156,7 @@ const createCheckInOutTableColumns = ({
   },
   {
     id: "hours",
-    header: "Hours",
+    header: t('attendance.checkInOutTab.columns.hours'),
     cell: ({ row }) => {
       const staffId = row.original.id;
       const today = new Date();
@@ -179,7 +174,7 @@ const createCheckInOutTableColumns = ({
   },
   {
     id: "status",
-    header: "Status",
+    header: t('attendance.checkInOutTab.columns.status'),
     cell: ({ row }) => {
       const staffId = row.original.id;
       const today = new Date();
@@ -192,6 +187,15 @@ const createCheckInOutTableColumns = ({
 
       // Check if staff is on leave
       const isOnLeave = leaveStatus[staffId];
+      
+      const statusLabels = {
+        PRESENT: t('attendance.checkInOutTab.status.present'),
+        ABSENT: t('attendance.checkInOutTab.status.absent'),
+        CHECKED_IN: t('attendance.checkInOutTab.status.checkedIn'),
+        ON_LEAVE: t('attendance.checkInOutTab.status.onLeave'),
+        CHECKED_OUT: t('attendance.checkInOutTab.status.checkedOut'),
+      };
+      
       if (isOnLeave) {
         return (
           <Badge className={statusColors["ON_LEAVE"]}>
@@ -202,14 +206,14 @@ const createCheckInOutTableColumns = ({
 
       return (
         <Badge className={statusColors[todayRecord?.status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"}>
-          {todayRecord?.status ? statusLabels[todayRecord.status as keyof typeof statusLabels] || todayRecord.status : "Not Checked"}
+          {todayRecord?.status ? statusLabels[todayRecord.status as keyof typeof statusLabels] || todayRecord.status : t('attendance.checkInOutTab.status.notChecked')}
         </Badge>
       );
     },
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('attendance.checkInOutTab.columns.actions'),
     cell: ({ row }) => {
       const staffId = row.original.id;
       const today = new Date();
@@ -226,7 +230,7 @@ const createCheckInOutTableColumns = ({
         if (buttonState === 'onleave') {
           return (
             <Badge className="bg-blue-100 text-blue-800">
-              On Leave
+              {t('attendance.checkInOutTab.buttons.onLeave')}
             </Badge>
           );
         }
@@ -240,7 +244,7 @@ const createCheckInOutTableColumns = ({
               className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20"
             >
               <XCircle className="h-3 w-3 mr-1" />
-              Check Out
+              {t('attendance.checkInOutTab.buttons.checkOut')}
             </Button>
           );
         }
@@ -248,7 +252,7 @@ const createCheckInOutTableColumns = ({
         if (buttonState === 'checkedout') {
           return (
             <Badge className="bg-purple-100 text-purple-800">
-              Checked Out
+              {t('attendance.checkInOutTab.buttons.checkedOut')}
             </Badge>
           );
         }
@@ -262,7 +266,7 @@ const createCheckInOutTableColumns = ({
             className="text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950/20"
           >
             <CheckCircle className="h-3 w-3 mr-1" />
-            Check In
+            {t('attendance.checkInOutTab.buttons.checkIn')}
           </Button>
         );
       };
@@ -280,7 +284,7 @@ const createCheckInOutTableColumns = ({
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => onUndo(staffId)}>
                   <Undo2 className="mr-2 h-4 w-4" />
-                  Reset Record
+                  {t('attendance.checkInOutTab.buttons.resetRecord')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -292,24 +296,24 @@ const createCheckInOutTableColumns = ({
 ];
 
 // Attendance records table columns
-const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
+const createAttendanceRecordsColumns = (t: any): ColumnDef<AttendanceRecord>[] => [
   {
     accessorKey: "staff.name",
-    header: "Staff Member",
+    header: t('attendance.recordsTab.columns.staffMember'),
     meta: {
       className: "font-medium",
     },
   },
   {
     accessorKey: "date",
-    header: "Date",
+    header: t('attendance.recordsTab.columns.date'),
     cell: ({ row }) => {
       return EthiopianDateFormatter.formatForTable(new Date(row.getValue("date")));
     },
   },
   {
     accessorKey: "checkIn",
-    header: "Check In",
+    header: t('attendance.recordsTab.columns.checkIn'),
     cell: ({ row }) => {
       const checkIn = row.getValue("checkIn") as string;
       return checkIn ? (
@@ -328,7 +332,7 @@ const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
   },
   {
     accessorKey: "checkOut",
-    header: "Check Out",
+    header: t('attendance.recordsTab.columns.checkOut'),
     cell: ({ row }) => {
       const checkOut = row.getValue("checkOut") as string;
       return checkOut ? (
@@ -347,9 +351,16 @@ const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t('attendance.recordsTab.columns.status'),
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
+      const statusLabels = {
+        PRESENT: t('attendance.checkInOutTab.status.present'),
+        ABSENT: t('attendance.checkInOutTab.status.absent'),
+        CHECKED_IN: t('attendance.checkInOutTab.status.checkedIn'),
+        ON_LEAVE: t('attendance.checkInOutTab.status.onLeave'),
+        CHECKED_OUT: t('attendance.checkInOutTab.status.checkedOut'),
+      };
       return (
         <Badge className={statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"}>
           {statusLabels[status as keyof typeof statusLabels] || status}
@@ -359,7 +370,7 @@ const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
   },
   {
     accessorKey: "hours",
-    header: "Hours",
+    header: t('attendance.recordsTab.columns.hours'),
     cell: ({ row }) => {
       const hours = row.getValue("hours") as number;
       return hours && hours > 0 ? `${Math.round(hours * 10) / 10}h` : "-";
@@ -368,23 +379,23 @@ const attendanceRecordsColumns: ColumnDef<AttendanceRecord>[] = [
 ];
 
 // Reports table columns
-const reportsColumns: ColumnDef<any>[] = [
+const createReportsColumns = (t: any): ColumnDef<any>[] => [
   {
     accessorKey: "name",
-    header: "Staff Member",
+    header: t('attendance.reportsTab.columns.staffMember'),
     meta: {
       className: "font-medium",
     },
   },
   {
     accessorKey: "weekAttendance",
-    header: "This Week",
+    header: t('attendance.reportsTab.columns.thisWeek'),
     cell: ({ row }) => {
       const weekAttendance = row.getValue("weekAttendance") as number;
       return (
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="bg-blue-100 text-blue-800">
-            {weekAttendance} days
+            {weekAttendance} {t('attendance.reportsTab.columns.days')}
           </Badge>
         </div>
       );
@@ -392,13 +403,13 @@ const reportsColumns: ColumnDef<any>[] = [
   },
   {
     accessorKey: "monthAttendance",
-    header: "This Month",
+    header: t('attendance.reportsTab.columns.thisMonth'),
     cell: ({ row }) => {
       const monthAttendance = row.getValue("monthAttendance") as number;
       return (
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="bg-green-100 text-green-800">
-            {monthAttendance} days
+            {monthAttendance} {t('attendance.reportsTab.columns.days')}
           </Badge>
         </div>
       );
@@ -406,13 +417,13 @@ const reportsColumns: ColumnDef<any>[] = [
   },
   {
     accessorKey: "yearAttendance",
-    header: "This Year",
+    header: t('attendance.reportsTab.columns.thisYear'),
     cell: ({ row }) => {
       const yearAttendance = row.getValue("yearAttendance") as number;
       return (
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="bg-purple-100 text-purple-800">
-            {yearAttendance} days
+            {yearAttendance} {t('attendance.reportsTab.columns.days')}
           </Badge>
         </div>
       );
@@ -421,6 +432,7 @@ const reportsColumns: ColumnDef<any>[] = [
 ];
 
 export function AttendanceManagement() {
+  const t = useTranslations('staff');
   const [activeTab, setActiveTab] = useState("checkin");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -475,7 +487,7 @@ export function AttendanceManagement() {
       }
     } catch (error) {
       console.error("Error loading staff members:", error);
-      toast.error("Failed to load staff members");
+      toast.error(t('attendance.toasts.loadStaffError'));
     }
   };
 
@@ -598,7 +610,7 @@ export function AttendanceManagement() {
       }
     } catch (error) {
       console.error("Error loading attendance records:", error);
-      toast.error("Failed to load attendance records");
+      toast.error(t('attendance.toasts.loadRecordsError'));
     } finally {
       setLoading(false);
     }
@@ -662,7 +674,7 @@ export function AttendanceManagement() {
     try {
       const result = await checkIn(staffId);
       if (result.success) {
-        toast.success("Checked in successfully");
+        toast.success(t('attendance.toasts.checkInSuccess'));
         // Update button state to checkout
         setButtonStates(prev => ({ ...prev, [staffId]: 'checkout' }));
         loadAttendanceStats();
@@ -671,11 +683,11 @@ export function AttendanceManagement() {
           loadAttendanceRecords();
         }
       } else {
-        toast.error(result.message || "Failed to check in");
+        toast.error(result.message || t('attendance.toasts.checkInError'));
       }
     } catch (error) {
       console.error("Error checking in:", error);
-      toast.error("Failed to check in");
+      toast.error(t('attendance.toasts.checkInError'));
     }
   };
 
@@ -683,7 +695,7 @@ export function AttendanceManagement() {
     try {
       const result = await checkOut(staffId);
       if (result.success) {
-        toast.success("Checked out successfully");
+        toast.success(t('attendance.toasts.checkOutSuccess'));
         // Update button state to checkedout
         setButtonStates(prev => ({ ...prev, [staffId]: 'checkedout' }));
         loadAttendanceStats();
@@ -692,11 +704,11 @@ export function AttendanceManagement() {
           loadAttendanceRecords();
         }
       } else {
-        toast.error(result.message || "Failed to check out");
+        toast.error(result.message || t('attendance.toasts.checkOutError'));
       }
     } catch (error) {
       console.error("Error checking out:", error);
-      toast.error("Failed to check out");
+      toast.error(t('attendance.toasts.checkOutError'));
     }
   };
 
@@ -714,7 +726,7 @@ export function AttendanceManagement() {
         const deleteResult = await deleteAttendance(attendanceRecord.id);
         
         if (deleteResult.success) {
-          toast.success("Attendance record reset");
+          toast.success(t('attendance.toasts.resetSuccess'));
           // Reset button state to checkin
           setButtonStates(prev => ({ ...prev, [staffId]: 'checkin' }));
           loadAttendanceStats();
@@ -723,14 +735,14 @@ export function AttendanceManagement() {
             loadAttendanceRecords();
           }
         } else {
-          toast.error(deleteResult.message || "Failed to reset attendance");
+          toast.error(deleteResult.message || t('attendance.toasts.resetError'));
         }
       } else {
-        toast.error("No attendance record found to reset");
+        toast.error(t('attendance.toasts.noRecordFound'));
       }
     } catch (error) {
       console.error("Error undoing attendance:", error);
-      toast.error("Failed to reset attendance");
+      toast.error(t('attendance.toasts.resetError'));
     }
   };
 
@@ -762,9 +774,9 @@ export function AttendanceManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Attendance Management</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t('attendance.pageTitle')}</h2>
           <p className="text-muted-foreground">
-            Track staff attendance and manage check-in/check-out for workers.
+            {t('attendance.pageDescription')}
           </p>
         </div>
       </div>
@@ -773,7 +785,7 @@ export function AttendanceManagement() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Workers</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('attendance.stats.totalWorkers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -785,7 +797,7 @@ export function AttendanceManagement() {
               <>
                 <div className="text-2xl font-bold">{attendanceStats.totalStaff}</div>
                 <p className="text-xs text-muted-foreground">
-                  Active worker staff members
+                  {t('attendance.stats.activeWorkerStaff')}
                 </p>
               </>
             )}
@@ -794,7 +806,7 @@ export function AttendanceManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Present Today</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('attendance.stats.presentToday')}</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -806,7 +818,7 @@ export function AttendanceManagement() {
               <>
                 <div className="text-2xl font-bold text-green-600">{attendanceStats.present}</div>
                 <p className="text-xs text-muted-foreground">
-                  {attendanceStats.totalStaff > 0 ? Math.round((attendanceStats.present / attendanceStats.totalStaff) * 100) : 0}% attendance rate
+                  {attendanceStats.totalStaff > 0 ? Math.round((attendanceStats.present / attendanceStats.totalStaff) * 100) : 0}% {t('attendance.stats.attendanceRate')}
                 </p>
               </>
             )}
@@ -815,7 +827,7 @@ export function AttendanceManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Absent Today</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('attendance.stats.absentToday')}</CardTitle>
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -827,7 +839,7 @@ export function AttendanceManagement() {
               <>
                 <div className="text-2xl font-bold text-red-600">{attendanceStats.absent}</div>
                 <p className="text-xs text-muted-foreground">
-                  Staff not present
+                  {t('attendance.stats.staffNotPresent')}
                 </p>
               </>
             )}
@@ -836,7 +848,7 @@ export function AttendanceManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Hours</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('attendance.stats.avgHours')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -848,7 +860,7 @@ export function AttendanceManagement() {
               <>
                 <div className="text-2xl font-bold">{attendanceStats.averageHours}h</div>
                 <p className="text-xs text-muted-foreground">
-                  Per staff member today
+                  {t('attendance.stats.perStaffToday')}
                 </p>
               </>
             )}
@@ -859,18 +871,18 @@ export function AttendanceManagement() {
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
-          <TabsTrigger value="checkin">Check In/Out</TabsTrigger>
-          <TabsTrigger value="records">Attendance Records</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="checkin">{t('attendance.tabs.checkInOut')}</TabsTrigger>
+          <TabsTrigger value="records">{t('attendance.tabs.records')}</TabsTrigger>
+          <TabsTrigger value="reports">{t('attendance.tabs.reports')}</TabsTrigger>
         </TabsList>
 
         {/* Check In/Out Tab */}
         <TabsContent value="checkin" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Worker Check In/Out</CardTitle>
+              <CardTitle>{t('attendance.checkInOutTab.title')}</CardTitle>
               <CardDescription>
-                Manage daily attendance for all workers.
+                {t('attendance.checkInOutTab.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -878,7 +890,7 @@ export function AttendanceManagement() {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading attendance data...</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('attendance.checkInOutTab.loading')}</p>
                   </div>
                 </div>
               ) : (
@@ -890,6 +902,7 @@ export function AttendanceManagement() {
                     attendanceRecords,
                     buttonStates,
                     leaveStatus,
+                    t,
                   })}
                   data={staffMembers}
                 />
@@ -903,9 +916,9 @@ export function AttendanceManagement() {
           {/* Filters */}
           <Card>
             <CardHeader>
-              <CardTitle>Filters</CardTitle>
+              <CardTitle>{t('attendance.recordsTab.filtersTitle')}</CardTitle>
               <CardDescription>
-                Filter attendance records by staff, status, or date.
+                {t('attendance.recordsTab.filtersDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -914,7 +927,7 @@ export function AttendanceManagement() {
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by staff name..."
+                      placeholder={t('attendance.recordsTab.searchPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-8"
@@ -923,15 +936,15 @@ export function AttendanceManagement() {
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
+                    <SelectValue placeholder={t('attendance.recordsTab.filterByStatus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="PRESENT">Present</SelectItem>
-                    <SelectItem value="CHECKED_IN">Checked In</SelectItem>
-                    <SelectItem value="CHECKED_OUT">Checked Out</SelectItem>
-                    <SelectItem value="ABSENT">Absent</SelectItem>
-                    <SelectItem value="ON_LEAVE">On Leave</SelectItem>
+                    <SelectItem value="all">{t('attendance.recordsTab.allStatus')}</SelectItem>
+                    <SelectItem value="PRESENT">{t('attendance.checkInOutTab.status.present')}</SelectItem>
+                    <SelectItem value="CHECKED_IN">{t('attendance.checkInOutTab.status.checkedIn')}</SelectItem>
+                    <SelectItem value="CHECKED_OUT">{t('attendance.checkInOutTab.status.checkedOut')}</SelectItem>
+                    <SelectItem value="ABSENT">{t('attendance.checkInOutTab.status.absent')}</SelectItem>
+                    <SelectItem value="ON_LEAVE">{t('attendance.checkInOutTab.status.onLeave')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Popover>
@@ -944,15 +957,13 @@ export function AttendanceManagement() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? EthiopianDateFormatter.formatForTable(selectedDate) : "Pick a date"}
+                      {selectedDate ? EthiopianDateFormatter.formatForTable(selectedDate) : t('attendance.recordsTab.pickDate')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
-                      mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -964,7 +975,7 @@ export function AttendanceManagement() {
                     setSelectedDate(undefined);
                   }}
                 >
-                  Clear Filters
+                  {t('attendance.recordsTab.clearFilters')}
                 </Button>
               </div>
             </CardContent>
@@ -973,9 +984,9 @@ export function AttendanceManagement() {
           {/* Attendance Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Attendance Records</CardTitle>
+              <CardTitle>{t('attendance.recordsTab.tableTitle')}</CardTitle>
               <CardDescription>
-                Detailed attendance records for all staff members with filtering and pagination.
+                {t('attendance.recordsTab.tableDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -983,12 +994,12 @@ export function AttendanceManagement() {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading attendance records...</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('attendance.recordsTab.loading')}</p>
                   </div>
                 </div>
               ) : (
                 <DataTable
-                  columns={attendanceRecordsColumns}
+                  columns={createAttendanceRecordsColumns(t)}
                   data={attendanceRecords}
                 />
               )}
@@ -1000,9 +1011,9 @@ export function AttendanceManagement() {
         <TabsContent value="reports" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Attendance Reports</CardTitle>
+              <CardTitle>{t('attendance.reportsTab.title')}</CardTitle>
               <CardDescription>
-                Weekly, monthly, and yearly attendance summary for all workers.
+                {t('attendance.reportsTab.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1010,12 +1021,12 @@ export function AttendanceManagement() {
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading attendance reports...</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('attendance.reportsTab.loading')}</p>
                   </div>
                 </div>
               ) : (
                 <DataTable
-                  columns={reportsColumns}
+                  columns={createReportsColumns(t)}
                   data={reportsTableData}
                 />
               )}

@@ -28,17 +28,20 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { useTranslations } from 'next-intl';
 
-const formSchema = z.object({
-  email: z.string().email(),
+const getFormSchema = (t: any) => z.object({
+  email: z.string().email(t('validation.emailInvalid')),
 });
 
 export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const t = useTranslations('auth');
   const [isLoading, setIsLoading] = useState(false);
 
+  const formSchema = getFormSchema(t);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -57,7 +60,7 @@ export function ForgotPasswordForm({
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Password reset email sent");
+      toast.success(t('passwordResetEmailSent'));
     }
 
     setIsLoading(false);
@@ -67,9 +70,9 @@ export function ForgotPasswordForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Forgot Password</CardTitle>
+          <CardTitle className="text-xl">{t('forgotPasswordTitle')}</CardTitle>
           <CardDescription>
-            Enter your email to reset your password
+            {t('forgotPasswordDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -82,9 +85,9 @@ export function ForgotPasswordForm({
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t('email')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="m@example.com" {...field} />
+                          <Input placeholder={t('emailPlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -95,14 +98,14 @@ export function ForgotPasswordForm({
                   {isLoading ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    "Reset Password"
+                    t('resetPasswordButton')
                   )}
                 </Button>
               </div>
               <div className="text-center text-sm">
-                Go back to{" "}
+                {t('goBackTo')}{" "}
                 <Link href="/signin" className="underline underline-offset-4">
-                  Sign In
+                  {t('signIn')}
                 </Link>
               </div>
             </form>

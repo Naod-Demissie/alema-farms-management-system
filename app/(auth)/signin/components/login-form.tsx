@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useTranslations } from 'next-intl';
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const t = useTranslations('auth');
 
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
@@ -86,7 +88,7 @@ export function LoginForm({
       if (result.data) {
         console.log('[LoginForm] Sign in successful, redirecting...');
         console.log('[LoginForm] Session data:', result.data);
-        toast.success("Signed in successfully!");
+        toast.success(t('signingIn'));
         
         // Get callback URL from query params or default to home
         const urlParams = new URLSearchParams(window.location.search);
@@ -125,8 +127,8 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>Login with your Google account</CardDescription>
+          <CardTitle className="text-xl">{t('welcomeBack')}</CardTitle>
+          <CardDescription>{t('loginWithGoogle')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -145,12 +147,12 @@ export function LoginForm({
                         fill="currentColor"
                       />
                     </svg>
-                    Login with Google
+                    {t('loginWithGoogleButton')}
                   </Button>
                 </div>
                 <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
                   <span className="bg-card text-muted-foreground relative z-10 px-2">
-                    Or continue with
+                    {t('orContinueWith')}
                   </span>
                 </div>
                 <div className="grid gap-6">
@@ -160,9 +162,9 @@ export function LoginForm({
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t('email')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="m@example.com" {...field} />
+                            <Input placeholder={t('emailPlaceholder')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -176,11 +178,11 @@ export function LoginForm({
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>{t('password')}</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input
-                                  placeholder="********"
+                                  placeholder={t('passwordPlaceholder')}
                                   {...field}
                                   type={showPassword ? "text" : "password"}
                                 />
@@ -207,7 +209,7 @@ export function LoginForm({
                         href="/forgot-password"
                         className="ml-auto text-sm underline-offset-4 hover:underline"
                       >
-                        Forgot your password?
+                        {t('forgotPassword')}
                       </Link>
                     </div>
                   </div>
@@ -215,7 +217,7 @@ export function LoginForm({
                     {isLoading ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
-                      "Sign In"
+                      t('signIn')
                     )}
                   </Button>
                 </div>

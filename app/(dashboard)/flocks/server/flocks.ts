@@ -27,8 +27,9 @@ export interface Flock {
     mortality: number;
     feedUsage: number;
     eggProduction: number;
-    expenses: number;
-    revenue: number;
+    broilerProduction: number;
+    manureProduction: number;
+    notifications: number;
   };
 }
 
@@ -136,6 +137,48 @@ export async function createFlock(data: CreateFlockData): Promise<ApiResponse> {
   }
 }
 
+// Get all flocks (simple version without pagination for use in dropdowns)
+export async function getFlocksAction(): Promise<ApiResponse> {
+  try {
+    // Get authenticated user
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
+
+    // Get all active flocks
+    const flocks = await prisma.flocks.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        batchCode: true,
+        arrivalDate: true,
+        initialCount: true,
+        currentCount: true,
+        ageInDays: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+
+    return {
+      success: true,
+      data: flocks
+    };
+  } catch (error) {
+    const e = error as Error;
+    console.error('Error fetching flocks:', e);
+    return {
+      success: false,
+      message: e.message || "Failed to fetch flocks"
+    };
+  }
+}
+
 // Get all flocks with filtering and pagination
 export async function getFlocks(
   filters: FlockFilters = {},
@@ -180,7 +223,7 @@ export async function getFlocks(
     const total = await prisma.flocks.count({ where });
 
     // Get flocks with pagination - optimized with selective loading
-    const flocks = await prisma.flocks.findMany({
+    const flocksData = await prisma.flocks.findMany({
       where,
       skip: offset,
       take: limit,
@@ -209,6 +252,13 @@ export async function getFlocks(
         }
       }
     });
+
+    // Map the data to convert null to undefined for ageInDays
+    const flocks = flocksData.map(flock => ({
+      ...flock,
+      ageInDays: flock.ageInDays ?? undefined,
+      notes: flock.notes ?? undefined
+    }));
 
     return {
       success: true,
@@ -286,7 +336,7 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
         select: {
           id: true,
           vaccineName: true,
-          date: true,
+          administeredDate: true,
           notes: true,
           createdAt: true
         }
@@ -298,8 +348,8 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
         select: {
           id: true,
           disease: true,
-          treatment: true,
-          date: true,
+          medication: true,
+          startDate: true,
           response: true,
           notes: true,
           createdAt: true
@@ -314,7 +364,7 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
           count: true,
           date: true,
           cause: true,
-          notes: true
+          causeDescription: true
         }
       }),
       prisma.feedUsage.findMany({
@@ -330,7 +380,6 @@ export async function getFlockById(flockId: string): Promise<ApiResponse> {
           feed: {
             select: {
               id: true,
-              feedName: true,
               feedType: true
             }
           }
@@ -632,8 +681,6 @@ export async function getFlockStatistics(): Promise<ApiResponse> {
     const [
       totalFlocks,
       totalBirds,
-      flocksByBreed,
-      flocksBySource,
       recentFlocks,
       mortalityRate
     ] = await Promise.all([
@@ -642,20 +689,6 @@ export async function getFlockStatistics(): Promise<ApiResponse> {
       
       // Total birds across all flocks
       prisma.flocks.aggregate({
-        _sum: { currentCount: true }
-      }),
-      
-      // Flocks by breed
-      prisma.flocks.groupBy({
-        by: ['breed'],
-        _count: { breed: true },
-        _sum: { currentCount: true }
-      }),
-      
-      // Flocks by source
-      prisma.flocks.groupBy({
-        by: ['source'],
-        _count: { source: true },
         _sum: { currentCount: true }
       }),
       
@@ -684,16 +717,6 @@ export async function getFlockStatistics(): Promise<ApiResponse> {
     const statistics = {
       totalFlocks,
       totalBirds: totalBirds._sum.currentCount || 0,
-      flocksByBreed: flocksByBreed.map(item => ({
-        breed: item.breed,
-        count: item._count.breed,
-        birds: item._sum.currentCount || 0
-      })),
-      flocksBySource: flocksBySource.map(item => ({
-        source: item.source,
-        count: item._count.source,
-        birds: item._sum.currentCount || 0
-      })),
       recentFlocks,
       averageMortalityRate: Math.round(avgMortalityRate * 100) / 100
     };

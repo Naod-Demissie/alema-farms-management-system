@@ -1,5 +1,6 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
@@ -25,11 +26,12 @@ import {
 export const vaccinationColumns = (
   onEdit: (vaccination: any) => void,
   onDelete: (vaccination: any) => void,
-  getStatusBadge: (status: string) => React.ReactNode
+  getStatusBadge: (status: string) => React.ReactNode,
+  t?: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "vaccineName",
-    header: "Vaccine Name",
+    header: t ? t('columns.vaccineName') : "Vaccine Name",
     cell: ({ row }) => {
       const vaccination = row.original;
       return (
@@ -42,7 +44,7 @@ export const vaccinationColumns = (
   },
   {
     accessorKey: "flockId",
-    header: "Flock",
+    header: t ? t('columns.flock') : "Flock",
     cell: ({ row }) => {
       const vaccination = row.original;
       return (
@@ -54,7 +56,7 @@ export const vaccinationColumns = (
   },
   {
     accessorKey: "administeredDate",
-    header: "Date Administered",
+    header: t ? t('columns.dateAdministered') : "Date Administered",
     cell: ({ row }) => {
       const vaccination = row.original;
       return (
@@ -65,7 +67,7 @@ export const vaccinationColumns = (
               {EthiopianDateFormatter.formatForTable(new Date(vaccination.administeredDate))}
             </div>
             <div className="text-sm text-muted-foreground">
-              by {vaccination.administeredBy}
+              {t ? t('columns.by') : "by"} {vaccination.administeredBy}
             </div>
           </div>
         </div>
@@ -74,20 +76,20 @@ export const vaccinationColumns = (
   },
   {
     accessorKey: "quantity",
-    header: "Quantity",
+    header: t ? t('columns.quantity') : "Quantity",
     cell: ({ row }) => {
       const vaccination = row.original;
       return (
         <div className="text-center">
           <div className="font-medium">{vaccination.quantity.toLocaleString()}</div>
-          <div className="text-sm text-muted-foreground">birds</div>
+          <div className="text-sm text-muted-foreground">{t ? t('columns.birds') : "birds"}</div>
         </div>
       );
     },
   },
   {
     accessorKey: "dosage",
-    header: "Dosage",
+    header: t ? t('columns.dosage') : "Dosage",
     cell: ({ row }) => {
       const vaccination = row.original;
       return (
@@ -97,7 +99,7 @@ export const vaccinationColumns = (
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t ? t('columns.status') : "Status",
     cell: ({ row }) => {
       const vaccination = row.original;
       return getStatusBadge(vaccination.status);
@@ -105,7 +107,7 @@ export const vaccinationColumns = (
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t ? t('columns.notes') : "Notes",
     cell: ({ row }) => {
       const vaccination = row.original;
       return (
@@ -118,7 +120,7 @@ export const vaccinationColumns = (
               </span>
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">No notes</span>
+            <span className="text-sm text-muted-foreground">{t ? t('columns.noNotes') : "No notes"}</span>
           )}
         </div>
       );
@@ -126,7 +128,7 @@ export const vaccinationColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t ? t('columns.actions') : "Actions",
     cell: ({ row }) => {
       const vaccination = row.original;
       
@@ -139,22 +141,22 @@ export const vaccinationColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{t ? t('columns.actions') : "Actions"}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(vaccination.id)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
+              {t ? t('columns.viewDetails') : "View Details"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(vaccination)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Record
+              {t ? t('columns.editRecord') : "Edit Record"}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onDelete(vaccination)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Record
+              {t ? t('columns.deleteRecord') : "Delete Record"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

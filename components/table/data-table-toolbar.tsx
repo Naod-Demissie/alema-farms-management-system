@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
 import { DataTableViewOptions } from "./data-table-view-options";
+import { useTranslations } from 'next-intl';
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -27,6 +28,7 @@ export function DataTableToolbar<TData>({
   customFilters,
   onResetCustomFilters,
 }: DataTableToolbarProps<TData>) {
+  const t = useTranslations('common');
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -34,7 +36,7 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
         {filterColumnId && (
           <Input
-            placeholder={filterPlaceholder || `Filter ${filterColumnId}...`}
+            placeholder={filterPlaceholder || `${t('filter')} ${filterColumnId}...`}
             value={
               (table.getColumn(filterColumnId)?.getFilterValue() as string) ?? ""
             }
@@ -68,7 +70,7 @@ export function DataTableToolbar<TData>({
             }}
             className="h-8 px-2 lg:px-3"
           >
-            Reset
+            {t('resetFilters')}
             <Cross2Icon className="ml-2 h-4 w-4" />
           </Button>
         )}

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { ReusableDialog } from "@/components/ui/reusable-dialog";
 import { ProductionForm, eggProductionSchema, broilerProductionSchema, manureProductionSchema } from "@/app/(dashboard)/production/components/shared/production-forms";
 import { 
@@ -62,6 +63,7 @@ export function ProductionDialog({
   onSuccess,
   loading = false
 }: ProductionDialogProps) {
+  const t = useTranslations('production');
   
   // Get the appropriate schema based on production type
   const getSchema = () => {
@@ -166,34 +168,36 @@ export function ProductionDialog({
       }
 
       if (result.success) {
-        toast.success(`${isUpdate ? 'Updated' : 'Created'} ${productionType.charAt(0).toUpperCase() + productionType.slice(1)} production record successfully`);
+        const action = isUpdate ? 'updated' : 'created';
+        toast.success(t(`toasts.${action}`, { type: t(`tabs.${productionType}`) }));
         if (onSuccess) {
           onSuccess();
         }
       } else {
-        toast.error(result.message || `Failed to ${isUpdate ? 'update' : 'create'} production record`);
+        const action = isUpdate ? 'update' : 'create';
+        toast.error(result.message || t('toasts.createFailed', { action }));
       }
     } catch (error) {
       console.error("Error creating production record:", error);
-      toast.error("An error occurred while creating the production record");
+      toast.error(t('toasts.error'));
     }
   };
 
   // Get dialog title and description
   const getDialogConfig = () => {
     const isUpdate = !!initialData?.id;
-    const typeLabels = {
-      eggs: "Egg Production",
-      broiler: "Broiler Production", 
-      manure: "Manure Production"
+    const titleKey = isUpdate ? 'dialogs.edit' : 'dialogs.add';
+    
+    const typeTitles: Record<string, string> = {
+      eggs: isUpdate ? t('dialogs.edit.eggTitle') : t('dialogs.add.eggTitle'),
+      broiler: isUpdate ? t('dialogs.edit.broilerTitle') : t('dialogs.add.broilerTitle'),
+      manure: isUpdate ? t('dialogs.edit.manureTitle') : t('dialogs.add.manureTitle')
     };
 
     return {
-      title: `${isUpdate ? "Edit" : "Add"} ${typeLabels[productionType]}`,
-      description: isUpdate 
-        ? "Update the production record details below." 
-        : "Add a new production record to your system.",
-      submitText: isUpdate ? "Update" : "Add"
+      title: typeTitles[productionType],
+      description: t(`${titleKey}.description`),
+      submitText: t(`${titleKey}.submit`)
     };
   };
 

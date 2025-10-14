@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import {
   Card,
   CardContent,
@@ -76,6 +77,7 @@ interface FinancialReportsProps {
 }
 
 export function FinancialReports({ filters }: FinancialReportsProps) {
+  const t = useTranslations('reports');
   const [flockFinancials, setFlockFinancials] = useState<
     FlockFinancialSummary[]
   >([]);
@@ -272,9 +274,9 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
     setTimeRange,
   }: any) => {
     const financialMetrics = [
-      { key: "revenue", label: "Revenue", color: "#16a34a" },
-      { key: "expenses", label: "Expenses", color: "#dc2626" },
-      { key: "net", label: "Net Profit", color: "#2563eb" }
+      { key: "revenue", label: t('financial.revenue'), color: "#16a34a" },
+      { key: "expenses", label: t('financial.expenses'), color: "#dc2626" },
+      { key: "net", label: t('financial.netProfit'), color: "#2563eb" }
     ];
 
     return (
@@ -287,19 +289,19 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
               className="w-[160px] rounded-lg sm:ml-auto"
-              aria-label="Select a time range"
+              aria-label={t('common.selectTimeRange')}
             >
-              <SelectValue placeholder="Last 3 months" />
+              <SelectValue placeholder={t('common.last3Months')} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="3months" className="rounded-lg">
-                Last 3 months
+                {t('common.last3Months')}
               </SelectItem>
               <SelectItem value="month" className="rounded-lg">
-                Last 30 days
+                {t('common.last30Days')}
               </SelectItem>
               <SelectItem value="week" className="rounded-lg">
-                Last 7 days
+                {t('common.last7Days')}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -307,9 +309,9 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
         <CardContent className="px-2 sm:p-6">
           <ChartContainer
             config={{
-              revenue: { label: "Revenue", color: "#16a34a" },
-              expenses: { label: "Expenses", color: "#dc2626" },
-              net: { label: "Net Profit", color: "#2563eb" }
+              revenue: { label: t('financial.revenue'), color: "#16a34a" },
+              expenses: { label: t('financial.expenses'), color: "#dc2626" },
+              net: { label: t('financial.netProfit'), color: "#2563eb" }
             }}
             className="aspect-auto h-[300px] w-full"
           >
@@ -391,7 +393,7 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('financial.totalRevenue')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -413,7 +415,7 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Expenses
+              {t('financial.totalExpenses')}
             </CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
@@ -464,7 +466,7 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('financial.profitMargin')}</CardTitle>
             <Target className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
@@ -491,8 +493,8 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
 
       {/* Financial Overview Area Chart */}
       <FinancialAreaChart
-        title="Financial Overview"
-        description="Revenue, expenses, and net profit trends over time"
+        title={t('financial.revenueVsExpenses')}
+        description={t('financial.revenueVsExpensesDesc')}
         data={areaChartData}
           config={chartConfig}
         timeRange={areaChartTimeFilter}
@@ -505,8 +507,8 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
         <Card className="pt-0">
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Revenue Breakdown</CardTitle>
-              <CardDescription>Revenue distribution by source</CardDescription>
+              <CardTitle>{t('financial.revenueBreakdown')}</CardTitle>
+              <CardDescription>{t('financial.revenueBreakdownDesc')}</CardDescription>
             </div>
 
             <Select
@@ -515,19 +517,19 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             >
               <SelectTrigger
                 className="w-[160px] rounded-lg sm:ml-auto sm:flex"
-                aria-label="Select a time range"
+                aria-label={t('common.selectTimeRange')}
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder={t('common.last3Months')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="3months" className="rounded-lg">
-                  Last 3 months
+                  {t('common.last3Months')}
                 </SelectItem>
                 <SelectItem value="month" className="rounded-lg">
-                  Last 30 days
+                  {t('common.last30Days')}
                 </SelectItem>
                 <SelectItem value="week" className="rounded-lg">
-                  Last 7 days
+                  {t('common.last7Days')}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -634,9 +636,9 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
         <Card className="pt-0">
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Expense Breakdown</CardTitle>
+              <CardTitle>{t('financial.expenseBreakdown')}</CardTitle>
               <CardDescription>
-                Expense distribution by category
+                {t('financial.expenseBreakdownDesc')}
               </CardDescription>
             </div>
 
@@ -646,19 +648,19 @@ export function FinancialReports({ filters }: FinancialReportsProps) {
             >
               <SelectTrigger
                 className="w-[160px] rounded-lg sm:ml-auto sm:flex"
-                aria-label="Select a time range"
+                aria-label={t('common.selectTimeRange')}
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder={t('common.last3Months')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="3months" className="rounded-lg">
-                  Last 3 months
+                  {t('common.last3Months')}
                 </SelectItem>
                 <SelectItem value="month" className="rounded-lg">
-                  Last 30 days
+                  {t('common.last30Days')}
                 </SelectItem>
                 <SelectItem value="week" className="rounded-lg">
-                  Last 7 days
+                  {t('common.last7Days')}
                 </SelectItem>
               </SelectContent>
             </Select>

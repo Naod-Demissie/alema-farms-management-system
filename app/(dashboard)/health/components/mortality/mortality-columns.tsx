@@ -1,5 +1,6 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
@@ -29,11 +30,12 @@ import {
 export const mortalityColumns = (
   onEdit: (record: any) => void,
   onDelete: (record: any) => void,
-  getCauseBadge: (cause: string) => React.ReactNode
+  getCauseBadge: (cause: string) => React.ReactNode,
+  t?: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flockId",
-    header: "Flock ID",
+    header: t ? t('columns.flockId') : "Flock ID",
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -45,7 +47,7 @@ export const mortalityColumns = (
   },
   {
     accessorKey: "date",
-    header: "Recorded Date",
+    header: t ? t('columns.recordedDate') : "Recorded Date",
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -60,19 +62,19 @@ export const mortalityColumns = (
   },
   {
     accessorKey: "recordedBy",
-    header: "Recorded By",
+    header: t ? t('columns.recordedBy') : "Recorded By",
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="text-sm">
-          <div className="font-medium">{record.recordedBy?.name || record.recordedBy || "Unknown"}</div>
+          <div className="font-medium">{record.recordedBy?.name || record.recordedBy || (t ? t('columns.unknown') : "Unknown")}</div>
         </div>
       );
     },
   },
   {
     accessorKey: "count",
-    header: "Deaths",
+    header: t ? t('columns.deaths') : "Deaths",
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -84,7 +86,7 @@ export const mortalityColumns = (
   },
   {
     accessorKey: "cause",
-    header: "Cause",
+    header: t ? t('columns.cause') : "Cause",
     cell: ({ row }) => {
       const record = row.original;
       return getCauseBadge(record.cause);
@@ -92,7 +94,7 @@ export const mortalityColumns = (
   },
   {
     accessorKey: "causeDescription",
-    header: "Cause Description",
+    header: t ? t('columns.causeDescription') : "Cause Description",
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -106,7 +108,7 @@ export const mortalityColumns = (
   },
   {
     accessorKey: "age",
-    header: "Age at Death",
+    header: t ? t('columns.ageAtDeath') : "Age at Death",
     cell: ({ row }) => {
       const record = row.original;
       
@@ -160,7 +162,7 @@ export const mortalityColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t ? t('columns.actions') : "Actions",
     cell: ({ row }) => {
       const record = row.original;
       
@@ -173,22 +175,22 @@ export const mortalityColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{t ? t('columns.actions') : "Actions"}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(record.id)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
+              {t ? t('columns.viewDetails') : "View Details"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(record)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Record
+              {t ? t('columns.editRecord') : "Edit Record"}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onDelete(record)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Record
+              {t ? t('columns.deleteRecord') : "Delete Record"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

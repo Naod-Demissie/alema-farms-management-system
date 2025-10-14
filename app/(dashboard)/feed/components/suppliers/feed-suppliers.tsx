@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,8 @@ const supplierSchema = z.object({
 type SupplierFormData = z.infer<typeof supplierSchema>;
 
 export function FeedSuppliers() {
+  const t = useTranslations('feed.suppliers');
+  const tCommon = useTranslations('feed.common');
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
@@ -96,10 +99,10 @@ export function FeedSuppliers() {
         // Update existing supplier
         result = await updateFeedSupplierAction(editingSupplier.id, data);
         if (result.success) {
-          toast.success("Supplier updated successfully!");
+          toast.success(t('toasts.updated'));
         } else {
-          toast.error("Failed to update supplier", {
-            description: result.error || "An unexpected error occurred",
+          toast.error(t('toasts.updateError'), {
+            description: result.error || t('toasts.unexpectedError'),
           });
           return;
         }
@@ -107,10 +110,10 @@ export function FeedSuppliers() {
         // Add new supplier
         result = await createFeedSupplierAction(data);
         if (result.success) {
-          toast.success("Supplier created successfully!");
-        } else {
-          toast.error("Failed to create supplier", {
-            description: result.error || "An unexpected error occurred",
+          toast.success(t('toasts.created'));
+        } else{
+          toast.error(t('toasts.createError'), {
+            description: result.error || t('toasts.unexpectedError'),
           });
           return;
         }
@@ -122,8 +125,8 @@ export function FeedSuppliers() {
       form.reset();
     } catch (error) {
       console.error("Error saving supplier:", error);
-      toast.error("Failed to save supplier", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('toasts.createError'), {
+        description: error instanceof Error ? error.message : t('toasts.unexpectedError'),
       });
     } finally {
       setLoading(false);
@@ -175,19 +178,19 @@ export function FeedSuppliers() {
       const result = await deleteFeedSupplierAction(supplier.id);
       
       if (result.success) {
-        toast.success("Supplier deleted successfully!", {
-          description: `Supplier ${supplier.name} has been removed`,
+        toast.success(t('toasts.deleted'), {
+          description: `${t('supplierName')} ${supplier.name} ${tCommon('deleteRecord')}`,
         });
         await fetchSuppliers();
       } else {
-        toast.error("Failed to delete supplier", {
-          description: result.error || "An unexpected error occurred",
+        toast.error(t('toasts.deleteError'), {
+          description: result.error || t('toasts.unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error deleting supplier:", error);
-      toast.error("Failed to delete supplier", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('toasts.deleteError'), {
+        description: error instanceof Error ? error.message : t('toasts.unexpectedError'),
       });
     } finally {
       setActionLoading(null);
@@ -218,7 +221,7 @@ export function FeedSuppliers() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.totalSuppliers')}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -233,7 +236,7 @@ export function FeedSuppliers() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Suppliers</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.activeSuppliers')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -247,7 +250,7 @@ export function FeedSuppliers() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactive Suppliers</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.activeContracts')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -261,7 +264,7 @@ export function FeedSuppliers() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">With Contact Info</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.recentOrders')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -282,9 +285,9 @@ export function FeedSuppliers() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Feed Suppliers</CardTitle>
+              <CardTitle>{t('table.title')}</CardTitle>
               <CardDescription>
-                Manage your feed suppliers and their contact information.
+                {t('table.description')}
               </CardDescription>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -416,7 +419,7 @@ export function FeedSuppliers() {
             </div>
           ) : (
             <SupplierTable
-              columns={supplierColumns(handleView, handleEdit, handleDeleteClick, getStatusBadge)}
+              columns={supplierColumns(handleView, handleEdit, handleDeleteClick, getStatusBadge, t, tCommon)}
               data={suppliers}
               onView={handleView}
               onEdit={handleEdit}

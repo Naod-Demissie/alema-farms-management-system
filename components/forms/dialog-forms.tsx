@@ -101,9 +101,13 @@ interface FlockFormProps {
   form: UseFormReturn<z.infer<typeof flockSchema>>;
   flocks?: any[];
   onGenerateBatchCode?: (breed: string) => Promise<string | null>;
+  t?: any;
 }
 
-export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormProps) {
+export function FlockForm({ form, flocks = [], onGenerateBatchCode, t }: FlockFormProps) {
+  // Provide default translations if t is not provided (for backwards compatibility)
+  const getLabel = (key: string, defaultValue: string) => t ? t(key) : defaultValue;
+  
   return (
     <>
       {/* Row 1: Batch Code Generation */}
@@ -114,11 +118,11 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormLabel className="flex items-center gap-1">
-                Batch Code <span className="text-red-500">*</span>
+                {getLabel('form.batchCodeLabel', 'Batch Code')} <span className="text-red-500">*</span>
               </FormLabel>
               <div className="flex flex-col sm:flex-row gap-2">
                 <FormControl>
-                  <Input placeholder="e.g., FL2501" {...field} className="h-10" />
+                  <Input placeholder={getLabel('form.batchCodePlaceholder', 'e.g., FL2501')} {...field} className="h-10" />
                 </FormControl>
                 {onGenerateBatchCode && (
                   <Button
@@ -132,7 +136,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                     }}
                     className="whitespace-nowrap h-10 px-4"
                   >
-                    Generate
+                    {getLabel('form.generateButton', 'Generate')}
                   </Button>
                 )}
               </div>
@@ -150,7 +154,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormLabel className="flex items-center gap-1">
-                Arrival Date <span className="text-red-500">*</span>
+                {getLabel('form.arrivalDateLabel', 'Arrival Date')} <span className="text-red-500">*</span>
               </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
@@ -165,7 +169,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
                       {field.value ? (
                         EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
-                        <span>Pick a date</span>
+                        <span>{getLabel('form.arrivalDatePlaceholder', 'Pick a date')}</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
@@ -193,13 +197,13 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormLabel className="flex items-center gap-1">
-                Age at Arrival (Days) <span className="text-red-500">*</span>
+                {getLabel('form.ageInDaysLabel', 'Age at Arrival (Days)')} <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
                 <Input
                   type="number"
                   min="0"
-                  placeholder="e.g., 1, 7, 14"
+                  placeholder={getLabel('form.ageInDaysPlaceholder', 'e.g., 1, 7, 14')}
                   value={field.value === 0 ? "" : field.value}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -221,13 +225,13 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormLabel className="flex items-center gap-1">
-                Initial Count <span className="text-red-500">*</span>
+                {getLabel('form.initialCountLabel', 'Initial Count')} <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
                 <Input
                   type="number"
                   min="1"
-                  placeholder="e.g., 1000"
+                  placeholder={getLabel('form.initialCountPlaceholder', 'e.g., 1000')}
                   value={field.value === 0 ? "" : field.value}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -245,13 +249,13 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormLabel className="flex items-center gap-1">
-                Current Count <span className="text-red-500">*</span>
+                {getLabel('form.currentCountLabel', 'Current Count')} <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
                 <Input
                   type="number"
                   min="0"
-                  placeholder="e.g., 950"
+                  placeholder={getLabel('form.currentCountPlaceholder', 'e.g., 950')}
                   value={field.value === 0 ? "" : field.value}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -271,10 +275,10 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode }: FlockFormP
         name="notes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Notes</FormLabel>
+            <FormLabel>{getLabel('form.notesLabel', 'Notes')}</FormLabel>
             <FormControl>
               <Textarea
-                placeholder="Additional notes about the flock..."
+                placeholder={getLabel('form.notesPlaceholder', 'Additional notes about the flock...')}
                 className="min-h-[80px]"
                 {...field}
               />

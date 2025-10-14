@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,8 @@ interface Expense {
 
 
 export function ExpenseTracking() {
+  const t = useTranslations('financial.expenses');
+  const tCommon = useTranslations('financial.common');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -67,12 +70,12 @@ export function ExpenseTracking() {
       if (result.success) {
         setExpenses((result.data || []) as Expense[]);
       } else {
-        toast.error(result.message || "Failed to fetch expenses");
+        toast.error(result.message || t('toasts.fetchError'));
         setExpenses([]);
       }
     } catch (error) {
       console.error("Error fetching expenses:", error);
-      toast.error("Failed to fetch expenses");
+      toast.error(t('toasts.fetchError'));
       setExpenses([]);
     } finally {
       setLoading(false);
@@ -104,16 +107,16 @@ export function ExpenseTracking() {
       }
 
       if (result.success) {
-        toast.success(editingExpense ? "Expense updated successfully" : "Expense created successfully");
+        toast.success(editingExpense ? t('toasts.updateSuccess') : t('toasts.createSuccess'));
         setIsDialogOpen(false);
         setEditingExpense(null);
         fetchExpenses();
       } else {
-        toast.error(result.message || "Failed to save expense");
+        toast.error(result.message || (editingExpense ? t('toasts.updateError') : t('toasts.createError')));
       }
     } catch (error) {
       console.error("Error saving expense:", error);
-      toast.error("Failed to save expense");
+      toast.error(editingExpense ? t('toasts.updateError') : t('toasts.createError'));
     }
   };
 
@@ -142,15 +145,15 @@ export function ExpenseTracking() {
     try {
       const result = await deleteExpense(confirmDialog.record.id);
       if (result.success) {
-        toast.success("Expense deleted successfully");
+        toast.success(t('toasts.deleteSuccess'));
         fetchExpenses();
         setConfirmDialog({ open: false, type: null, record: null });
       } else {
-        toast.error(result.message || "Failed to delete expense");
+        toast.error(result.message || t('toasts.deleteError'));
       }
     } catch (error) {
       console.error("Error deleting expense:", error);
-      toast.error("Failed to delete expense");
+      toast.error(t('toasts.deleteError'));
     } finally {
       setActionLoading(null);
     }
@@ -212,7 +215,7 @@ export function ExpenseTracking() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.todayExpenses')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -233,7 +236,7 @@ export function ExpenseTracking() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Week's Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.weekExpenses')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -254,7 +257,7 @@ export function ExpenseTracking() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month's Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.monthExpenses')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -275,7 +278,7 @@ export function ExpenseTracking() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Year's Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.yearExpenses')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -302,15 +305,15 @@ export function ExpenseTracking() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Expenses</CardTitle>
-              <CardDescription>Track and manage all farm expenses</CardDescription>
+              <CardTitle>{t('title')}</CardTitle>
+              <CardDescription>{t('pageDescription')}</CardDescription>
             </div>
             <Button onClick={() => {
               setEditingExpense(null);
               setIsDialogOpen(true);
             }}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Expense
+              {t('addExpense')}
             </Button>
           </div>
         </CardHeader>
@@ -329,22 +332,22 @@ export function ExpenseTracking() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Expense Details</DialogTitle>
+            <DialogTitle>{t('dialogs.view.title')}</DialogTitle>
             <DialogDescription>
-              View detailed information about this expense record
+              {t('dialogs.view.description')}
             </DialogDescription>
           </DialogHeader>
           {viewingExpense && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{tCommon('date')}</Label>
                   <p className="text-sm font-medium">
                     {EthiopianDateFormatter.formatForTable(new Date(viewingExpense.date))}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{tCommon('category')}</Label>
                   <div className="mt-1">
                     <Badge className={getExpenseCategoryBadgeColor(viewingExpense.category as any)}>
                       {EXPENSE_CATEGORIES.find(c => c.value === viewingExpense.category)?.label || viewingExpense.category}
@@ -353,13 +356,13 @@ export function ExpenseTracking() {
                 </div>
                 {viewingExpense.quantity && (
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Quantity</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">{tCommon('quantity')}</Label>
                     <p className="text-sm font-medium">{viewingExpense.quantity}</p>
                   </div>
                 )}
                 {viewingExpense.costPerQuantity && (
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Cost per Quantity</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">{tCommon('costPerQuantity')}</Label>
                     <p className="text-sm font-medium">
                       {new Intl.NumberFormat("en-ET", {
                         style: "currency",
@@ -369,7 +372,7 @@ export function ExpenseTracking() {
                   </div>
                 )}
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Total Amount</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('form.amount')}</Label>
                   <p className="text-lg font-semibold text-red-600">
                     {new Intl.NumberFormat("en-ET", {
                       style: "currency",
@@ -384,22 +387,22 @@ export function ExpenseTracking() {
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                <Label className="text-sm font-medium text-muted-foreground">{tCommon('description')}</Label>
                 <p className="text-sm mt-1 p-3 bg-muted rounded-md">
-                  {viewingExpense.description || "No description provided"}
+                  {viewingExpense.description || t('dialogs.view.noDescription')}
                 </p>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-              Close
+              {tCommon('close')}
             </Button>
             <Button onClick={() => {
               setIsViewDialogOpen(false);
               handleEdit(viewingExpense!);
             }}>
-              Edit Expense
+              {t('editExpense')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -421,19 +424,19 @@ export function ExpenseTracking() {
           date: new Date(editingExpense.date),
           description: editingExpense.description || "",
         } : undefined}
-        title={editingExpense ? "Edit Expense" : "Add New Expense"}
-        description={editingExpense ? "Update expense details" : "Record a new expense for your farm"}
-        submitButtonText={editingExpense ? "Update Expense" : "Add Expense"}
+        title={editingExpense ? t('dialogs.edit.title') : t('dialogs.add.title')}
+        description={editingExpense ? t('dialogs.edit.description') : t('dialogs.add.description')}
+        submitButtonText={editingExpense ? t('editExpense') : t('addExpense')}
       />
 
       {/* Confirmation Dialog */}
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title="Delete Expense"
-        desc={`Are you sure you want to delete this expense record? This action cannot be undone and the record will be permanently removed.`}
-        confirmText="Delete Expense"
-        cancelBtnText="Cancel"
+        title={t('dialogs.delete.title')}
+        desc={t('dialogs.delete.description')}
+        confirmText={t('deleteExpense')}
+        cancelBtnText={tCommon('cancel')}
         destructive={true}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.record?.id}

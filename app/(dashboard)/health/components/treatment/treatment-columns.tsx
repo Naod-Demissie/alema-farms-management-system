@@ -1,5 +1,6 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
@@ -27,11 +28,12 @@ export const treatmentColumns = (
   onEdit: (treatment: any) => void,
   onDelete: (treatment: any) => void,
   getDiseaseBadge: (disease: string) => React.ReactNode,
-  getResponseBadge: (response: string) => React.ReactNode
+  getResponseBadge: (response: string) => React.ReactNode,
+  t?: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flockId",
-    header: "Flock ID",
+    header: t ? t('columns.flockId') : "Flock ID",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
@@ -43,7 +45,7 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "diseaseName",
-    header: "Disease Name",
+    header: t ? t('columns.diseaseName') : "Disease Name",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
@@ -56,7 +58,7 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "disease",
-    header: "Disease Type",
+    header: t ? t('columns.diseaseType') : "Disease Type",
     cell: ({ row }) => {
       const treatment = row.original;
       return getDiseaseBadge(treatment.disease);
@@ -64,7 +66,7 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "symptoms",
-    header: "Symptoms",
+    header: t ? t('columns.symptoms') : "Symptoms",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
@@ -78,7 +80,7 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "medication",
-    header: "Medication",
+    header: t ? t('columns.medication') : "Medication",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
@@ -91,7 +93,7 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "dosage",
-    header: "Dosage",
+    header: t ? t('columns.dosage') : "Dosage",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
@@ -106,7 +108,7 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "startDate",
-    header: "Start Date",
+    header: t ? t('columns.startDate') : "Start Date",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
@@ -121,14 +123,14 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "endDate",
-    header: "End Date",
+    header: t ? t('columns.endDate') : "End Date",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="font-medium">
-            {treatment.endDate ? EthiopianDateFormatter.formatForTable(new Date(treatment.endDate)) : "Ongoing"}
+            {treatment.endDate ? EthiopianDateFormatter.formatForTable(new Date(treatment.endDate)) : (t ? t('columns.ongoing') : "Ongoing")}
           </div>
         </div>
       );
@@ -136,19 +138,19 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "treatedBy",
-    header: "Treated By",
+    header: t ? t('columns.treatedBy') : "Treated By",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
         <div className="text-sm">
-          <div className="font-medium">{treatment.treatedBy?.name || treatment.treatedBy || "Unknown"}</div>
+          <div className="font-medium">{treatment.treatedBy?.name || treatment.treatedBy || (t ? t('columns.unknown') : "Unknown")}</div>
         </div>
       );
     },
   },
   {
     accessorKey: "response",
-    header: "Response",
+    header: t ? t('columns.response') : "Response",
     cell: ({ row }) => {
       const treatment = row.original;
       return getResponseBadge(treatment.response);
@@ -156,7 +158,7 @@ export const treatmentColumns = (
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t ? t('columns.notes') : "Notes",
     cell: ({ row }) => {
       const treatment = row.original;
       return (
@@ -169,7 +171,7 @@ export const treatmentColumns = (
               </span>
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">No notes</span>
+            <span className="text-sm text-muted-foreground">{t ? t('columns.noNotes') : "No notes"}</span>
           )}
         </div>
       );
@@ -177,7 +179,7 @@ export const treatmentColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t ? t('columns.actions') : "Actions",
     cell: ({ row }) => {
       const treatment = row.original;
       
@@ -190,22 +192,22 @@ export const treatmentColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{t ? t('columns.actions') : "Actions"}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(treatment.id)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
+              {t ? t('columns.viewDetails') : "View Details"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(treatment)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Treatment
+              {t ? t('columns.editRecord') : "Edit Treatment"}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onDelete(treatment)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Treatment
+              {t ? t('columns.deleteRecord') : "Delete Treatment"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

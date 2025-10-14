@@ -27,6 +27,7 @@ export interface LeaveBalance {
 interface LeaveBalanceTableColumnsProps {
   onEdit: (balance: LeaveBalance) => void;
   onDelete: (balance: LeaveBalance) => void;
+  t: any; // Translation function
 }
 
 const roleColors = {
@@ -38,12 +39,13 @@ const roleColors = {
 export const createLeaveBalanceTableColumns = ({
   onEdit,
   onDelete,
+  t,
 }: LeaveBalanceTableColumnsProps): ColumnDef<LeaveBalance>[] => [
   {
     id: "staffName",
     accessorFn: (row) => row.staff.name,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Staff Member" />
+      <DataTableColumnHeader column={column} title={t('leave.balanceTable.columns.staffMember')} />
     ),
     cell: ({ row }) => {
       const staff = row.original.staff;
@@ -77,7 +79,7 @@ export const createLeaveBalanceTableColumns = ({
   {
     accessorKey: "year",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Year" />
+      <DataTableColumnHeader column={column} title={t('leave.balanceTable.columns.year')} />
     ),
     cell: ({ row }) => {
       const year = row.getValue("year") as number;
@@ -97,13 +99,13 @@ export const createLeaveBalanceTableColumns = ({
   {
     accessorKey: "totalLeaveDays",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Total Days" />
+      <DataTableColumnHeader column={column} title={t('leave.balanceTable.columns.totalDays')} />
     ),
     cell: ({ row }) => {
       const days = row.getValue("totalLeaveDays") as number;
       return (
         <Badge variant="outline" className="bg-blue-100 text-blue-800">
-          {days} days
+          {days} {t('leave.balanceTable.columns.days')}
         </Badge>
       );
     },
@@ -111,13 +113,13 @@ export const createLeaveBalanceTableColumns = ({
   {
     accessorKey: "usedLeaveDays",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Used Days" />
+      <DataTableColumnHeader column={column} title={t('leave.balanceTable.columns.usedDays')} />
     ),
     cell: ({ row }) => {
       const days = row.getValue("usedLeaveDays") as number;
       return (
         <Badge variant="outline" className="bg-orange-100 text-orange-800">
-          {days} days
+          {days} {t('leave.balanceTable.columns.days')}
         </Badge>
       );
     },
@@ -125,14 +127,14 @@ export const createLeaveBalanceTableColumns = ({
   {
     accessorKey: "remainingLeaveDays",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Remaining Days" />
+      <DataTableColumnHeader column={column} title={t('leave.balanceTable.columns.remainingDays')} />
     ),
     cell: ({ row }) => {
       const days = row.getValue("remainingLeaveDays") as number;
       const isLow = days <= 5;
       return (
         <Badge variant="outline" className={isLow ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
-          {days} days
+          {days} {t('leave.balanceTable.columns.days')}
         </Badge>
       );
     },

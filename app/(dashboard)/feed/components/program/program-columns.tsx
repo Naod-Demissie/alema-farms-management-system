@@ -21,15 +21,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const feedTypeLabels = {
-  LAYER_STARTER: "Layer Starter",
-  REARING: "Rearing",
-  PULLET_FEED: "Pullet Feed",
-  LAYER: "Layer",
-  LAYER_PHASE_1: "Layer Phase 1",
-  CUSTOM: "Custom"
-};
-
 const feedTypeColors = {
   LAYER_STARTER: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   REARING: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
@@ -42,11 +33,14 @@ const feedTypeColors = {
 export const programColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
-  onDelete: (record: any) => void
+  onDelete: (record: any) => void,
+  t: any,
+  tCommon: any,
+  tFeedTypes: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "ageInWeeks",
-    header: "Week",
+    header: t('columns.week'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -58,7 +52,7 @@ export const programColumns = (
   },
   {
     accessorKey: "ageInDays",
-    header: "Age Range (Days)",
+    header: t('columns.ageRange'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -71,14 +65,15 @@ export const programColumns = (
   },
   {
     accessorKey: "feedType",
-    header: "Feed Type",
+    header: t('columns.feedType'),
     cell: ({ row }) => {
       const record = row.original;
+      const feedType = record.feedType;
       return (
         <div className="flex items-center space-x-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="outline" className={feedTypeColors[record.feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
-            {feedTypeLabels[record.feedType as keyof typeof feedTypeLabels] || record.feedType}
+          <Badge variant="outline" className={feedTypeColors[feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
+            {feedType ? tFeedTypes(feedType, { defaultValue: feedType }) : tCommon('unknown')}
           </Badge>
         </div>
       );
@@ -86,7 +81,7 @@ export const programColumns = (
   },
   {
     accessorKey: "gramPerHen",
-    header: "Grams per Hen",
+    header: t('columns.gramsPerHen'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -99,7 +94,7 @@ export const programColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('columns.actions'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -128,14 +123,14 @@ export const programColumns = (
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => onView(record)}>
                 <Eye className="mr-2 h-4 w-4" />
-                View Details
+                {tCommon('viewDetails')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(record)}>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit
+                {tCommon('edit')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
@@ -143,7 +138,7 @@ export const programColumns = (
                 className="text-red-600"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                {tCommon('delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -19,7 +20,7 @@ import {
   updateFeedUsageAction, 
   deleteFeedUsageAction 
 } from "@/app/(dashboard)/feed/server/feed-usage";
-import { feedTypeLabels, feedTypeColors } from "../../utils/feed-program";
+import { feedTypeColors } from "../../utils/feed-program";
 import { useSession } from "@/lib/auth-client";
 
 type FeedUsageFormData = {
@@ -30,6 +31,9 @@ type FeedUsageFormData = {
 };
 
 export function FeedUsage() {
+  const t = useTranslations('feed.usage');
+  const tCommon = useTranslations('feed.common');
+  const tFeedTypes = useTranslations('feed.feedTypes');
   const { data: session } = useSession();
   const currentUser = session?.user;
   
@@ -82,10 +86,10 @@ export function FeedUsage() {
         // Update existing item
         result = await updateFeedUsageAction(editingItem.id, data);
         if (result.success) {
-          toast.success("Feed usage record updated successfully!");
+          toast.success(t('toasts.updated'));
         } else {
-          toast.error("Failed to update feed usage record", {
-            description: result.error || "An unexpected error occurred",
+          toast.error(t('toasts.updateError'), {
+            description: result.error || t('toasts.unexpectedError'),
           });
           return;
         }
@@ -93,10 +97,10 @@ export function FeedUsage() {
         // Add new item
         result = await createFeedUsageAction(data);
         if (result.success) {
-          toast.success("Feed usage record created successfully!");
+          toast.success(t('toasts.created'));
         } else {
-          toast.error("Failed to create feed usage record", {
-            description: result.error || "An unexpected error occurred",
+          toast.error(t('toasts.createError'), {
+            description: result.error || t('toasts.unexpectedError'),
           });
           return;
         }
@@ -153,17 +157,17 @@ export function FeedUsage() {
       const result = await deleteFeedUsageAction(item.id);
       
       if (result.success) {
-        toast.success("Feed usage record deleted successfully!");
+        toast.success(t('toasts.deleted'));
         await fetchFeedUsage();
       } else {
-        toast.error("Failed to delete feed usage record", {
-          description: result.error || "An unexpected error occurred",
+        toast.error(t('toasts.deleteError'), {
+          description: result.error || t('toasts.unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error deleting feed usage record:", error);
-      toast.error("Failed to delete feed usage record", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('toasts.deleteError'), {
+        description: error instanceof Error ? error.message : t('toasts.unexpectedError'),
       });
     } finally {
       setActionLoading(null);
@@ -190,7 +194,7 @@ export function FeedUsage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usage</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.totalUsage')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -200,9 +204,9 @@ export function FeedUsage() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">{totalUsage.toFixed(1)}kg</div>
+                <div className="text-2xl font-bold">{totalUsage.toFixed(1)}{tCommon('kg')}</div>
                 <p className="text-xs text-muted-foreground">
-                  All time feed consumption
+                  {t('cards.allTimeFeedConsumption')}
                 </p>
               </>
             )}
@@ -211,7 +215,7 @@ export function FeedUsage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Flocks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.activeFlocks')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -223,7 +227,7 @@ export function FeedUsage() {
               <>
                 <div className="text-2xl font-bold">{uniqueFlocks}</div>
                 <p className="text-xs text-muted-foreground">
-                  Flocks with usage records
+                  {t('cards.flocksWithUsageRecords')}
                 </p>
               </>
             )}
@@ -232,7 +236,7 @@ export function FeedUsage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Usage</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.todayUsage')}</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -242,9 +246,9 @@ export function FeedUsage() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold text-green-600">{todayUsage.toFixed(1)}kg</div>
+                <div className="text-2xl font-bold text-green-600">{todayUsage.toFixed(1)}{tCommon('kg')}</div>
                 <p className="text-xs text-muted-foreground">
-                  Feed consumed today
+                  {t('cards.feedConsumedToday')}
                 </p>
               </>
             )}
@@ -253,7 +257,7 @@ export function FeedUsage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Records</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.totalRecords')}</CardTitle>
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -265,7 +269,7 @@ export function FeedUsage() {
               <>
                 <div className="text-2xl font-bold">{feedUsage.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  Usage records tracked
+                  {t('cards.usageRecordsTracked')}
                 </p>
               </>
             )}
@@ -278,14 +282,14 @@ export function FeedUsage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Feed Usage Tracking</CardTitle>
+              <CardTitle>{t('table.title')}</CardTitle>
               <CardDescription>
-                Track daily feed consumption per flock and monitor feeding patterns.
+                {t('table.description')}
               </CardDescription>
             </div>
             <Button onClick={handleAdd}>
               <Plus className="h-4 w-4 mr-2" />
-              Record Usage
+              {t('recordUsage')}
             </Button>
           </div>
         </CardHeader>
@@ -294,12 +298,12 @@ export function FeedUsage() {
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading usage records...</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('table.loadingMessage')}</p>
               </div>
             </div>
           ) : (
             <UsageTable
-              columns={usageColumns(handleView, handleEdit, handleDeleteClick)}
+              columns={usageColumns(handleView, handleEdit, handleDeleteClick, t, tCommon)}
               data={feedUsage}
               onView={handleView}
               onEdit={handleEdit}

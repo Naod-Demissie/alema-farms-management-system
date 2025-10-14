@@ -29,16 +29,18 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from 'next-intl';
 
-const formSchema = z.object({
-  password: z.string().min(8),
-  confirmPassword: z.string().min(8),
+const getFormSchema = (t: any) => z.object({
+  password: z.string().min(8, t('validation.passwordMinLength')),
+  confirmPassword: z.string().min(8, t('validation.passwordMinLength')),
 });
 
 export function ResetPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const t = useTranslations('auth');
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") as string;
@@ -47,6 +49,7 @@ export function ResetPasswordForm({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const formSchema = getFormSchema(t);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -59,7 +62,7 @@ export function ResetPasswordForm({
     setIsLoading(true);
 
     if (values.password !== values.confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error(t('passwordsDoNotMatch'));
       setIsLoading(false);
       return;
     }
@@ -72,7 +75,7 @@ export function ResetPasswordForm({
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Password reset successfully");
+      toast.success(t('passwordResetSuccess'));
       router.push("/signin");
     }
 
@@ -83,8 +86,8 @@ export function ResetPasswordForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Reset Password</CardTitle>
-          <CardDescription>Enter your new password</CardDescription>
+          <CardTitle className="text-xl">{t('resetPasswordTitle')}</CardTitle>
+          <CardDescription>{t('resetPasswordDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -96,7 +99,7 @@ export function ResetPasswordForm({
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t('password')}</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input {...field} type={showPassword ? "text" : "password"} />
@@ -126,7 +129,7 @@ export function ResetPasswordForm({
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>{t('confirmPassword')}</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input {...field} type={showConfirmPassword ? "text" : "password"} />
@@ -154,14 +157,14 @@ export function ResetPasswordForm({
                   {isLoading ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    "Reset Password"
+                    t('resetPasswordButton')
                   )}
                 </Button>
               </div>
               <div className="text-center text-sm">
-                Go back to{" "}
+                {t('goBackTo')}{" "}
                 <Link href="/signin" className="underline underline-offset-4">
-                  Sign In
+                  {t('signIn')}
                 </Link>
               </div>
             </form>

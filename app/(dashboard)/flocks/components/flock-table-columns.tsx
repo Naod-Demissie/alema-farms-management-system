@@ -21,17 +21,17 @@ import { Flock } from "./flock-types";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
-export const flockColumns: ColumnDef<Flock>[] = [
+export const getFlockColumns = (t: any): ColumnDef<Flock>[] => [
   {
     accessorKey: "batchCode",
-    header: "Batch Code",
+    header: t('tableColumns.batchCode'),
     cell: ({ row }) => (
       <div className="font-medium">{row.getValue("batchCode")}</div>
     ),
   },
   {
     accessorKey: "arrivalDate",
-    header: "Arrival Date",
+    header: t('tableColumns.arrivalDate'),
     cell: ({ row }) => {
       const date = new Date(row.getValue("arrivalDate"));
       return <div>{EthiopianDateFormatter.formatForTable(date)}</div>;
@@ -39,7 +39,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     accessorKey: "age",
-    header: "Current Age",
+    header: t('tableColumns.currentAge'),
     cell: ({ row }) => {
       const flock = row.original;
       const arrivalDate = new Date(flock.arrivalDate);
@@ -66,7 +66,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     accessorKey: "initialCount",
-    header: "Initial Count",
+    header: t('tableColumns.initialCount'),
     cell: ({ row }) => {
       const count = row.getValue("initialCount") as number;
       return <div>{count.toLocaleString()}</div>;
@@ -74,7 +74,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     accessorKey: "currentCount",
-    header: "Current Count",
+    header: t('tableColumns.currentCount'),
     cell: ({ row }) => {
       const count = row.getValue("currentCount") as number;
       return <div>{count.toLocaleString()}</div>;
@@ -82,7 +82,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     accessorKey: "populationChange",
-    header: "Population Change",
+    header: t('tableColumns.populationChange'),
     cell: ({ row }) => {
       const initialCount = row.getValue("initialCount") as number;
       const currentCount = row.getValue("currentCount") as number;
@@ -108,7 +108,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     accessorKey: "mortalityRate",
-    header: "Mortality Rate",
+    header: t('tableColumns.mortalityRate'),
     cell: ({ row }) => {
       const flock = row.original;
       const initialCount = flock.initialCount;
@@ -136,7 +136,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t('tableColumns.status'),
     cell: ({ row }) => {
       const flock = row.original;
       const initialCount = flock.initialCount;
@@ -144,9 +144,9 @@ export const flockColumns: ColumnDef<Flock>[] = [
       const mortalityRate = initialCount > 0 ? (totalMortality / initialCount) * 100 : 0;
       
       const getMortalityStatus = (rate: number) => {
-        if (rate > 15) return { status: 'HIGH RISK', color: 'text-red-600' };
-        if (rate > 5) return { status: 'MEDIUM', color: 'text-yellow-600' };
-        return { status: 'HEALTHY', color: 'text-green-600' };
+        if (rate > 15) return { status: t('status.highRisk'), color: 'text-red-600' };
+        if (rate > 5) return { status: t('status.medium'), color: 'text-yellow-600' };
+        return { status: t('status.healthy'), color: 'text-green-600' };
       };
       
       const status = getMortalityStatus(mortalityRate);
@@ -160,7 +160,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t('tableColumns.notes'),
     cell: ({ row }) => {
       const notes = row.getValue("notes") as string;
       if (!notes) {
@@ -175,7 +175,7 @@ export const flockColumns: ColumnDef<Flock>[] = [
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('tableColumns.actions'),
     cell: ({ row }) => {
       return <div>Actions will be handled by FlockTable</div>;
     },

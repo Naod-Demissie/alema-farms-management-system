@@ -33,17 +33,16 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Upload, User, X, Loader2 } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
-const editStaffFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
+const getEditStaffFormSchema = (t: any) => z.object({
+  firstName: z.string().min(1, t('directory.dialogs.edit.validation.firstNameRequired')),
+  lastName: z.string().min(1, t('directory.dialogs.edit.validation.lastNameRequired')),
+  email: z.string().email(t('directory.dialogs.edit.validation.invalidEmail')).optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
   image: z.string().optional(),
   isActive: z.boolean(),
 });
-
-type EditStaffFormValues = z.infer<typeof editStaffFormSchema>;
 
 interface Staff {
   id: string;
@@ -59,7 +58,7 @@ interface Staff {
 interface EditStaffDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: EditStaffFormValues) => Promise<void>;
+  onSubmit?: (data: any) => Promise<void>;
   staff?: Staff | null;
   title?: string;
   description?: string;
@@ -72,12 +71,16 @@ export function EditStaffDialog({
   onClose,
   onSubmit,
   staff,
-  title = "Edit Staff Member",
-  description = "Update staff member information and settings.",
-  submitButtonText = "Save Changes",
+  title,
+  description,
+  submitButtonText,
   isLoading = false
 }: EditStaffDialogProps) {
+  const t = useTranslations('staff');
   const [imagePreview, setImagePreview] = useState<string>("");
+
+  const editStaffFormSchema = getEditStaffFormSchema(t);
+  type EditStaffFormValues = z.infer<typeof editStaffFormSchema>;
 
   const form = useForm<EditStaffFormValues>({
     resolver: zodResolver(editStaffFormSchema),
@@ -111,14 +114,14 @@ export function EditStaffDialog({
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast.error("Please select a valid image file");
+        toast.error(t('directory.dialogs.edit.imageTypeError'));
         return;
       }
 
       // Validate file size (2MB limit)
       const maxSize = 2 * 1024 * 1024; // 2MB in bytes
       if (file.size > maxSize) {
-        toast.error("Image size must be less than 2MB");
+        toast.error(t('directory.dialogs.edit.imageSizeError'));
         return;
       }
 
@@ -149,12 +152,12 @@ export function EditStaffDialog({
           form.setValue("image", compressedImage);
         };
         img.onerror = () => {
-          toast.error("Failed to process image");
+          toast.error(t('directory.dialogs.edit.imageProcessError'));
         };
         img.src = result;
       };
       reader.onerror = () => {
-        toast.error("Failed to read image file");
+        toast.error(t('directory.dialogs.edit.imageReadError'));
       };
       reader.readAsDataURL(file);
     }
@@ -175,7 +178,7 @@ export function EditStaffDialog({
       onClose();
     } catch (error) {
       console.error("Failed to update staff member:", error);
-      toast.error("Failed to update staff member");
+      toast.error(t('directory.dialogs.edit.errorMessage'));
     }
   };
 
@@ -183,9 +186,9 @@ export function EditStaffDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{title || t('directory.dialogs.edit.title')}</DialogTitle>
           <DialogDescription>
-            {description}
+            {description || t('directory.dialogs.edit.description')}
           </DialogDescription>
         </DialogHeader>
         {staff && (
@@ -200,34 +203,34 @@ export function EditStaffDialog({
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
-                  <Label htmlFor="image-upload" className="cursor-pointer">
-                    <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
-                      <Upload className="h-4 w-4" />
-                      <span>Upload Profile Picture</span>
-                    </div>
-                  </Label>
-                  <Input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  {imagePreview && (
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleRemoveImage}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Remove Picture
-                    </Button>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    JPG, PNG or GIF. Max size 2MB.
-                  </p>
+                <Label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
+                    <Upload className="h-4 w-4" />
+                    <span>{t('directory.dialogs.edit.uploadPicture')}</span>
+                  </div>
+                </Label>
+                <Input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                {imagePreview && (
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRemoveImage}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    {t('directory.dialogs.edit.removePicture')}
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {t('directory.dialogs.edit.imageHelp')}
+                </p>
                 </div>
               </div>
 
@@ -236,98 +239,98 @@ export function EditStaffDialog({
                   control={form.control}
                   name="firstName"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input className="w-full" placeholder="John" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input className="w-full" placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('directory.dialogs.edit.firstName')} <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Input className="w-full" placeholder="john@example.com" {...field} />
+                      <Input className="w-full" placeholder={t('directory.dialogs.edit.firstNamePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('directory.dialogs.edit.lastName')} <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input className="w-full" placeholder={t('directory.dialogs.edit.lastNamePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input className="w-full" placeholder="+1234567890" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <FormControl>
-                        <Select 
-                          value={field.value ? "active" : "inactive"}
-                          onValueChange={(value) => field.onChange(value === "active")}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isLoading ? "Saving..." : submitButtonText}
-                </Button>
-              </DialogFooter>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('directory.dialogs.edit.email')}</FormLabel>
+                  <FormControl>
+                    <Input className="w-full" placeholder={t('directory.dialogs.edit.emailPlaceholder')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('directory.dialogs.edit.phoneNumber')}</FormLabel>
+                    <FormControl>
+                      <Input className="w-full" placeholder={t('directory.dialogs.edit.phonePlaceholder')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('directory.dialogs.edit.status')}</FormLabel>
+                    <FormControl>
+                      <Select 
+                        value={field.value ? "active" : "inactive"}
+                        onValueChange={(value) => field.onChange(value === "active")}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">{t('directory.status.active')}</SelectItem>
+                          <SelectItem value="inactive">{t('directory.status.inactive')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isLoading}
+              >
+                {t('directory.dialogs.edit.cancel')}
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? t('directory.dialogs.edit.saving') : (submitButtonText || t('directory.dialogs.edit.submit'))}
+              </Button>
+            </DialogFooter>
             </form>
           </Form>
         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import {
   Card,
   CardContent,
@@ -40,6 +41,7 @@ interface ProductionAnalyticsProps {
 export function ProductionReports({
   filters,
 }: ProductionAnalyticsProps) {
+  const t = useTranslations('reports');
   interface ProductionSummary {
     totalEggs: number;
     averageDailyProduction: number;
@@ -94,7 +96,7 @@ export function ProductionReports({
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Eggs</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('production.totalEggs')}</CardTitle>
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -106,7 +108,7 @@ export function ProductionReports({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('production.avgDailyProduction')}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -145,8 +147,8 @@ export function ProductionReports({
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Production Trend</CardTitle>
-              <CardDescription>Daily egg production over time</CardDescription>
+              <CardTitle>{t('production.productionTrend')}</CardTitle>
+              <CardDescription>{t('production.productionTrendDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
@@ -156,8 +158,8 @@ export function ProductionReports({
 
           <Card>
             <CardHeader>
-              <CardTitle>Quality Breakdown</CardTitle>
-              <CardDescription>Distribution of egg grades</CardDescription>
+              <CardTitle>{t('production.qualityBreakdown')}</CardTitle>
+              <CardDescription>{t('production.qualityBreakdownDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
@@ -199,14 +201,14 @@ export function ProductionReports({
 
     // Prepare quality breakdown data
     const qualityData = [
-      { name: "Good", value: summary.gradeBreakdown.normal, color: "#10b981" },
+      { name: t('production.good'), value: summary.gradeBreakdown.normal, color: "#10b981" },
       {
-        name: "Cracked",
+        name: t('production.cracked'),
         value: summary.gradeBreakdown.cracked,
         color: "#f59e0b",
       },
       {
-        name: "Spoiled",
+        name: t('production.spoiled'),
         value: summary.gradeBreakdown.spoiled,
         color: "#ef4444",
       },
@@ -273,16 +275,16 @@ export function ProductionReports({
     // If no trend data, use the grade breakdown directly
     if (filtered.length === 0 && summary.gradeBreakdown) {
       return [
-        { name: "Good", value: summary.gradeBreakdown.normal || 0 },
-        { name: "Cracked", value: summary.gradeBreakdown.cracked || 0 },
-        { name: "Spoiled", value: summary.gradeBreakdown.spoiled || 0 },
+        { name: t('production.good'), value: summary.gradeBreakdown.normal || 0 },
+        { name: t('production.cracked'), value: summary.gradeBreakdown.cracked || 0 },
+        { name: t('production.spoiled'), value: summary.gradeBreakdown.spoiled || 0 },
       ].filter(item => item.value > 0);
     }
     
     return [
-      { name: "Good", value: totals.normal },
-      { name: "Cracked", value: totals.cracked },
-      { name: "Spoiled", value: totals.spoiled },
+      { name: t('production.good'), value: totals.normal },
+      { name: t('production.cracked'), value: totals.cracked },
+      { name: t('production.spoiled'), value: totals.spoiled },
     ].filter(item => item.value > 0);
   })();
 
@@ -317,7 +319,7 @@ export function ProductionReports({
                   {summary?.totalEggs?.toLocaleString() || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  All time production
+                  {t('production.allTimeProduction')}
                 </p>
               </>
             )}
@@ -326,7 +328,7 @@ export function ProductionReports({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('production.dailyAverage')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -340,7 +342,7 @@ export function ProductionReports({
                   {summary?.averageDailyProduction?.toFixed(1) || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Eggs per day
+                  {t('production.eggsPerDay')}
                 </p>
               </>
             )}
@@ -349,7 +351,7 @@ export function ProductionReports({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quality Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('production.qualityRate')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -368,7 +370,7 @@ export function ProductionReports({
                   })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Good quality eggs
+                  {t('production.goodQualityEggs')}
                 </p>
               </>
             )}
@@ -377,7 +379,7 @@ export function ProductionReports({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Flocks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('production.activeFlocks')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -391,7 +393,7 @@ export function ProductionReports({
                   {uniqueFlocks.length}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Producing flocks
+                  {t('production.producingFlocks')}
                 </p>
               </>
             )}
@@ -405,20 +407,20 @@ export function ProductionReports({
         <Card>
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Egg Production Trend</CardTitle>
-              <CardDescription>7, 30, and 90 day trends</CardDescription>
+              <CardTitle>{t('production.eggProductionTrend')}</CardTitle>
+              <CardDescription>{t('production.trendDescription')}</CardDescription>
             </div>
             <Select value={trendTimeFilter} onValueChange={setTrendTimeFilter}>
               <SelectTrigger
                 className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                aria-label="Select a time range"
+                aria-label={t('common.selectTimeRange')}
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder={t('common.last3Months')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-                <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-                <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
+                <SelectItem value="90d" className="rounded-lg">{t('common.last3Months')}</SelectItem>
+                <SelectItem value="30d" className="rounded-lg">{t('common.last30Days')}</SelectItem>
+                <SelectItem value="7d" className="rounded-lg">{t('common.last7Days')}</SelectItem>
               </SelectContent>
             </Select>
           </CardHeader>
@@ -480,7 +482,7 @@ export function ProductionReports({
               <div className="text-center py-8">
                 <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  No production trend data available
+                  {t('production.noTrendData')}
                 </p>
               </div>
             )}
@@ -491,20 +493,20 @@ export function ProductionReports({
         <Card>
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Egg Quality Breakdown</CardTitle>
-              <CardDescription>Good vs cracked vs spoiled</CardDescription>
+              <CardTitle>{t('production.eggQualityBreakdown')}</CardTitle>
+              <CardDescription>{t('production.qualityDescription')}</CardDescription>
             </div>
             <Select value={qualityTimeFilter} onValueChange={setQualityTimeFilter}>
               <SelectTrigger
                 className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                aria-label="Select a time range"
+                aria-label={t('common.selectTimeRange')}
               >
-                <SelectValue placeholder="Last 3 months" />
+                <SelectValue placeholder={t('common.last3Months')} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-                <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-                <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
+                <SelectItem value="90d" className="rounded-lg">{t('common.last3Months')}</SelectItem>
+                <SelectItem value="30d" className="rounded-lg">{t('common.last30Days')}</SelectItem>
+                <SelectItem value="7d" className="rounded-lg">{t('common.last7Days')}</SelectItem>
               </SelectContent>
             </Select>
           </CardHeader>
@@ -513,7 +515,7 @@ export function ProductionReports({
               <div className="h-[300px]">
                 <ChartContainer
                   config={{
-                    value: { label: "Eggs" },
+                    value: { label: t('production.eggs') },
                     ...filteredQualityData.reduce((acc: any, item, index) => {
                       acc[item.name] = { label: item.name, color: orangeColors[index % orangeColors.length] };
                       return acc;
@@ -557,7 +559,7 @@ export function ProductionReports({
                                   y={(viewBox.cy || 0) + 24}
                                   className="fill-muted-foreground"
                                 >
-                                  eggs
+                                  {t('production.eggs')}
                                 </tspan>
                               </text>
                             );
@@ -578,12 +580,12 @@ export function ProductionReports({
                     return (
                       <div className="flex items-center gap-2 leading-none font-medium">
                         <TrendingUp className="h-4 w-4" />
-                        {leader?.name} leading with {percentage.toFixed(1)}%
+                        {leader?.name} {t('production.leadingWith')} {percentage.toFixed(1)}%
                       </div>
                     );
                   })()}
                   <div className="text-muted-foreground leading-none text-center">
-                    Showing distribution across {filteredQualityData.length} categories
+                    {t('production.showingDistribution')} {filteredQualityData.length} {t('production.categories')}
                   </div>
                 </div>
               </div>
@@ -591,7 +593,7 @@ export function ProductionReports({
               <div className="text-center py-8">
                 <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  No quality data available
+                  {t('production.noQualityData')}
                 </p>
               </div>
             )}

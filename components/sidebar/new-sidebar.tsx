@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from 'next-intl';
 import { NavUser } from "./nav-user";
 
 import {
@@ -82,94 +83,83 @@ type SidebarData = {
   navGroups: NavGroup[];
 };
 
-const sidebarData: SidebarData = {
-  user: {
-    name: "satnaing",
-    email: "satnaingdev@gmail.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-
-  navGroups: [
-    {
-      title: "General",
-      items: [
-        {
-          title: "Dashboard",
-          url: "/home",
-          icon: Home,
-          visible: ["admin", "veterinarian", "worker"],
-        },
-        {
-          title: "Flock Management",
-          url: "/flocks",
-          icon: Bird,
-          visible: ["admin", "veterinarian", "worker"],
-        },
-        {
-          title: "Health & Veterinary",
-          url: "/health",
-          icon: Heart,
-          visible: ["admin", "veterinarian"],
-        },
-        {
-          title: "Feed Management",
-          url: "/feed",
-          icon: Wheat,
-          visible: ["admin", "veterinarian", "worker"],
-        },
-        {
-          title: "Production Management",
-          url: "/production",
-          icon: Egg,
-          visible: ["admin", "veterinarian", "worker"],
-        },
-        {
-          title: "Financial Management",
-          url: "/financial",
-          icon: DollarSign,
-          visible: ["admin"],
-        },
-
-        // {
-        //   title: "Prescriptions",
-        //   url: "/prescriptions",
-        //   icon: Clipboard,
-        //   visible: ["admin", "dentist"],
-        // },
-        // {
-        //   title: "Invoices",
-        //   url: "/invoices",
-        //   icon: FileText,
-        //   visible: ["admin", "receptionist"],
-        // },
-      ],
+function getSidebarData(t: any): SidebarData {
+  return {
+    user: {
+      name: "satnaing",
+      email: "satnaingdev@gmail.com",
+      avatar: "/avatars/shadcn.jpg",
     },
 
-    {
-      title: "Other",
-      items: [
-        {
-          title: "Reports & Analytics",
-          url: "/reports",
-          icon: BarChart3,
-          visible: ["admin"],
-        },
-        {
-          title: "Staff",
-          url: "/staff",
-          icon: UserCheck,
-          visible: ["admin"],
-        },
-        {
-          title: "Settings",
-          url: "/settings",
-          icon: Settings,
-          visible: ["admin", "veterinarian", "worker"],
-        },
-      ],
-    },
-  ],
-};
+    navGroups: [
+      {
+        title: t('navigation.general'),
+        items: [
+          {
+            title: t('navigation.dashboard'),
+            url: "/home",
+            icon: Home,
+            visible: ["admin", "veterinarian", "worker"],
+          },
+          {
+            title: t('navigation.flockManagement'),
+            url: "/flocks",
+            icon: Bird,
+            visible: ["admin", "veterinarian", "worker"],
+          },
+          {
+            title: t('navigation.healthVeterinary'),
+            url: "/health",
+            icon: Heart,
+            visible: ["admin", "veterinarian"],
+          },
+          {
+            title: t('navigation.feedManagement'),
+            url: "/feed",
+            icon: Wheat,
+            visible: ["admin", "veterinarian", "worker"],
+          },
+          {
+            title: t('navigation.productionManagement'),
+            url: "/production",
+            icon: Egg,
+            visible: ["admin", "veterinarian", "worker"],
+          },
+          {
+            title: t('navigation.financialManagement'),
+            url: "/financial",
+            icon: DollarSign,
+            visible: ["admin"],
+          },
+        ],
+      },
+
+      {
+        title: t('navigation.other'),
+        items: [
+          {
+            title: t('navigation.reportsAnalytics'),
+            url: "/reports",
+            icon: BarChart3,
+            visible: ["admin"],
+          },
+          {
+            title: t('navigation.staff'),
+            url: "/staff",
+            icon: UserCheck,
+            visible: ["admin"],
+          },
+          {
+            title: t('navigation.settings'),
+            url: "/settings",
+            icon: Settings,
+            visible: ["admin", "veterinarian", "worker"],
+          },
+        ],
+      },
+    ],
+  };
+}
 
 export function NavGroup({ title, items }: NavGroup) {
   const { state, isMobile } = useSidebar();
@@ -346,6 +336,8 @@ function checkIsActive(href: string, item: NavItem, mainNav = false) {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const t = useTranslations();
+  const sidebarData = getSidebarData(t);
   const navGroups = sidebarData?.navGroups || [];
 
   return (

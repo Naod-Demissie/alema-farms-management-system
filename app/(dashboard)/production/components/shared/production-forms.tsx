@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,6 +79,7 @@ interface ProductionFormProps {
 }
 
 export function ProductionForm({ form, flocks, flocksLoading = false, productionType }: ProductionFormProps) {
+  const t = useTranslations('production.form');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     form.getValues("date") || new Date()
   );
@@ -97,11 +99,11 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
           name="flockId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Flock <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{t('flock')} <span className="text-red-500">{t('required')}</span></FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a flock" />
+                    <SelectValue placeholder={t('flockPlaceholder')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -109,12 +111,12 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                     <SelectItem value="loading" disabled>
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-                        Loading flocks...
+                        {t('loadingFlocks')}
                       </div>
                     </SelectItem>
                   ) : flocks.length === 0 ? (
                     <SelectItem value="no-flocks" disabled>
-                      <div className="text-muted-foreground">No flocks available</div>
+                      <div className="text-muted-foreground">{t('noFlocks')}</div>
                     </SelectItem>
                   ) : (
                     flocks.map((flock) => (
@@ -122,7 +124,7 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                         <div className="flex items-center justify-between w-full">
                           <span className="font-medium">{flock.batchCode}</span>
                           <span className="text-muted-foreground ml-2">
-                            {flock.currentCount.toLocaleString()} birds
+                            {flock.currentCount.toLocaleString()} {t('birds')}
                           </span>
                         </div>
                       </SelectItem>
@@ -140,7 +142,7 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{t('date')} <span className="text-red-500">{t('required')}</span></FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -154,7 +156,7 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                       {field.value ? (
                         EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
-                        <span>Select date</span>
+                        <span>{t('datePlaceholder')}</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
@@ -186,13 +188,13 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
               name="quantity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantity <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>{t('quantity')} <span className="text-red-500">{t('required')}</span></FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     min="0"
                     step="0.1"
-                    placeholder="0"
+                    placeholder={t('quantityPlaceholder')}
                     value={field.value === 0 ? "" : field.value}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -218,13 +220,13 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-500" />
-                      Normal <span className="text-red-500">*</span>
+                      {t('normalCount')} <span className="text-red-500">{t('required')}</span>
                     </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="0"
-                      placeholder="0"
+                      placeholder={t('quantityPlaceholder')}
                       value={field.value === 0 ? "" : field.value}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -243,13 +245,13 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-orange-500" />
-                      Cracked <span className="text-red-500">*</span>
+                      {t('crackedCount')} <span className="text-red-500">{t('required')}</span>
                     </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="0"
-                      placeholder="0"
+                      placeholder={t('quantityPlaceholder')}
                       value={field.value === 0 ? "" : field.value}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -268,13 +270,13 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500" />
-                      Spoiled <span className="text-red-500">*</span>
+                      {t('spoiledCount')} <span className="text-red-500">{t('required')}</span>
                     </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="0"
-                      placeholder="0"
+                      placeholder={t('quantityPlaceholder')}
                       value={field.value === 0 ? "" : field.value}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -289,7 +291,7 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
           </div>
 
           <div className="bg-muted/50 p-3 rounded-lg text-center">
-            <div className="text-sm text-muted-foreground mb-1">Total Eggs</div>
+            <div className="text-sm text-muted-foreground mb-1">{t('totalEggs')}</div>
             <div className="text-xl font-semibold">
               {(form.watch("normalCount") || 0) + (form.watch("crackedCount") || 0) + (form.watch("spoiledCount") || 0)}
             </div>
@@ -302,10 +304,10 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
         name="notes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Notes</FormLabel>
+            <FormLabel>{t('notes')}</FormLabel>
             <FormControl>
               <Textarea
-                placeholder="Add any additional notes about this production record..."
+                placeholder={t('notesPlaceholder')}
                 className="resize-none"
                 {...field}
               />

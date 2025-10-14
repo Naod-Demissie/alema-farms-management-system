@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -65,6 +66,7 @@ const buttonVariants: Variants = {
 
 export default function Home() {
   const router = useRouter();
+  const t = useTranslations('landing');
 
   const handleGetStarted = () => {
     // Always redirect to signin - middleware will handle redirecting authenticated users
@@ -110,7 +112,7 @@ export default function Home() {
           variants={itemVariants}
           style={{ willChange: "opacity, transform" }}
         >
-          Poultry Farm Management System
+          {t('title')}
         </motion.h1>
 
         <motion.p
@@ -118,9 +120,7 @@ export default function Home() {
           variants={itemVariants}
           style={{ willChange: "opacity, transform" }}
         >
-          A complete solution to record, monitor, and manage your poultry farm
-          operations efficiently — from flocks and feed to health, sales, and
-          profits.
+          {t('subtitle')}
         </motion.p>
 
         <motion.div
@@ -133,10 +133,11 @@ export default function Home() {
             className="h-fit w-fit rounded-full px-10 py-4 text-md font-medium leading-tight"
             onClick={handleGetStarted}
           >
-            Get Started
+            {t('getStarted')}
           </Button>
         </motion.div>
       </motion.div>
     </section>
   );
 }
+

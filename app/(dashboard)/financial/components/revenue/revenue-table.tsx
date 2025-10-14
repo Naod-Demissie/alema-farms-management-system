@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import { useReactTable, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, getFacetedRowModel, getFacetedUniqueValues, ColumnFiltersState, ColumnVisibility, VisibilityState } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
@@ -29,15 +30,17 @@ interface RevenueTableProps {
 }
 
 export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }: RevenueTableProps) {
+  const t = useTranslations('financial.revenue');
+  const tCommon = useTranslations('financial.common');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   
-  const columns = getRevenueColumns(onEdit, onDelete);
+  const columns = getRevenueColumns(onView, onEdit, onDelete, t, tCommon);
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
-    columns: getRevenueColumns(onEdit, onDelete),
+    columns: getRevenueColumns(onView, onEdit, onDelete, t, tCommon),
     state: {
       columnFilters,
       columnVisibility: mobileColumnVisibility,
@@ -54,10 +57,10 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
 
   // Prepare source options for filter
   const sourceOptions = [
-    { label: "Egg Sales", value: "egg_sales" },
-    { label: "Bird Sales", value: "bird_sales" },
-    { label: "Manure", value: "manure" },
-    { label: "Other", value: "other" },
+    { label: t('sources.egg_sales'), value: "egg_sales" },
+    { label: t('sources.bird_sales'), value: "bird_sales" },
+    { label: t('sources.manure'), value: "manure" },
+    { label: t('sources.other'), value: "other" },
   ];
 
   return (
@@ -65,11 +68,11 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
       <DataTableToolbar
         table={table}
         filterColumnId="description"
-        filterPlaceholder="Search revenues..."
+        filterPlaceholder={t('table.searchPlaceholder')}
         facetedFilters={[
           {
             columnId: "source",
-            title: "Source",
+            title: t('sources.filterTitle'),
             options: sourceOptions,
           },
         ]}
@@ -81,12 +84,12 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">Loading revenues...</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t('table.loadingMessage')}</p>
           </div>
         </div>
       ) : (
         <DataTable
-          columns={getRevenueColumns(onView, onEdit, onDelete)}
+          columns={getRevenueColumns(onView, onEdit, onDelete, t, tCommon)}
           data={data}
           enableFiltering={true}
           enablePagination={true}

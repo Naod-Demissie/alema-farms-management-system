@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import { useReactTable, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, getFacetedRowModel, getFacetedUniqueValues, ColumnFiltersState, ColumnVisibility, VisibilityState } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
@@ -34,15 +35,17 @@ interface ExpenseTableProps {
 }
 
 export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }: ExpenseTableProps) {
+  const t = useTranslations('financial.expenses');
+  const tCommon = useTranslations('financial.common');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   
-  const columns = getExpenseColumns(onView, onEdit, onDelete);
+  const columns = getExpenseColumns(onView, onEdit, onDelete, t, tCommon);
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
-    columns: getExpenseColumns(onView, onEdit, onDelete),
+    columns: getExpenseColumns(onView, onEdit, onDelete, t, tCommon),
     state: {
       columnFilters,
       columnVisibility: mobileColumnVisibility,
@@ -59,12 +62,12 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
 
   // Prepare category options for filter
   const categoryOptions = [
-    { label: "Feed", value: "feed" },
-    { label: "Medicine", value: "medicine" },
-    { label: "Labor", value: "labor" },
-    { label: "Utilities", value: "utilities" },
-    { label: "Maintenance", value: "maintenance" },
-    { label: "Other", value: "other" },
+    { label: t('categories.feed'), value: "feed" },
+    { label: t('categories.medicine'), value: "medicine" },
+    { label: t('categories.labor'), value: "labor" },
+    { label: t('categories.utilities'), value: "utilities" },
+    { label: t('categories.maintenance'), value: "maintenance" },
+    { label: t('categories.other'), value: "other" },
   ];
 
   return (
@@ -72,11 +75,11 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
       <DataTableToolbar
         table={table}
         filterColumnId="description"
-        filterPlaceholder="Search expenses..."
+        filterPlaceholder={t('table.searchPlaceholder')}
         facetedFilters={[
           {
             columnId: "category",
-            title: "Category",
+            title: t('categories.filterTitle'),
             options: categoryOptions,
           },
         ]}
@@ -88,12 +91,12 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">Loading expenses...</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t('table.loadingMessage')}</p>
           </div>
         </div>
       ) : (
         <DataTable
-          columns={getExpenseColumns(onView, onEdit, onDelete)}
+          columns={getExpenseColumns(onView, onEdit, onDelete, t, tCommon)}
           data={data}
           enableFiltering={true}
           enablePagination={true}

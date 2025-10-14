@@ -1,6 +1,7 @@
                     "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -145,6 +146,7 @@ const COLORS = {
 };
 
 export function FlockReports({ filters }: FlockReportsProps) {
+  const t = useTranslations('reports');
   const [data, setData] = useState<FlockData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("90d");
@@ -193,7 +195,7 @@ export function FlockReports({ filters }: FlockReportsProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Flocks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('flock.totalFlocks')}</CardTitle>
             <Bird className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -215,7 +217,7 @@ export function FlockReports({ filters }: FlockReportsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Birds</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('flock.totalBirds')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -237,7 +239,7 @@ export function FlockReports({ filters }: FlockReportsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mortality Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('flock.mortalityRate')}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -259,7 +261,7 @@ export function FlockReports({ filters }: FlockReportsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Healthy Flocks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('flock.healthyFlocks')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -287,9 +289,9 @@ export function FlockReports({ filters }: FlockReportsProps) {
         <Card className="pt-0">
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Birds per Flock Trend</CardTitle>
+              <CardTitle>{t('flock.birdsPerFlockTrend')}</CardTitle>
               <CardDescription>
-                Showing average birds per flock over time with mortality impact
+                {t('flock.birdsPerFlockTrendDesc')}
               </CardDescription>
             </div>
             <Select value={timeRange} onValueChange={setTimeRange}>
@@ -439,8 +441,8 @@ export function FlockReports({ filters }: FlockReportsProps) {
         {/* Breed Distribution - Donut Pie Chart */}
         <Card className="flex flex-col">
           <CardHeader className="items-center pb-0">
-            <CardTitle>Breed Distribution</CardTitle>
-            <CardDescription>Flocks by breed type</CardDescription>
+            <CardTitle>{t('flock.flocksByBreed')}</CardTitle>
+            <CardDescription>{t('flock.flocksByBreedDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 pb-0">
             {loading || !data ? (
@@ -512,7 +514,7 @@ export function FlockReports({ filters }: FlockReportsProps) {
                                 y={(viewBox.cy || 0) + 24}
                                 className="fill-muted-foreground"
                               >
-                                Flocks
+                                {t('flock.flocks')}
                               </tspan>
                             </text>
                           )

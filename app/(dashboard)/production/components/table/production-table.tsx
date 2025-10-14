@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   ColumnDef,
   flexRender,
@@ -58,6 +59,7 @@ export function ProductionTable<TData, TValue>({
   onStatusChange,
   meta,
 }: ProductionTableProps<TData, TValue>) {
+  const t = useTranslations('production');
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -154,7 +156,7 @@ export function ProductionTable<TData, TValue>({
                 >
                   <NoDataIcon 
                     icon={Egg}
-                    title="No production records found"
+                    title={t('table.noRecordsFound')}
                   />
                 </TableCell>
               </TableRow>

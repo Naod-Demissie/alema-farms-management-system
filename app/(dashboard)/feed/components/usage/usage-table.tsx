@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import {
   ColumnDef,
@@ -60,6 +61,9 @@ interface UsageTableProps {
 }
 
 export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }: UsageTableProps) {
+  const t = useTranslations('feed.usage');
+  const tCommon = useTranslations('feed.common');
+  const tFeedTypes = useTranslations('feed.feedTypes');
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -86,18 +90,18 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onView?.(record)}>
                     <Eye className="h-4 w-4 mr-2" />
-                    View Details
+                    {tCommon('viewDetails')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onEdit?.(record)}>
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    {tCommon('edit')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onDelete?.(record)}
                     className="text-red-600"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    {tCommon('delete')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -132,18 +136,18 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
         <DataTableToolbar
           table={table}
           filterColumnId="flock"
-          filterPlaceholder="Filter usage records..."
+          filterPlaceholder={t('noUsage')}
           facetedFilters={[
             {
               columnId: "feed",
-              title: "Feed Type",
+              title: t('columns.feedType'),
               options: [
-                { label: "Layer Starter", value: "LAYER_STARTER" },
-                { label: "Rearing", value: "REARING" },
-                { label: "Pullet Feed", value: "PULLET_FEED" },
-                { label: "Layer", value: "LAYER" },
-                { label: "Layer Phase 1", value: "LAYER_PHASE_1" },
-                { label: "Custom", value: "CUSTOM" },
+                { label: tFeedTypes('LAYER_STARTER'), value: "LAYER_STARTER" },
+                { label: tFeedTypes('REARING'), value: "REARING" },
+                { label: tFeedTypes('PULLET_FEED'), value: "PULLET_FEED" },
+                { label: tFeedTypes('LAYER'), value: "LAYER" },
+                { label: tFeedTypes('LAYER_PHASE_1'), value: "LAYER_PHASE_1" },
+                { label: tFeedTypes('CUSTOM'), value: "CUSTOM" },
               ],
             },
           ]}
@@ -202,7 +206,7 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
                 >
                   <NoDataIcon 
                     icon={Wheat}
-                    title="No usage records found"
+                    title={t('noUsage')}
                   />
                 </TableCell>
               </TableRow>

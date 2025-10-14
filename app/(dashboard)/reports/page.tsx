@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -39,6 +40,7 @@ interface ReportFilters {
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("financial");
+  const t = useTranslations('reports');
 
   // Default filters - no longer editable since filter card is removed
   const filters = {
@@ -63,27 +65,27 @@ export default function ReportsPage() {
   const reportTabs = [
     {
       id: "financial",
-      label: "Financial",
+      label: t('tabs.financial'),
       icon: DollarSign,
-      description: "Revenue, expenses, and profitability reports",
+      description: t('tabs.financialDesc'),
     },
     {
       id: "flock",
-      label: "Flock Management",
+      label: t('tabs.flock'),
       icon: Bird,
-      description: "Flock performance and population analytics",
+      description: t('tabs.flockDesc'),
     },
     {
       id: "production",
-      label: "Production",
+      label: t('tabs.production'),
       icon: Egg,
-      description: "Egg production and quality reports",
+      description: t('tabs.productionDesc'),
     },
     {
       id: "feed",
-      label: "Feed Management",
+      label: t('tabs.feed'),
       icon: Package,
-      description: "Feed usage and inventory reports",
+      description: t('tabs.feedDesc'),
     },
   ];
 
@@ -91,8 +93,8 @@ export default function ReportsPage() {
     <div className="space-y-6">
       {/* Banner Header */}
       <PageBanner
-        title="Reports & Analytics"
-        description="Comprehensive reports and analytics for all aspects of your poultry farm"
+        title={t('title')}
+        description={t('description')}
         imageSrc="/banner-bg-image.webp"
       />
 
@@ -122,7 +124,7 @@ export default function ReportsPage() {
         <TabsContent value="financial" className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <DollarSign className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Financial Reports</h2>
+            <h2 className="text-xl font-semibold">{t('headers.financial')}</h2>
           </div>
           <FinancialReports filters={filters} />
         </TabsContent>
@@ -131,7 +133,7 @@ export default function ReportsPage() {
         <TabsContent value="flock" className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <Bird className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Flock Management Reports</h2>
+            <h2 className="text-xl font-semibold">{t('headers.flock')}</h2>
           </div>
           <FlockReports filters={filtersWithStartEndDate} />
         </TabsContent>
@@ -140,7 +142,7 @@ export default function ReportsPage() {
         <TabsContent value="production" className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <Egg className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Production Reports</h2>
+            <h2 className="text-xl font-semibold">{t('headers.production')}</h2>
           </div>
           <ProductionReports filters={filters} />
         </TabsContent>
@@ -149,7 +151,7 @@ export default function ReportsPage() {
         <TabsContent value="feed" className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <Package className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Feed Management Reports</h2>
+            <h2 className="text-xl font-semibold">{t('headers.feed')}</h2>
           </div>
           <FeedReports filters={filters} />
         </TabsContent>

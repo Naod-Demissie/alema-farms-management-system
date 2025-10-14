@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export function ProductionTableToolbar<TData>({
   table,
   flocks,
 }: ProductionTableToolbarProps<TData>) {
+  const t = useTranslations('production.table');
   const isFiltered = table.getState().columnFilters.length > 0;
   const [selectedMonth, setSelectedMonth] = React.useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined);
@@ -68,7 +70,7 @@ export function ProductionTableToolbar<TData>({
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
         {/* Search Input for Flock */}
         <Input
-          placeholder="Search by flock..."
+          placeholder={t('searchPlaceholder')}
           value={(table.getColumn("flockId")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("flockId")?.setFilterValue(event.target.value)
@@ -92,7 +94,7 @@ export function ProductionTableToolbar<TData>({
                 {selectedMonth ? (
                   format(selectedMonth, "MMM dd, yyyy")
                 ) : (
-                  <span>Filter by month</span>
+                  <span>{t('filterByMonth')}</span>
                 )}
                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
               </Button>
@@ -119,7 +121,7 @@ export function ProductionTableToolbar<TData>({
                 {selectedDate ? (
                   format(selectedDate, "MMM dd, yyyy")
                 ) : (
-                  <span>Filter by date</span>
+                  <span>{t('filterByDate')}</span>
                 )}
                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
               </Button>
@@ -145,7 +147,7 @@ export function ProductionTableToolbar<TData>({
             onClick={clearFilters}
             className="h-8 px-2 lg:px-3"
           >
-            Reset
+            {t('reset')}
             <X className="ml-2 h-4 w-4" />
           </Button>
         )}

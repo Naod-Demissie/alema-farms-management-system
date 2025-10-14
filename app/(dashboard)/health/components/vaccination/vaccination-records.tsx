@@ -65,9 +65,11 @@ import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useTranslations } from 'next-intl';
 
 
 export function VaccinationRecords() {
+  const t = useTranslations('health.vaccination');
   const [vaccinations, setVaccinations] = useState<any[]>([]);
   const [flocks, setFlocks] = useState<any[]>([]);
   const [veterinarians, setVeterinarians] = useState<any[]>([]);
@@ -166,20 +168,20 @@ export function VaccinationRecords() {
       });
       
       if (result.success) {
-        toast.success("Vaccination record created successfully!", {
-          description: `${data.vaccineName} vaccination has been recorded for the flock`,
+        toast.success(t('createSuccess'), {
+          description: t('createSuccessDesc', { vaccineName: data.vaccineName }),
         });
         await fetchVaccinations();
         setIsAddDialogOpen(false);
       } else {
-        toast.error("Failed to create vaccination record", {
-          description: result.message || "An unexpected error occurred",
+        toast.error(t('createError'), {
+          description: result.message || t('unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error creating vaccination:", error);
-      toast.error("Failed to create vaccination record", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('createError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
       });
     } finally {
       setLoading(false);
@@ -202,21 +204,21 @@ export function VaccinationRecords() {
       });
       
       if (result.success) {
-        toast.success("Vaccination record updated successfully!", {
-          description: `${data.vaccineName} vaccination record has been updated`,
+        toast.success(t('updateSuccess'), {
+          description: t('updateSuccessDesc', { vaccineName: data.vaccineName }),
         });
         await fetchVaccinations();
         setIsAddDialogOpen(false);
         setEditingVaccination(null);
       } else {
-        toast.error("Failed to update vaccination record", {
-          description: result.message || "An unexpected error occurred",
+        toast.error(t('updateError'), {
+          description: result.message || t('unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error updating vaccination:", error);
-      toast.error("Failed to update vaccination record", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('updateError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
       });
     } finally {
       setLoading(false);
@@ -251,19 +253,19 @@ export function VaccinationRecords() {
       const result = await deleteVaccination(vaccination.id);
       
       if (result.success) {
-        toast.success("Vaccination record deleted successfully!", {
-          description: `${vaccination.vaccineName} vaccination record has been removed`,
+        toast.success(t('deleteSuccess'), {
+          description: t('deleteSuccessDesc', { vaccineName: vaccination.vaccineName }),
         });
         await fetchVaccinations();
       } else {
-        toast.error("Failed to delete vaccination record", {
-          description: result.message || result.error || "An unexpected error occurred",
+        toast.error(t('deleteError'), {
+          description: result.message || result.error || t('unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error deleting vaccination:", error);
-      toast.error("Failed to delete vaccination record", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('deleteError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
       });
     } finally {
       setActionLoading(null);
@@ -275,11 +277,11 @@ export function VaccinationRecords() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />{t('status.completed')}</Badge>;
       case "scheduled":
-        return <Badge variant="outline" className="border-yellow-200 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Scheduled</Badge>;
+        return <Badge variant="outline" className="border-yellow-200 text-yellow-800"><Clock className="w-3 h-3 mr-1" />{t('status.scheduled')}</Badge>;
       case "in_progress":
-        return <Badge variant="outline" className="border-blue-200 text-blue-800"><Clock className="w-3 h-3 mr-1" />In Progress</Badge>;
+        return <Badge variant="outline" className="border-blue-200 text-blue-800"><Clock className="w-3 h-3 mr-1" />{t('status.inProgress')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -289,9 +291,9 @@ export function VaccinationRecords() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Vaccination Records</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t('pageTitle')}</h2>
         <p className="text-muted-foreground">
-          Track vaccine administration with lot numbers and detailed records
+          {t('pageDescription')}
         </p>
       </div>
 
@@ -300,16 +302,16 @@ export function VaccinationRecords() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Vaccination Records ({vaccinations.length})</CardTitle>
+              <CardTitle>{t('recordsCount', { count: vaccinations.length })}</CardTitle>
               <CardDescription>
-                Manage and track vaccination records for your poultry flocks
+                {t('cardDescription')}
               </CardDescription>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Vaccination
+                  {t('addVaccination')}
                 </Button>
               </DialogTrigger>
             </Dialog>
@@ -341,9 +343,9 @@ export function VaccinationRecords() {
                   dosage: "",
                   notes: "",
                 },
-                title: editingVaccination ? "Edit Vaccination Record" : "Add New Vaccination Record",
-                description: "Record vaccine administration details including dosage and administration information.",
-                submitText: editingVaccination ? "Update Record" : "Add Record",
+                title: editingVaccination ? t('editTitle') : t('addNewTitle'),
+                description: editingVaccination ? t('editDescription') : t('addNewDescription'),
+                submitText: editingVaccination ? t('updateButton') : t('addButton'),
                 onSubmit: editingVaccination ? handleUpdate : handleSubmit,
                 children: (form) => (
                   <VaccinationForm 
@@ -362,12 +364,12 @@ export function VaccinationRecords() {
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('loadingData')}</p>
               </div>
             </div>
           ) : (
             <VaccinationTable
-            columns={vaccinationColumns(handleEdit, handleDeleteClick, getStatusBadge)}
+            columns={vaccinationColumns(handleEdit, handleDeleteClick, getStatusBadge, t)}
               data={vaccinations}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
@@ -380,22 +382,10 @@ export function VaccinationRecords() {
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title={
-          confirmDialog.type === 'delete'
-            ? 'Delete Vaccination'
-            : 'Confirm Action'
-        }
-        desc={
-          confirmDialog.type === 'delete'
-            ? 'Are you sure you want to delete this vaccination record? This action cannot be undone.'
-            : 'Are you sure you want to proceed?'
-        }
-        confirmText={
-          confirmDialog.type === 'delete'
-            ? 'Delete'
-            : 'Continue'
-        }
-        cancelBtnText="Cancel"
+        title={t('deleteConfirmTitle')}
+        desc={t('deleteConfirmDesc')}
+        confirmText={t('deleteButton')}
+        cancelBtnText={t('cancelButton')}
         destructive={confirmDialog.type === 'delete'}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.vaccination?.id}

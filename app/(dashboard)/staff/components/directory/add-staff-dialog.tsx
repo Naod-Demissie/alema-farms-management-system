@@ -27,15 +27,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createNonSystemStaff } from "@/app/(dashboard)/staff/server/staff-invites";
 import { toast } from "sonner";
 import { Upload, User, X, Loader2 } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
-const addStaffFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+const getAddStaffFormSchema = (t: any) => z.object({
+  firstName: z.string().min(1, t('directory.dialogs.add.validation.firstNameRequired')),
+  lastName: z.string().min(1, t('directory.dialogs.add.validation.lastNameRequired')),
   phoneNumber: z.string().optional(),
   image: z.string().optional(),
 });
 
-type AddStaffFormValues = z.infer<typeof addStaffFormSchema>;
+type AddStaffFormValues = {
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  image?: string;
+};
 
 interface AddStaffDialogProps {
   isOpen: boolean;
@@ -50,12 +56,15 @@ export function AddStaffDialog({
   isOpen,
   onClose,
   onSubmit,
-  title = "Add Staff Member",
-  description = "Add a new worker to the system.",
-  submitButtonText = "Add Staff Member"
+  title,
+  description,
+  submitButtonText
 }: AddStaffDialogProps) {
+  const t = useTranslations('staff');
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
+
+  const addStaffFormSchema = getAddStaffFormSchema(t);
 
   const form = useForm<AddStaffFormValues>({
     resolver: zodResolver(addStaffFormSchema),
@@ -72,14 +81,14 @@ export function AddStaffDialog({
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast.error("Please select a valid image file");
+        toast.error(t('directory.dialogs.add.imageTypeError'));
         return;
       }
 
       // Validate file size (2MB limit)
       const maxSize = 2 * 1024 * 1024; // 2MB in bytes
       if (file.size > maxSize) {
-        toast.error("Image size must be less than 2MB");
+        toast.error(t('directory.dialogs.add.imageSizeError'));
         return;
       }
 
@@ -110,12 +119,12 @@ export function AddStaffDialog({
           form.setValue("image", compressedImage);
         };
         img.onerror = () => {
-          toast.error("Failed to process image");
+          toast.error(t('directory.dialogs.add.imageProcessError'));
         };
         img.src = result;
       };
       reader.onerror = () => {
-        toast.error("Failed to read image file");
+        toast.error(t('directory.dialogs.add.imageReadError'));
       };
       reader.readAsDataURL(file);
     }
@@ -144,9 +153,9 @@ export function AddStaffDialog({
         });
         
         if (result.success) {
-          toast.success("Staff member added successfully!");
+          toast.success(t('directory.dialogs.add.successMessage'));
         } else {
-          toast.error(result.message || "Failed to add staff member");
+          toast.error(result.message || t('directory.dialogs.add.errorMessage'));
         }
       }
       
@@ -156,7 +165,7 @@ export function AddStaffDialog({
       onClose();
     } catch (error) {
       console.error("Failed to add staff member:", error);
-      toast.error("Failed to add staff member");
+      toast.error(t('directory.dialogs.add.errorMessage'));
     } finally {
       setIsLoading(false);
     }
@@ -179,9 +188,9 @@ export function AddStaffDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{title || t('directory.dialogs.add.title')}</DialogTitle>
           <DialogDescription>
-            {description}
+            {description || t('directory.dialogs.add.description')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -198,7 +207,7 @@ export function AddStaffDialog({
                 <Label htmlFor="image-upload" className="cursor-pointer">
                   <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
                     <Upload className="h-4 w-4" />
-                    <span>Upload Profile Picture</span>
+                    <span>{t('directory.dialogs.add.uploadPicture')}</span>
                   </div>
                 </Label>
                 <Input
@@ -217,11 +226,11 @@ export function AddStaffDialog({
                     className="text-red-600 hover:text-red-700"
                   >
                     <X className="mr-2 h-4 w-4" />
-                    Remove Picture
+                    {t('directory.dialogs.add.removePicture')}
                   </Button>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  JPG, PNG or GIF. Max size 2MB.
+                  {t('directory.dialogs.add.imageHelp')}
                 </p>
               </div>
             </div>
@@ -232,9 +241,9 @@ export function AddStaffDialog({
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>{t('directory.dialogs.add.firstName')} <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="John" {...field} />
+                      <Input placeholder={t('directory.dialogs.add.firstNamePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -245,9 +254,9 @@ export function AddStaffDialog({
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>{t('directory.dialogs.add.lastName')} <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="Doe" {...field} />
+                      <Input placeholder={t('directory.dialogs.add.lastNamePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -260,9 +269,9 @@ export function AddStaffDialog({
               name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>{t('directory.dialogs.add.phoneNumber')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1234567890" {...field} />
+                    <Input placeholder={t('directory.dialogs.add.phonePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -276,11 +285,11 @@ export function AddStaffDialog({
                 onClick={onClose}
                 disabled={isLoading}
               >
-                Cancel
+                {t('directory.dialogs.add.cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Adding..." : submitButtonText}
+                {isLoading ? t('directory.dialogs.add.adding') : (submitButtonText || t('directory.dialogs.add.submit'))}
               </Button>
             </DialogFooter>
           </form>

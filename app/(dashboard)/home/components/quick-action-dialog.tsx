@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ interface QuickActionDialogProps {
 }
 
 export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: QuickActionDialogProps) {
+  const t = useTranslations('dashboard.quickActions');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -109,15 +111,15 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
       });
 
       if (result.success) {
-        toast.success("Expense created successfully");
+        toast.success(t('expense.createSuccess'));
         setIsExpenseDialogOpen(false);
         onClose();
       } else {
-        toast.error(result.message || "Failed to create expense");
+        toast.error(result.message || t('expense.createError'));
       }
     } catch (error) {
       console.error("Error creating expense:", error);
-      toast.error("Failed to create expense");
+      toast.error(t('expense.createError'));
     }
   };
 
@@ -133,15 +135,15 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
       });
 
       if (result.success) {
-        toast.success("Revenue created successfully");
+        toast.success(t('revenue.createSuccess'));
         setIsRevenueDialogOpen(false);
         onClose();
       } else {
-        toast.error(result.message || "Failed to create revenue");
+        toast.error(result.message || t('revenue.createError'));
       }
     } catch (error) {
       console.error("Error creating revenue:", error);
-      toast.error("Failed to create revenue");
+      toast.error(t('revenue.createError'));
     }
   };
 
@@ -157,17 +159,17 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
       });
 
       if (result.success) {
-        toast.success("Staff member added successfully!");
+        toast.success(t('staff.createSuccess'));
         setIsAddStaffDialogOpen(false);
         onClose();
         onRefresh?.();
       } else {
-        toast.error(result.message || "Failed to add staff member");
-        throw new Error(result.message || "Failed to add staff member");
+        toast.error(result.message || t('staff.createError'));
+        throw new Error(result.message || t('staff.createError'));
       }
     } catch (error) {
       console.error("Error adding staff member:", error);
-      toast.error("Failed to add staff member");
+      toast.error(t('staff.createError'));
     }
   };
 
@@ -178,44 +180,44 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="batchCode">Batch Code</Label>
-                <Input id="batchCode" placeholder="FLK-2024-001" required />
+                <Label htmlFor="batchCode">{t('flock.batchCode')}</Label>
+                <Input id="batchCode" placeholder={t('flock.batchCodePlaceholder')} required />
               </div>
               <div>
-                <Label htmlFor="breed">Breed</Label>
+                <Label htmlFor="breed">{t('flock.breed')}</Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select breed" />
+                    <SelectValue placeholder={t('flock.breedPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="broiler">Broiler</SelectItem>
-                    <SelectItem value="layer">Layer</SelectItem>
-                    <SelectItem value="dual_purpose">Dual Purpose</SelectItem>
+                    <SelectItem value="broiler">{t('flock.broiler')}</SelectItem>
+                    <SelectItem value="layer">{t('flock.layer')}</SelectItem>
+                    <SelectItem value="dual_purpose">{t('flock.dualPurpose')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="initialCount">Initial Count</Label>
-                <Input id="initialCount" type="number" placeholder="1000" required />
+                <Label htmlFor="initialCount">{t('flock.initialCount')}</Label>
+                <Input id="initialCount" type="number" placeholder={t('flock.initialCountPlaceholder')} required />
               </div>
               <div>
-                <Label htmlFor="source">Source</Label>
+                <Label htmlFor="source">{t('flock.source')}</Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select source" />
+                    <SelectValue placeholder={t('flock.sourcePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="hatchery">Hatchery</SelectItem>
-                    <SelectItem value="farm">Farm</SelectItem>
-                    <SelectItem value="imported">Imported</SelectItem>
+                    <SelectItem value="hatchery">{t('flock.hatchery')}</SelectItem>
+                    <SelectItem value="farm">{t('flock.farm')}</SelectItem>
+                    <SelectItem value="imported">{t('flock.imported')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <Label htmlFor="arrivalDate">Arrival Date</Label>
+              <Label htmlFor="arrivalDate">{t('flock.arrivalDate')}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -226,22 +228,20 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "MMM dd, yyyy") : "Pick a date"}
+                    {selectedDate ? format(selectedDate, "MMM dd, yyyy") : t('flock.pickDate')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
-                    mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
             <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" placeholder="Additional notes..." />
+              <Label htmlFor="notes">{t('flock.notes')}</Label>
+              <Textarea id="notes" placeholder={t('flock.notesPlaceholder')} />
             </div>
           </form>
         );
@@ -251,35 +251,35 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
       case "record-manure-production":
         return (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Opening production recording form...</p>
+            <p className="text-muted-foreground">{t('loading.production')}</p>
           </div>
         );
 
       case "add-expense":
         return (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Opening expense form...</p>
+            <p className="text-muted-foreground">{t('loading.expense')}</p>
           </div>
         );
 
       case "add-revenue":
         return (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Opening revenue form...</p>
+            <p className="text-muted-foreground">{t('loading.revenue')}</p>
           </div>
         );
 
       case "add-staff":
         return (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Opening staff form...</p>
+            <p className="text-muted-foreground">{t('loading.staff')}</p>
           </div>
         );
 
       default:
         return (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Quick action form coming soon...</p>
+            <p className="text-muted-foreground">{t('loading.comingSoon')}</p>
           </div>
         );
     }
@@ -290,24 +290,24 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {actionType === "add-flock" && "Add New Flock"}
-            {actionType === "record-production" && "Record Egg Production"}
-            {actionType === "record-broiler-production" && "Record Broiler Production"}
-            {actionType === "record-manure-production" && "Record Manure Production"}
-            {actionType === "add-expense" && "Add Expense"}
-            {actionType === "add-revenue" && "Add Revenue"}
-            {actionType === "add-staff" && "Add Staff Member"}
-            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Quick Action"}
+            {actionType === "add-flock" && t('titles.addFlock')}
+            {actionType === "record-production" && t('titles.recordProduction')}
+            {actionType === "record-broiler-production" && t('titles.recordBroilerProduction')}
+            {actionType === "record-manure-production" && t('titles.recordManureProduction')}
+            {actionType === "add-expense" && t('titles.addExpense')}
+            {actionType === "add-revenue" && t('titles.addRevenue')}
+            {actionType === "add-staff" && t('titles.addStaff')}
+            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && t('titles.quickAction')}
           </DialogTitle>
           <DialogDescription>
-            {actionType === "add-flock" && "Register a new flock batch in your system."}
-            {actionType === "record-production" && "Log daily egg production data."}
-            {actionType === "record-broiler-production" && "Record broiler production and sales data."}
-            {actionType === "record-manure-production" && "Record manure production from your flocks."}
-            {actionType === "add-expense" && "Record a new farm expense."}
-            {actionType === "add-revenue" && "Record a new farm revenue."}
-            {actionType === "add-staff" && "Add a new staff member to your team."}
-            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Complete this action quickly."}
+            {actionType === "add-flock" && t('descriptions.addFlock')}
+            {actionType === "record-production" && t('descriptions.recordProduction')}
+            {actionType === "record-broiler-production" && t('descriptions.recordBroilerProduction')}
+            {actionType === "record-manure-production" && t('descriptions.recordManureProduction')}
+            {actionType === "add-expense" && t('descriptions.addExpense')}
+            {actionType === "add-revenue" && t('descriptions.addRevenue')}
+            {actionType === "add-staff" && t('descriptions.addStaff')}
+            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && t('descriptions.quickAction')}
           </DialogDescription>
         </DialogHeader>
         
@@ -316,19 +316,19 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
         </div>
 
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
+          <Button type="button" variant="outline" onClick={onClose}>
+            {t('buttons.cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button type="button" onClick={handleSubmit} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {actionType === "add-flock" && "Add Flock"}
-            {actionType === "record-production" && "Record Egg Production"}
-            {actionType === "record-broiler-production" && "Record Broiler Production"}
-            {actionType === "record-manure-production" && "Record Manure Production"}
-            {actionType === "add-expense" && "Add Expense"}
-            {actionType === "add-revenue" && "Add Revenue"}
-            {actionType === "add-staff" && "Add Staff"}
-            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && "Submit"}
+            {actionType === "add-flock" && t('buttons.addFlock')}
+            {actionType === "record-production" && t('buttons.recordProduction')}
+            {actionType === "record-broiler-production" && t('buttons.recordBroilerProduction')}
+            {actionType === "record-manure-production" && t('buttons.recordManureProduction')}
+            {actionType === "add-expense" && t('buttons.addExpense')}
+            {actionType === "add-revenue" && t('buttons.addRevenue')}
+            {actionType === "add-staff" && t('buttons.addStaff')}
+            {!["add-flock", "record-production", "record-broiler-production", "record-manure-production", "add-expense", "add-revenue", "add-staff"].includes(actionType || "") && t('buttons.submit')}
           </Button>
         </div>
       </DialogContent>
@@ -341,9 +341,6 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
           onClose();
         }}
         onSubmit={handleExpenseSubmit}
-        title="Add New Expense"
-        description="Record a new expense for your farm"
-        submitButtonText="Add Expense"
       />
 
       {/* Reusable Revenue Dialog */}
@@ -354,9 +351,6 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
           onClose();
         }}
         onSubmit={handleRevenueSubmit}
-        title="Add New Revenue"
-        description="Record a new revenue for your farm"
-        submitButtonText="Add Revenue"
       />
 
       {/* Reusable Production Dialogs */}
@@ -413,9 +407,6 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
           onClose();
         }}
         onSubmit={handleStaffSubmit}
-        title="Add Staff Member"
-        description="Add a new worker to your team."
-        submitButtonText="Add Staff Member"
       />
     </Dialog>
   );

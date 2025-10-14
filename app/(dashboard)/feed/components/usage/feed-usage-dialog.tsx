@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +24,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { cn } from "@/lib/utils";
-import { feedTypeLabels, feedTypeColors } from "../../utils/feed-program";
+import { feedTypeColors } from "../../utils/feed-program";
 import { 
   createFeedUsageAction, 
   updateFeedUsageAction 
@@ -56,10 +57,12 @@ export function FeedUsageDialog({
   onClose,
   onSubmit,
   initialData,
-  title = "Record Feed Usage",
-  description = "Record a new feed usage for a flock.",
-  submitButtonText = "Record Usage"
+  title,
+  description,
+  submitButtonText
 }: FeedUsageDialogProps) {
+  const t = useTranslations('feed.usage');
+  const tFeedTypes = useTranslations('feed.feedTypes');
   const [flocks, setFlocks] = useState<any[]>([]);
   const [feedInventory, setFeedInventory] = useState<any[]>([]);
   const [feedRecommendations, setFeedRecommendations] = useState<any[]>([]);
@@ -121,7 +124,7 @@ export function FeedUsageDialog({
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to load data");
+      toast.error(t('validation.loadError'));
     }
   };
 
@@ -162,10 +165,10 @@ export function FeedUsageDialog({
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-lg font-semibold">
-            {title}
+            {title || (initialData ? t('dialog.editTitle') : t('dialog.addTitle'))}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {description}
+            {description || (initialData ? t('dialog.editDescription') : t('dialog.addDescription'))}
           </DialogDescription>
         </DialogHeader>
         
@@ -177,14 +180,14 @@ export function FeedUsageDialog({
                   name="flockId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Flock<span className="text-red-500">*</span></FormLabel>
+                      <FormLabel className="text-sm font-medium">{t('form.flockLabel')}<span className="text-red-500">*</span></FormLabel>
                       <Select onValueChange={(value) => {
                         field.onChange(value);
                         handleFlockChange(value);
                       }} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-9 w-full">
-                            <SelectValue placeholder="Select flock" />
+                            <SelectValue placeholder={t('form.flockPlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -193,10 +196,10 @@ export function FeedUsageDialog({
                             return (
                               <SelectItem key={flock.id} value={flock.id}>
                                 <div className="flex items-center justify-between w-full">
-                                  <span className="truncate">{flock.batchCode} ({flock.breed} - {flock.currentCount} birds)</span>
+                                  <span className="truncate">{flock.batchCode} ({flock.breed} - {flock.currentCount} {t('form.birds')})</span>
                                   {flockRec && (
                                     <Badge className={`ml-2 ${feedTypeColors[flockRec.recommendation.feedType as keyof typeof feedTypeColors]}`}>
-                                      {feedTypeLabels[flockRec.recommendation.feedType as keyof typeof feedTypeLabels]}
+                                      {tFeedTypes(flockRec.recommendation.feedType, { defaultValue: flockRec.recommendation.feedType })}
                                     </Badge>
                                   )}
                                 </div>
@@ -214,28 +217,28 @@ export function FeedUsageDialog({
             {recommendation && (
               <div className="p-3 bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">Feed Program Recommendation</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{t('recommendation.title')}</h4>
                   <Badge className={`${feedTypeColors[recommendation.feedType as keyof typeof feedTypeColors]} text-xs`}>
-                    {feedTypeLabels[recommendation.feedType as keyof typeof feedTypeColors]}
+                    {tFeedTypes(recommendation.feedType, { defaultValue: recommendation.feedType })}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-2">
                   <div>
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">Age:</span>
-                    <div className="text-gray-900 dark:text-gray-100">{recommendation.ageInWeeks} weeks ({recommendation.ageInDays} days)</div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">{t('recommendation.age')}:</span>
+                    <div className="text-gray-900 dark:text-gray-100">{recommendation.ageInWeeks} {t('recommendation.weeks')} ({recommendation.ageInDays} {t('recommendation.days')})</div>
                   </div>
                   <div>
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">Per hen:</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">{t('recommendation.perHen')}:</span>
                     <div className="text-gray-900 dark:text-gray-100">{recommendation.gramPerHen}g</div>
                   </div>
                   <div>
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">Total:</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">{t('recommendation.total')}:</span>
                     <div className="text-gray-900 dark:text-gray-100 font-semibold">{recommendation.totalAmountKg.toFixed(1)}kg</div>
                   </div>
                 </div>
                 {recommendation.isTransitionWeek && (
                   <div className="mb-2 p-2 bg-orange-100 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-orange-800 dark:text-orange-200 text-xs">
-                    ⚠️ Feed change next week to {feedTypeLabels[recommendation.nextFeedType as keyof typeof feedTypeLabels]}
+                    ⚠️ {t('recommendation.transitionWarning')} {tFeedTypes(recommendation.nextFeedType, { defaultValue: recommendation.nextFeedType })}
                   </div>
                 )}
                 <Button
@@ -247,7 +250,7 @@ export function FeedUsageDialog({
                     form.setValue('amountUsed', recommendation.totalAmountKg);
                   }}
                 >
-                  Use Recommendation
+                  {t('form.useRecommendation')}
                 </Button>
               </div>
             )}
@@ -259,7 +262,7 @@ export function FeedUsageDialog({
                 name="date"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-sm font-medium">Date<span className="text-red-500">*</span></FormLabel>
+                    <FormLabel className="text-sm font-medium">{t('form.dateLabel')}<span className="text-red-500">*</span></FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -273,7 +276,7 @@ export function FeedUsageDialog({
                             {field.value ? (
                               EthiopianDateFormatter.formatForTable(field.value)
                             ) : (
-                              <span>Select date</span>
+                              <span>{t('form.datePlaceholder')}</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -300,12 +303,12 @@ export function FeedUsageDialog({
                 name="amountUsed"
                 render={({ field }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-sm font-medium">Amount Used (kg)<span className="text-red-500">*</span></FormLabel>
+                    <FormLabel className="text-sm font-medium">{t('form.amountUsedLabel')}<span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         step="0.1"
-                        placeholder="0.0"
+                        placeholder={t('form.amountUsedPlaceholder')}
                         className="h-9 w-full"
                         value={field.value === 0 ? "" : field.value}
                         onChange={(e) => {
@@ -326,10 +329,10 @@ export function FeedUsageDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="text-sm font-medium">Notes</FormLabel>
+                  <FormLabel className="text-sm font-medium">{t('form.notesLabel')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Additional notes about this feeding..."
+                      placeholder={t('form.notesPlaceholder')}
                       className="min-h-[60px] resize-none w-full"
                       {...field}
                     />
@@ -347,7 +350,7 @@ export function FeedUsageDialog({
                   onClick={onClose}
                   className="px-4 h-9 w-full sm:w-auto"
                 >
-                  Cancel
+                  {t('form.cancelButton')}
                 </Button>
                 <Button 
                   type="submit" 
@@ -355,7 +358,7 @@ export function FeedUsageDialog({
                   className="px-4 h-9 w-full sm:w-auto"
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {submitButtonText}
+                  {submitButtonText || (initialData ? t('form.updateButton') : t('form.submitButton'))}
                 </Button>
               </div>
             </DialogFooter>

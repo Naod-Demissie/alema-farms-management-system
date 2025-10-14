@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import {
   updateFeedProgramAction, 
   deleteFeedProgramAction 
 } from "@/app/(dashboard)/feed/server/feed-program";
-import { feedTypeLabels, feedTypeColors } from "../../utils/feed-program";
+import { feedTypeColors } from "../../utils/feed-program";
 import { ProgramTable } from "./program-table";
 import { programColumns } from "./program-columns";
 
@@ -35,6 +36,9 @@ const feedProgramSchema = z.object({
 type FeedProgramFormData = z.infer<typeof feedProgramSchema>;
 
 export function FeedProgram() {
+  const t = useTranslations('feed.program');
+  const tCommon = useTranslations('feed.common');
+  const tFeedTypes = useTranslations('feed.feedTypes');
   const [program, setProgram] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -74,11 +78,11 @@ export function FeedProgram() {
       if (result.success) {
         setProgram(result.data || []);
       } else {
-        toast.error(result.error || "Failed to fetch feed program");
+        toast.error(result.error || t('toasts.unexpectedError'));
       }
     } catch (error) {
       console.error("Error fetching feed program:", error);
-      toast.error("Failed to fetch feed program");
+      toast.error(t('toasts.unexpectedError'));
     } finally {
       setLoading(false);
     }
@@ -130,17 +134,17 @@ export function FeedProgram() {
       }
 
       if (result.success) {
-        toast.success(editingItem ? "Feed program updated successfully" : "Feed program created successfully");
+        toast.success(editingItem ? t('toasts.updated') : t('toasts.created'));
         setIsAddDialogOpen(false);
         setEditingItem(null);
         form.reset();
         fetchProgram();
       } else {
-        toast.error(result.error || "Failed to save feed program");
+        toast.error(result.error || (editingItem ? t('toasts.updateError') : t('toasts.createError')));
       }
     } catch (error) {
       console.error("Error saving feed program:", error);
-      toast.error("Failed to save feed program");
+      toast.error(editingItem ? t('toasts.updateError') : t('toasts.createError'));
     } finally {
       setLoading(false);
     }
@@ -152,14 +156,14 @@ export function FeedProgram() {
       try {
         const result = await deleteFeedProgramAction(confirmDialog.item.id);
         if (result.success) {
-          toast.success("Feed program deleted successfully");
+          toast.success(t('toasts.deleted'));
           fetchProgram();
         } else {
-          toast.error(result.error || "Failed to delete feed program");
+          toast.error(result.error || t('toasts.deleteError'));
         }
       } catch (error) {
         console.error("Error deleting feed program:", error);
-        toast.error("Failed to delete feed program");
+        toast.error(t('toasts.deleteError'));
       } finally {
         setActionLoading(null);
         setConfirmDialog({ open: false, type: null, item: null });
@@ -167,7 +171,7 @@ export function FeedProgram() {
     }
   };
 
-  const columns = programColumns(handleView, handleEdit, handleDelete);
+  const columns = programColumns(handleView, handleEdit, handleDelete, t, tCommon, tFeedTypes);
 
   return (
     <div className="space-y-6">
@@ -177,15 +181,15 @@ export function FeedProgram() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Feed Program Management
+                {t('table.title')}
               </CardTitle>
               <CardDescription>
-                Manage feed programs for different age groups and feed types
+                {t('table.description')}
               </CardDescription>
             </div>
             <Button onClick={handleAdd} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Add Program
+              {t('addProgram')}
             </Button>
           </div>
         </CardHeader>
@@ -205,10 +209,10 @@ export function FeedProgram() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Edit Feed Program" : "Add New Feed Program"}
+              {editingItem ? t('dialog.editTitle') : t('dialog.addTitle')}
             </DialogTitle>
             <DialogDescription>
-              {editingItem ? "Update the feed program details below." : "Add a new feed program to your system."}
+              {editingItem ? t('dialog.editDescription') : t('dialog.addDescription')}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -221,13 +225,13 @@ export function FeedProgram() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-1">
-                        Age in Weeks <span className="text-red-500">*</span>
+                        {t('form.weekLabel')} <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           min="1"
-                          placeholder="Enter age in weeks"
+                          placeholder={t('form.weekPlaceholder')}
                           className="w-full"
                           value={field.value === 1 ? "" : field.value}
                           onChange={(e) => {
@@ -247,11 +251,11 @@ export function FeedProgram() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-1">
-                        Age Range (Days) <span className="text-red-500">*</span>
+                        {t('columns.ageRange')} <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g., 1-7, 8-14"
+                          placeholder="1-7, 8-14"
                           className="w-full"
                           {...field}
                         />
@@ -270,21 +274,21 @@ export function FeedProgram() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-1">
-                        Feed Type <span className="text-red-500">*</span>
+                        {t('form.feedTypeLabel')} <span className="text-red-500">*</span>
                       </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select feed type" />
+                            <SelectValue placeholder={t('form.feedTypePlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="LAYER_STARTER">Layer Starter</SelectItem>
-                          <SelectItem value="REARING">Rearing</SelectItem>
-                          <SelectItem value="PULLET_FEED">Pullet Feed</SelectItem>
-                          <SelectItem value="LAYER">Layer</SelectItem>
-                          <SelectItem value="LAYER_PHASE_1">Layer Phase 1</SelectItem>
-                          <SelectItem value="CUSTOM">Custom</SelectItem>
+                          <SelectItem value="LAYER_STARTER">{tFeedTypes('LAYER_STARTER')}</SelectItem>
+                          <SelectItem value="REARING">{tFeedTypes('REARING')}</SelectItem>
+                          <SelectItem value="PULLET_FEED">{tFeedTypes('PULLET_FEED')}</SelectItem>
+                          <SelectItem value="LAYER">{tFeedTypes('LAYER')}</SelectItem>
+                          <SelectItem value="LAYER_PHASE_1">{tFeedTypes('LAYER_PHASE_1')}</SelectItem>
+                          <SelectItem value="CUSTOM">{tFeedTypes('CUSTOM')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -298,14 +302,14 @@ export function FeedProgram() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-1">
-                        Grams per Hen <span className="text-red-500">*</span>
+                        {t('form.gramsPerHenLabel')} <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.1"
                           min="0.1"
-                          placeholder="Enter grams per hen"
+                          placeholder={t('form.gramsPerHenPlaceholder')}
                           className="w-full"
                           value={field.value === 0.1 ? "" : field.value}
                           onChange={(e) => {
@@ -322,11 +326,11 @@ export function FeedProgram() {
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
+                  {t('form.cancelButton')}
                 </Button>
                 <Button type="submit" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editingItem ? "Update" : "Add"} Program
+                  {editingItem ? t('form.updateButton') : t('form.submitButton')}
                 </Button>
               </DialogFooter>
             </form>
@@ -338,40 +342,40 @@ export function FeedProgram() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Feed Program Details</DialogTitle>
+            <DialogTitle>{t('dialog.viewTitle')}</DialogTitle>
             <DialogDescription>
-              View details of the selected feed program
+              {t('dialog.viewDescription')}
             </DialogDescription>
           </DialogHeader>
           {viewingItem && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Age in Weeks</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('week')}</Label>
                   <p className="text-sm font-medium">{viewingItem.ageInWeeks}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Age Range</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('ageRange')}</Label>
                   <p className="text-sm font-medium">{viewingItem.ageInDays}</p>
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Feed Type</Label>
+                <Label className="text-sm font-medium text-muted-foreground">{t('columns.feedType')}</Label>
                 <div className="mt-1">
                   <Badge variant="outline" className={feedTypeColors[viewingItem.feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
-                    {feedTypeLabels[viewingItem.feedType as keyof typeof feedTypeLabels] || viewingItem.feedType}
+                    {tFeedTypes(viewingItem.feedType, { defaultValue: viewingItem.feedType })}
                   </Badge>
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Grams per Hen</Label>
+                <Label className="text-sm font-medium text-muted-foreground">{t('columns.gramsPerHen')}</Label>
                 <p className="text-sm font-medium">{viewingItem.gramPerHen}g</p>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-              Close
+              {t('form.closeButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -381,10 +385,10 @@ export function FeedProgram() {
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title="Delete Feed Program"
-        desc={`Are you sure you want to delete this feed program? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelBtnText="Cancel"
+        title={t('dialog.deleteTitle')}
+        desc={t('dialog.deleteDescription')}
+        confirmText={t('form.deleteButton')}
+        cancelBtnText={t('form.cancelButton')}
         destructive={true}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.item?.id}

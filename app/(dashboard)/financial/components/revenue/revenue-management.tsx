@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,8 @@ interface Revenue {
 
 
 export function RevenueManagement() {
+  const t = useTranslations('financial.revenue');
+  const tCommon = useTranslations('financial.common');
   const [revenues, setRevenues] = useState<Revenue[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -61,12 +64,12 @@ export function RevenueManagement() {
       if (result.success) {
         setRevenues(result.data || []);
       } else {
-        toast.error(result.message || "Failed to fetch revenues");
+        toast.error(result.message || t('toasts.fetchError'));
         setRevenues([]);
       }
     } catch (error) {
       console.error("Error fetching revenues:", error);
-      toast.error("Failed to fetch revenues");
+      toast.error(t('toasts.fetchError'));
       setRevenues([]);
     } finally {
       setLoading(false);
@@ -98,16 +101,16 @@ export function RevenueManagement() {
       }
 
       if (result.success) {
-        toast.success(editingRevenue ? "Revenue updated successfully" : "Revenue created successfully");
+        toast.success(editingRevenue ? t('toasts.updateSuccess') : t('toasts.createSuccess'));
         setIsDialogOpen(false);
         setEditingRevenue(null);
         fetchRevenues();
       } else {
-        toast.error(result.message || "Failed to save revenue");
+        toast.error(result.message || (editingRevenue ? t('toasts.updateError') : t('toasts.createError')));
       }
     } catch (error) {
       console.error("Error saving revenue:", error);
-      toast.error("Failed to save revenue");
+      toast.error(editingRevenue ? t('toasts.updateError') : t('toasts.createError'));
     }
   };
 
@@ -136,15 +139,15 @@ export function RevenueManagement() {
     try {
       const result = await deleteRevenue(confirmDialog.record.id);
       if (result.success) {
-        toast.success("Revenue deleted successfully");
+        toast.success(t('toasts.deleteSuccess'));
         fetchRevenues();
         setConfirmDialog({ open: false, type: null, record: null });
       } else {
-        toast.error(result.message || "Failed to delete revenue");
+        toast.error(result.message || t('toasts.deleteError'));
       }
     } catch (error) {
       console.error("Error deleting revenue:", error);
-      toast.error("Failed to delete revenue");
+      toast.error(t('toasts.deleteError'));
     } finally {
       setActionLoading(null);
     }
@@ -206,7 +209,7 @@ export function RevenueManagement() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.todayRevenue')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -227,7 +230,7 @@ export function RevenueManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Week's Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.weekRevenue')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -248,7 +251,7 @@ export function RevenueManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month's Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.monthRevenue')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -269,7 +272,7 @@ export function RevenueManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Year's Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('cards.yearRevenue')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -296,15 +299,15 @@ export function RevenueManagement() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Revenue</CardTitle>
-              <CardDescription>Track and manage all farm revenue</CardDescription>
+              <CardTitle>{t('title')}</CardTitle>
+              <CardDescription>{t('pageDescription')}</CardDescription>
             </div>
             <Button onClick={() => {
               setEditingRevenue(null);
               setIsDialogOpen(true);
             }}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Revenue
+              {t('addRevenue')}
             </Button>
           </div>
         </CardHeader>
@@ -323,22 +326,22 @@ export function RevenueManagement() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Revenue Details</DialogTitle>
+            <DialogTitle>{t('dialogs.view.title')}</DialogTitle>
             <DialogDescription>
-              View detailed information about this revenue record
+              {t('dialogs.view.description')}
             </DialogDescription>
           </DialogHeader>
           {viewingRevenue && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{tCommon('date')}</Label>
                   <p className="text-sm font-medium">
                     {EthiopianDateFormatter.formatForTable(new Date(viewingRevenue.date))}
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Source</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('columns.source')}</Label>
                   <div className="mt-1">
                     <Badge className={getRevenueSourceBadgeColor(viewingRevenue.source as any)}>
                       {REVENUE_SOURCES.find(s => s.value === viewingRevenue.source)?.label || viewingRevenue.source}
@@ -347,13 +350,13 @@ export function RevenueManagement() {
                 </div>
                 {viewingRevenue.quantity && (
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Quantity</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">{tCommon('quantity')}</Label>
                     <p className="text-sm font-medium">{viewingRevenue.quantity}</p>
                   </div>
                 )}
                 {viewingRevenue.costPerQuantity && (
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Cost per Quantity</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">{tCommon('costPerQuantity')}</Label>
                     <p className="text-sm font-medium">
                       {new Intl.NumberFormat("en-ET", {
                         style: "currency",
@@ -363,7 +366,7 @@ export function RevenueManagement() {
                   </div>
                 )}
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Total Amount</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('form.amount')}</Label>
                   <p className="text-lg font-semibold text-green-600">
                     {new Intl.NumberFormat("en-ET", {
                       style: "currency",
@@ -378,22 +381,22 @@ export function RevenueManagement() {
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                <Label className="text-sm font-medium text-muted-foreground">{tCommon('description')}</Label>
                 <p className="text-sm mt-1 p-3 bg-muted rounded-md">
-                  {viewingRevenue.description || "No description provided"}
+                  {viewingRevenue.description || t('dialogs.view.noDescription')}
                 </p>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-              Close
+              {tCommon('close')}
             </Button>
             <Button onClick={() => {
               setIsViewDialogOpen(false);
               handleEdit(viewingRevenue!);
             }}>
-              Edit Revenue
+              {t('editRevenue')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -415,19 +418,19 @@ export function RevenueManagement() {
           date: new Date(editingRevenue.date),
           description: editingRevenue.description || "",
         } : undefined}
-        title={editingRevenue ? "Edit Revenue" : "Add New Revenue"}
-        description={editingRevenue ? "Update revenue details" : "Record a new revenue for your farm"}
-        submitButtonText={editingRevenue ? "Update Revenue" : "Add Revenue"}
+        title={editingRevenue ? t('dialogs.edit.title') : t('dialogs.add.title')}
+        description={editingRevenue ? t('dialogs.edit.description') : t('dialogs.add.description')}
+        submitButtonText={editingRevenue ? t('editRevenue') : t('addRevenue')}
       />
 
       {/* Confirmation Dialog */}
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title="Delete Revenue"
-        desc={`Are you sure you want to delete this revenue record? This action cannot be undone and the record will be permanently removed.`}
-        confirmText="Delete Revenue"
-        cancelBtnText="Cancel"
+        title={t('dialogs.delete.title')}
+        desc={t('dialogs.delete.description')}
+        confirmText={t('deleteRevenue')}
+        cancelBtnText={tCommon('cancel')}
         destructive={true}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.record?.id}

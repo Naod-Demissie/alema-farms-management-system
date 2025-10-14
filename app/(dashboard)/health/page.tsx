@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -29,6 +30,7 @@ import { PageBanner } from "@/components/ui/page-banner";
 
 export default function HealthManagementPage() {
   const [activeTab, setActiveTab] = useState("vaccinations");
+  const t = useTranslations('health');
 
   // Mock data for overview stats
   const healthStats = {
@@ -44,8 +46,8 @@ export default function HealthManagementPage() {
     <div className="space-y-6">
       {/* Banner Header */}
       <PageBanner
-        title="Health & Veterinary Management"
-        description="Comprehensive vaccination tracking and veterinary care management"
+        title={t('title')}
+        description={t('description')}
         imageSrc="/banner-bg-image.webp"
       />
 
@@ -56,9 +58,9 @@ export default function HealthManagementPage() {
         className="space-y-6"
       >
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="vaccinations">Vaccinations</TabsTrigger>
-          <TabsTrigger value="treatments">Treatments</TabsTrigger>
-          <TabsTrigger value="mortality">Mortality</TabsTrigger>
+          <TabsTrigger value="vaccinations">{t('vaccination.title')}</TabsTrigger>
+          <TabsTrigger value="treatments">{t('treatment.title')}</TabsTrigger>
+          <TabsTrigger value="mortality">{t('mortality.title')}</TabsTrigger>
         </TabsList>
 
         {/* Vaccination Records Tab */}

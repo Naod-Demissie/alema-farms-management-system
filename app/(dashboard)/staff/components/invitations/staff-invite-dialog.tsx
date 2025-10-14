@@ -33,17 +33,20 @@ import { Loader2 } from "lucide-react";
 import { useStaff } from "../../context/staff-context";
 import { createInvite } from "@/app/(dashboard)/staff/server/staff-invites";
 import { toast } from "sonner";
+import { useTranslations } from 'next-intl';
 
-const inviteFormSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+const getInviteFormSchema = (t: any) => z.object({
+  email: z.string().email(t('invites.dialogs.invite.validation.invalidEmail')),
   role: z.enum(["ADMIN", "VETERINARIAN"]),
 });
 
-type InviteFormValues = z.infer<typeof inviteFormSchema>;
-
 export function StaffInviteDialog() {
+  const t = useTranslations('staff');
   const { isInviteDialogOpen, setIsInviteDialogOpen, refreshStaff, refreshInvites } = useStaff();
   const [isLoading, setIsLoading] = useState(false);
+
+  const inviteFormSchema = getInviteFormSchema(t);
+  type InviteFormValues = z.infer<typeof inviteFormSchema>;
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
@@ -59,16 +62,16 @@ export function StaffInviteDialog() {
       const result = await createInvite(data);
       
       if (result.success) {
-        toast.success("Invitation sent successfully!");
+        toast.success(t('invites.dialogs.invite.successMessage'));
         form.reset();
         setIsInviteDialogOpen(false);
         refreshStaff();
         refreshInvites();
       } else {
-        toast.error(result.message || "Failed to send invitation");
+        toast.error(result.message || t('invites.dialogs.invite.errorMessage'));
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      toast.error(t('invites.dialogs.invite.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -78,9 +81,9 @@ export function StaffInviteDialog() {
     <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Invite Staff Member</DialogTitle>
+          <DialogTitle>{t('invites.dialogs.invite.title')}</DialogTitle>
           <DialogDescription>
-            Send an invitation to a new staff member to join the poultry management system.
+            {t('invites.dialogs.invite.description')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -90,10 +93,10 @@ export function StaffInviteDialog() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>{t('invites.dialogs.invite.email')} <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="staff@example.com"
+                      placeholder={t('invites.dialogs.invite.emailPlaceholder')}
                       type="email"
                       {...field}
                     />
@@ -107,16 +110,16 @@ export function StaffInviteDialog() {
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>{t('invites.dialogs.invite.role')} <span className="text-red-500">*</span></FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
+                        <SelectValue placeholder={t('invites.dialogs.invite.selectRole')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ADMIN">Administrator</SelectItem>
-                      <SelectItem value="VETERINARIAN">Veterinarian</SelectItem>
+                      <SelectItem value="ADMIN">{t('directory.roles.admin')}</SelectItem>
+                      <SelectItem value="VETERINARIAN">{t('directory.roles.veterinarian')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -130,11 +133,11 @@ export function StaffInviteDialog() {
                 onClick={() => setIsInviteDialogOpen(false)}
                 disabled={isLoading}
               >
-                Cancel
+                {t('invites.dialogs.invite.cancel')}
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Sending..." : "Send Invitation"}
+                {isLoading ? t('invites.dialogs.invite.sending') : t('invites.dialogs.invite.submit')}
               </Button>
             </DialogFooter>
           </form>

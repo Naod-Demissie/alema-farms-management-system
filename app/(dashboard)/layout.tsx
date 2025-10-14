@@ -2,6 +2,7 @@
 
 import React, { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 import { useSession } from "@/lib/auth-client";
 import { AppSidebar } from "@/components/sidebar/new-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -14,6 +15,7 @@ export default function DashboardLayout({
 }) {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const t = useTranslations('dashboard');
 
   useEffect(() => {
     console.log('[DashboardLayout] Session state changed:', { 
@@ -50,7 +52,7 @@ export default function DashboardLayout({
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Checking authentication...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('checkingAuth')}</p>
         </div>
       </div>
     );
@@ -82,7 +84,7 @@ export default function DashboardLayout({
                 <div className="flex items-center justify-center min-h-[400px]">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Loading dashboard...</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('loadingDashboard')}</p>
                   </div>
                 </div>
               }>

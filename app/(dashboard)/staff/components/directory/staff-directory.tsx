@@ -55,6 +55,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mail as MailIcon, Phone, Calendar, Shield, Copy, Send, XCircle } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
+import { useTranslations } from 'next-intl';
 
 // Edit staff form types (now handled by reusable component)
 type EditStaffFormValues = {
@@ -73,6 +74,7 @@ const roleColors = {
 };
 
 export function StaffDirectory() {
+  const t = useTranslations('staff');
   const { setIsInviteDialogOpen, setIsAddStaffDialogOpen, setRefreshInvites, setRefreshStaff } = useStaff();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -151,8 +153,8 @@ export function StaffDirectory() {
   // Refresh data
   const handleRefresh = async () => {
     await Promise.all([loadStaffMembers(), loadInvites()]);
-    toast.success("Data refreshed successfully!", {
-      description: "Staff members and invitations have been updated",
+    toast.success(t('directory.toasts.dataRefreshed'), {
+      description: t('directory.toasts.dataRefreshedDescription'),
     });
   };
 
@@ -198,18 +200,18 @@ export function StaffDirectory() {
         );
         // Also refresh from server to ensure data consistency
         await loadStaffMembers();
-        toast.success("Staff member updated successfully!", {
-          description: `${data.firstName} ${data.lastName} has been updated`,
+        toast.success(t('directory.toasts.staffUpdated'), {
+          description: t('directory.toasts.staffUpdatedDescription', { name: `${data.firstName} ${data.lastName}` }),
         });
         setIsEditDialogOpen(false);
       } else {
-        toast.error("Failed to update staff member", {
+        toast.error(t('directory.toasts.staffUpdateFailed'), {
           description: result.message || "An unexpected error occurred",
         });
       }
     } catch (error) {
       console.error("Failed to update staff:", error);
-      toast.error("Failed to update staff member", {
+      toast.error(t('directory.toasts.staffUpdateFailed'), {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
@@ -260,18 +262,18 @@ export function StaffDirectory() {
             )
           );
         }
-        toast.success("Invitation resent successfully!", {
-          description: `A new invitation has been sent to ${invite.email}`,
+        toast.success(t('directory.toasts.inviteResent'), {
+          description: t('directory.toasts.inviteResentDescription', { email: invite.email }),
         });
       } else {
         console.error("Failed to resend invite:", result.message);
-        toast.error("Failed to resend invitation", {
+        toast.error(t('directory.toasts.inviteResendFailed'), {
           description: result.message || "An unexpected error occurred",
         });
       }
     } catch (error) {
       console.error("Failed to resend invite:", error);
-      toast.error("Failed to resend invitation", {
+      toast.error(t('directory.toasts.inviteResendFailed'), {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
@@ -288,18 +290,18 @@ export function StaffDirectory() {
         setInviteData(prevInvites => 
           prevInvites.filter(inv => inv.id !== invite.id)
         );
-        toast.success("Invitation cancelled successfully!", {
-          description: `The invitation for ${invite.email} has been cancelled`,
+        toast.success(t('directory.toasts.inviteCancelled'), {
+          description: t('directory.toasts.inviteCancelledDescription', { email: invite.email }),
         });
       } else {
         console.error("Failed to cancel invite:", result.message);
-        toast.error("Failed to cancel invitation", {
+        toast.error(t('directory.toasts.inviteCancelFailed'), {
           description: result.message || "An unexpected error occurred",
         });
       }
     } catch (error) {
       console.error("Failed to cancel invite:", error);
-      toast.error("Failed to cancel invitation", {
+      toast.error(t('directory.toasts.inviteCancelFailed'), {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
@@ -318,18 +320,18 @@ export function StaffDirectory() {
         );
         // Also refresh from server to ensure data consistency
         await loadStaffMembers();
-        toast.success("Staff member deleted successfully!", {
-          description: `${staff.firstName} ${staff.lastName} has been removed from the system`,
+        toast.success(t('directory.toasts.staffDeleted'), {
+          description: t('directory.toasts.staffDeletedDescription', { name: `${staff.firstName} ${staff.lastName}` }),
         });
       } else {
         console.error("Failed to delete staff:", result.message);
-        toast.error("Failed to delete staff member", {
+        toast.error(t('directory.toasts.staffDeleteFailed'), {
           description: result.message || "An unexpected error occurred",
         });
       }
     } catch (error) {
       console.error("Failed to delete staff:", error);
-      toast.error("Failed to delete staff member", {
+      toast.error(t('directory.toasts.staffDeleteFailed'), {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
@@ -360,13 +362,13 @@ export function StaffDirectory() {
     try {
       const inviteLink = `${window.location.origin}/complete-registration?token=${invite.token}&email=${encodeURIComponent(invite.email)}`;
       await navigator.clipboard.writeText(inviteLink);
-      toast.success("Invite link copied!", {
-        description: `The invitation link for ${invite.email} has been copied to clipboard`,
+      toast.success(t('directory.toasts.linkCopied'), {
+        description: t('directory.toasts.linkCopiedDescription', { email: invite.email }),
       });
     } catch (error) {
       console.error("Failed to copy invite link:", error);
-      toast.error("Failed to copy invite link", {
-        description: "Unable to copy the invitation link to clipboard",
+      toast.error(t('directory.toasts.linkCopyFailed'), {
+        description: t('directory.toasts.linkCopyFailedDescription'),
       });
     }
   };
@@ -376,6 +378,7 @@ export function StaffDirectory() {
     onEdit: handleEditStaff,
     onView: handleViewStaff,
     onDelete: handleDeleteStaff,
+    t,
   });
 
   const inviteColumns = createInviteSentColumns({
@@ -383,25 +386,26 @@ export function StaffDirectory() {
     onCancel: handleCancelInvite,
     onCopyLink: handleCopyInviteLink,
     actionLoading,
+    t,
   });
 
   // Faceted filter options for staff
   const staffFacetedFilters = [
     {
       columnId: "role",
-      title: "Role",
+      title: t('directory.filters.role'),
       options: [
-        { label: "Admin", value: "ADMIN" },
-        { label: "Veterinarian", value: "VETERINARIAN" },
-        { label: "Worker", value: "WORKER" },
+        { label: t('directory.roles.admin'), value: "ADMIN" },
+        { label: t('directory.roles.veterinarian'), value: "VETERINARIAN" },
+        { label: t('directory.roles.worker'), value: "WORKER" },
       ],
     },
     {
       columnId: "isActive",
-      title: "Status",
+      title: t('directory.filters.status'),
       options: [
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
+        { label: t('directory.filterOptions.active'), value: "active" },
+        { label: t('directory.filterOptions.inactive'), value: "inactive" },
       ],
     },
   ];
@@ -410,21 +414,21 @@ export function StaffDirectory() {
   const inviteFacetedFilters = [
     {
       columnId: "role",
-      title: "Role",
+      title: t('directory.filters.role'),
       options: [
-        { label: "Admin", value: "ADMIN" },
-        { label: "Veterinarian", value: "VETERINARIAN" },
-        { label: "Worker", value: "WORKER" },
+        { label: t('directory.roles.admin'), value: "ADMIN" },
+        { label: t('directory.roles.veterinarian'), value: "VETERINARIAN" },
+        { label: t('directory.roles.worker'), value: "WORKER" },
       ],
     },
     {
       columnId: "status",
-      title: "Status",
+      title: t('directory.filters.status'),
       options: [
-        { label: "Pending", value: "PENDING" },
-        { label: "Accepted", value: "ACCEPTED" },
-        { label: "Expired", value: "EXPIRED" },
-        { label: "Cancelled", value: "CANCELLED" },
+        { label: t('invites.status.pending'), value: "PENDING" },
+        { label: t('invites.status.accepted'), value: "ACCEPTED" },
+        { label: t('invites.status.expired'), value: "EXPIRED" },
+        { label: t('invites.status.cancelled'), value: "CANCELLED" },
       ],
     },
   ];
@@ -442,17 +446,17 @@ export function StaffDirectory() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Staff Directory</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t('directory.title')}</h2>
         <p className="text-muted-foreground">
-          Manage your staff members and their information.
+          {t('directory.manageDescription')}
         </p>
       </div>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
-          <TabsTrigger value="staff">Staff Members</TabsTrigger>
-          <TabsTrigger value="invites">Invite Sent</TabsTrigger>
+          <TabsTrigger value="staff">{t('directory.tabs.staffMembers')}</TabsTrigger>
+          <TabsTrigger value="invites">{t('directory.tabs.invitesSent')}</TabsTrigger>
         </TabsList>
 
         {/* Staff Members Tab */}
@@ -462,7 +466,7 @@ export function StaffDirectory() {
               <CardContent className="flex items-center justify-center py-8">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-sm text-muted-foreground">Loading staff members...</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{t('directory.loading.staffMembers')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -473,7 +477,7 @@ export function StaffDirectory() {
                   <p className="text-red-600 mb-4">{error}</p>
                   <Button variant="outline" onClick={handleRefresh}>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Try Again
+                    {t('directory.errors.tryAgain')}
                   </Button>
                 </div>
               </CardContent>
@@ -483,14 +487,14 @@ export function StaffDirectory() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Staff Members ({staffData.length})</CardTitle>
+              <CardTitle>{t('directory.cards.staffMembers', { count: staffData.length })}</CardTitle>
               <CardDescription>
-                A list of all staff members in your organization.
+                {t('directory.cards.staffMembersDescription')}
               </CardDescription>
             </div>
             <Button onClick={() => setIsAddStaffDialogOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
-              Add Staff
+              {t('directory.buttons.addStaff')}
             </Button>
           </div>
         </CardHeader>
@@ -510,7 +514,7 @@ export function StaffDirectory() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('directory.cards.total')}</CardTitle>
                 <Mail className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -522,7 +526,7 @@ export function StaffDirectory() {
                   <>
                     <div className="text-2xl font-bold">{inviteStats.total}</div>
                     <p className="text-xs text-muted-foreground">
-                      All invitations
+                      {t('directory.cards.allInvitations')}
                     </p>
                   </>
                 )}
@@ -531,7 +535,7 @@ export function StaffDirectory() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('directory.cards.pending')}</CardTitle>
                 <RefreshCw className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -543,7 +547,7 @@ export function StaffDirectory() {
                   <>
                     <div className="text-2xl font-bold text-yellow-600">{inviteStats.pending}</div>
                     <p className="text-xs text-muted-foreground">
-                      Awaiting response
+                      {t('directory.cards.awaitingResponse')}
                     </p>
                   </>
                 )}
@@ -552,7 +556,7 @@ export function StaffDirectory() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Accepted</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('directory.cards.accepted')}</CardTitle>
                 <UserPlus className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -564,7 +568,7 @@ export function StaffDirectory() {
                   <>
                     <div className="text-2xl font-bold text-green-600">{inviteStats.accepted}</div>
                     <p className="text-xs text-muted-foreground">
-                      Successfully joined
+                      {t('directory.cards.successfullyJoined')}
                     </p>
                   </>
                 )}
@@ -573,7 +577,7 @@ export function StaffDirectory() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Expired</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('directory.cards.expired')}</CardTitle>
                 <XCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -585,7 +589,7 @@ export function StaffDirectory() {
                   <>
                     <div className="text-2xl font-bold text-red-600">{inviteStats.expired}</div>
                     <p className="text-xs text-muted-foreground">
-                      No longer valid
+                      {t('directory.cards.noLongerValid')}
                     </p>
                   </>
                 )}
@@ -598,7 +602,7 @@ export function StaffDirectory() {
               <CardContent className="flex items-center justify-center py-8">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-sm text-muted-foreground">Loading invites...</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{t('directory.loading.invites')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -609,7 +613,7 @@ export function StaffDirectory() {
                   <p className="text-red-600 mb-4">{inviteError}</p>
                   <Button variant="outline" onClick={handleRefresh}>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Try Again
+                    {t('directory.errors.tryAgain')}
                   </Button>
                 </div>
               </CardContent>
@@ -619,14 +623,14 @@ export function StaffDirectory() {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <CardTitle>Invitations Sent ({inviteData.length})</CardTitle>
+                    <CardTitle>{t('directory.cards.invitationsSent', { count: inviteData.length })}</CardTitle>
                     <CardDescription>
-                      All staff invitations sent and their current status.
+                      {t('directory.cards.invitationsSentDescription')}
                     </CardDescription>
                   </div>
                   <Button onClick={() => setIsInviteDialogOpen(true)}>
                     <Mail className="h-4 w-4 mr-2" />
-                    Invite Staff
+                    {t('directory.buttons.inviteStaff')}
                   </Button>
                 </div>
               </CardHeader>
@@ -645,9 +649,9 @@ export function StaffDirectory() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Staff Details</DialogTitle>
+            <DialogTitle>{t('directory.viewDialog.title')}</DialogTitle>
             <DialogDescription>
-              View detailed information about this staff member.
+              {t('directory.viewDialog.description')}
             </DialogDescription>
           </DialogHeader>
           {selectedStaff && (
@@ -664,36 +668,36 @@ export function StaffDirectory() {
                     {selectedStaff.firstName} {selectedStaff.lastName}
                   </h3>
                   <Badge className={roleColors[selectedStaff.role as keyof typeof roleColors]}>
-                    {selectedStaff.role}
+                    {t(`directory.roles.${selectedStaff.role.toLowerCase()}`)}
                   </Badge>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium">Contact Information</h4>
+                  <h4 className="font-medium">{t('directory.viewDialog.contactInformation')}</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center">
-                      <Mail className="mr-2 h-4 w-4" />
-                      {selectedStaff.email || "No email"}
+                      <MailIcon className="mr-2 h-4 w-4" />
+                      {selectedStaff.email || t('directory.viewDialog.noEmail')}
                     </div>
                     <div className="flex items-center">
                       <Phone className="mr-2 h-4 w-4" />
-                      {selectedStaff.phoneNumber || "No phone"}
+                      {selectedStaff.phoneNumber || t('directory.viewDialog.noPhone')}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-medium">Account Information</h4>
+                  <h4 className="font-medium">{t('directory.viewDialog.accountInformation')}</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center">
                       <Calendar className="mr-2 h-4 w-4" />
-                      Joined: {new Date(selectedStaff.createdAt).toLocaleDateString()}
+                      {t('directory.viewDialog.joined')} {new Date(selectedStaff.createdAt).toLocaleDateString()}
                     </div>
                     <div className="flex items-center">
                       <Shield className="mr-2 h-4 w-4" />
-                      Status: {selectedStaff.isActive ? "Active" : "Inactive"}
+                      {t('directory.viewDialog.status')} {selectedStaff.isActive ? t('directory.status.active') : t('directory.status.inactive')}
                     </div>
                   </div>
                 </div>
@@ -702,7 +706,7 @@ export function StaffDirectory() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-              Close
+              {t('directory.buttons.close')}
             </Button>
             <Button onClick={() => {
               setIsViewDialogOpen(false);
@@ -710,7 +714,7 @@ export function StaffDirectory() {
                 handleEditStaff(selectedStaff);
               }
             }}>
-              Edit Staff
+              {t('directory.buttons.editStaff')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -738,32 +742,32 @@ export function StaffDirectory() {
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
         title={
           confirmDialog.type === 'resend' 
-            ? 'Resend Invitation' 
+            ? t('directory.confirmDialogs.resendTitle')
             : confirmDialog.type === 'cancel' 
-            ? 'Cancel Invitation' 
+            ? t('directory.confirmDialogs.cancelTitle')
             : confirmDialog.type === 'delete'
-            ? 'Delete Staff Member'
+            ? t('directory.confirmDialogs.deleteTitle')
             : 'Confirm Action'
         }
         desc={
           confirmDialog.type === 'resend' 
-            ? `Are you sure you want to resend the invitation to ${confirmDialog.invite?.email}? A new invitation email will be sent with a fresh expiration date.`
+            ? t('directory.confirmDialogs.resendDescription', { email: confirmDialog.invite?.email })
             : confirmDialog.type === 'cancel'
-            ? `Are you sure you want to cancel the invitation for ${confirmDialog.invite?.email}? This action cannot be undone.`
+            ? t('directory.confirmDialogs.cancelDescription', { email: confirmDialog.invite?.email })
             : confirmDialog.type === 'delete'
-            ? `Are you sure you want to delete ${confirmDialog.staff?.firstName} ${confirmDialog.staff?.lastName}? This action cannot be undone and all associated data will be permanently removed.`
+            ? t('directory.confirmDialogs.deleteDescription', { name: `${confirmDialog.staff?.firstName} ${confirmDialog.staff?.lastName}` })
             : 'Are you sure you want to proceed?'
         }
         confirmText={
           confirmDialog.type === 'resend' 
-            ? 'Resend Invitation' 
+            ? t('directory.confirmDialogs.resendConfirm')
             : confirmDialog.type === 'cancel' 
-            ? 'Cancel Invitation' 
+            ? t('directory.confirmDialogs.cancelConfirm')
             : confirmDialog.type === 'delete'
-            ? 'Delete Staff Member'
+            ? t('directory.confirmDialogs.deleteConfirm')
             : 'Continue'
         }
-        cancelBtnText="Cancel"
+        cancelBtnText={t('directory.confirmDialogs.cancel')}
         destructive={confirmDialog.type === 'cancel' || confirmDialog.type === 'delete'}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === (confirmDialog.invite?.id || confirmDialog.staff?.id)}

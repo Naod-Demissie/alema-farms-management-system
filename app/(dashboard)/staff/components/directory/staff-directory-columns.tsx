@@ -14,17 +14,19 @@ interface StaffDirectoryColumnsProps {
   onEdit: (staff: Staff) => void;
   onView: (staff: Staff) => void;
   onDelete: (staff: Staff) => void;
+  t: any; // Translation function
 }
 
 export const createStaffDirectoryColumns = ({
   onEdit,
   onView,
   onDelete,
+  t,
 }: StaffDirectoryColumnsProps): ColumnDef<Staff>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Staff" />
+      <DataTableColumnHeader column={column} title={t('directory.columns.staff')} />
     ),
     cell: ({ row }) => {
       const staff = row.original;
@@ -40,7 +42,7 @@ export const createStaffDirectoryColumns = ({
           <div>
             <div className="font-medium">{staff.name}</div>
             <div className="text-sm text-muted-foreground">
-              {staff.email || "No email"}
+              {staff.email || t('directory.columns.noEmail')}
             </div>
           </div>
         </div>
@@ -50,7 +52,7 @@ export const createStaffDirectoryColumns = ({
   {
     accessorKey: "role",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Role" />
+      <DataTableColumnHeader column={column} title={t('directory.columns.role')} />
     ),
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
@@ -60,9 +62,15 @@ export const createStaffDirectoryColumns = ({
         WORKER: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       };
 
+      const roleTranslations: Record<string, string> = {
+        ADMIN: t('directory.roles.admin'),
+        VETERINARIAN: t('directory.roles.veterinarian'),
+        WORKER: t('directory.roles.worker'),
+      };
+
       return (
         <Badge className={roleColors[role as keyof typeof roleColors]}>
-          {role}
+          {roleTranslations[role] || role}
         </Badge>
       );
     },
@@ -73,7 +81,7 @@ export const createStaffDirectoryColumns = ({
   {
     accessorKey: "contact",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Contact" />
+      <DataTableColumnHeader column={column} title={t('directory.columns.contact')} />
     ),
     cell: ({ row }) => {
       const staff = row.original;
@@ -81,11 +89,11 @@ export const createStaffDirectoryColumns = ({
         <div className="space-y-1">
           <div className="flex items-center text-sm">
             <Mail className="mr-2 h-3 w-3" />
-            {staff.email || "No email"}
+            {staff.email || t('directory.columns.noEmail')}
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
             <Phone className="mr-2 h-3 w-3" />
-            {staff.phoneNumber || "No phone"}
+            {staff.phoneNumber || t('directory.columns.noPhone')}
           </div>
         </div>
       );
@@ -96,14 +104,14 @@ export const createStaffDirectoryColumns = ({
   {
     accessorKey: "isActive",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
+      <DataTableColumnHeader column={column} title={t('directory.columns.status')} />
     ),
     cell: ({ row }) => {
       const isActive = row.getValue("isActive") as boolean;
 
       return (
         <Badge variant={isActive ? "default" : "secondary"}>
-          {isActive ? "Active" : "Inactive"}
+          {isActive ? t('directory.status.active') : t('directory.status.inactive')}
         </Badge>
       );
     },
@@ -119,7 +127,7 @@ export const createStaffDirectoryColumns = ({
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Joined Date" />
+      <DataTableColumnHeader column={column} title={t('directory.columns.joinedDate')} />
     ),
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as string;

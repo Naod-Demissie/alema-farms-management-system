@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { StaffDirectory } from "./components/directory/staff-directory";
@@ -13,14 +14,15 @@ import { PageBanner } from "@/components/ui/page-banner";
 
 export default function StaffManagementPage() {
   const [activeTab, setActiveTab] = useState("directory");
+  const t = useTranslations('staff');
 
   return (
     <StaffProvider>
       <div className="space-y-6">
         {/* Banner Header */}
         <PageBanner
-          title="Staff Management"
-          description="Manage your staff members, attendance, payroll, and more"
+          title={t('title')}
+          description={t('description')}
           imageSrc="/banner-bg-image.webp"
         />
 
@@ -32,16 +34,16 @@ export default function StaffManagementPage() {
         >
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 h-auto">
             <TabsTrigger value="directory">
-              Staffs
+              {t('name')}
             </TabsTrigger>
             <TabsTrigger value="payroll">
-              Payroll
+              {t('payroll.title')}
             </TabsTrigger>
             <TabsTrigger value="attendance">
-              Attendance
+              {t('attendance.title')}
             </TabsTrigger>
             <TabsTrigger value="leave">
-              Leave
+              {t('leave.title')}
             </TabsTrigger>
           </TabsList>
 

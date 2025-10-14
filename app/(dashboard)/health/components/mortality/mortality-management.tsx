@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslations } from 'next-intl';
 import {
   Dialog,
   DialogContent,
@@ -84,6 +85,7 @@ const mortalitySchema = z.object({
 });
 
 export function MortalityManagement() {
+  const t = useTranslations('health.mortality');
   const [mortalityRecords, setMortalityRecords] = useState<any[]>([]);
   const [flocks, setFlocks] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -170,21 +172,21 @@ export function MortalityManagement() {
       });
       
       if (result.success) {
-        toast.success("Mortality record created successfully!", {
-          description: `Record for ${data.count} deaths has been added`,
+        toast.success(t('createSuccess'), {
+          description: t('createSuccessDesc', { count: data.count }),
         });
         await fetchMortalityRecords();
         setIsAddDialogOpen(false);
         form.reset();
       } else {
-        toast.error("Failed to create mortality record", {
-          description: result.message || "An unexpected error occurred",
+        toast.error(t('createError'), {
+          description: result.message || t('unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error creating mortality record:", error);
-      toast.error("Failed to create mortality record", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('createError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
       });
     } finally {
       setLoading(false);
@@ -215,22 +217,22 @@ export function MortalityManagement() {
       });
       
       if (result.success) {
-        toast.success("Mortality record updated successfully!", {
-          description: `Record for ${data.count} deaths has been updated`,
+        toast.success(t('updateSuccess'), {
+          description: t('updateSuccessDesc'),
         });
         await fetchMortalityRecords();
         setIsAddDialogOpen(false);
         setEditingRecord(null);
         form.reset();
       } else {
-        toast.error("Failed to update mortality record", {
-          description: result.message || "An unexpected error occurred",
+        toast.error(t('updateError'), {
+          description: result.message || t('unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error updating mortality record:", error);
-      toast.error("Failed to update mortality record", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('updateError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
       });
     } finally {
       setLoading(false);
@@ -265,19 +267,19 @@ export function MortalityManagement() {
       const result = await deleteMortalityRecord(record.id);
       
       if (result.success) {
-        toast.success("Mortality record deleted successfully!", {
-          description: `Record for ${record.count} deaths has been removed`,
+        toast.success(t('deleteSuccess'), {
+          description: t('deleteSuccessDesc'),
         });
         await fetchMortalityRecords();
       } else {
-        toast.error("Failed to delete mortality record", {
-          description: result.message || result.error || "An unexpected error occurred",
+        toast.error(t('deleteError'), {
+          description: result.message || result.error || t('unexpectedError'),
         });
       }
     } catch (error) {
       console.error("Error deleting mortality record:", error);
-      toast.error("Failed to delete mortality record", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+      toast.error(t('deleteError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
       });
     } finally {
       setActionLoading(null);
@@ -288,13 +290,13 @@ export function MortalityManagement() {
   const getCauseBadge = (cause: string) => {
     switch (cause) {
       case "disease":
-        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" />Disease</Badge>;
+        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" />{t('causeTypes.disease')}</Badge>;
       case "injury":
-        return <Badge variant="outline" className="border-orange-200 text-orange-800"><Activity className="w-3 h-3 mr-1" />Injury</Badge>;
+        return <Badge variant="outline" className="border-orange-200 text-orange-800"><Activity className="w-3 h-3 mr-1" />{t('causeTypes.injury')}</Badge>;
       case "environmental":
-        return <Badge variant="outline" className="border-blue-200 text-blue-800"><AlertCircle className="w-3 h-3 mr-1" />Environmental</Badge>;
+        return <Badge variant="outline" className="border-blue-200 text-blue-800"><AlertCircle className="w-3 h-3 mr-1" />{t('causeTypes.environmental')}</Badge>;
       case "unknown":
-        return <Badge variant="secondary"><XCircle className="w-3 h-3 mr-1" />Unknown</Badge>;
+        return <Badge variant="secondary"><XCircle className="w-3 h-3 mr-1" />{t('causeTypes.unknown')}</Badge>;
       default:
         return <Badge variant="secondary">{cause}</Badge>;
     }
@@ -333,9 +335,9 @@ export function MortalityManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Mortality Management</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t('pageTitle')}</h2>
         <p className="text-muted-foreground">
-          Track death causes, disposal methods, and post-mortem documentation
+          {t('pageDescription')}
         </p>
       </div>
 
@@ -343,7 +345,7 @@ export function MortalityManagement() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Mortality</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.totalMortality')}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -354,7 +356,7 @@ export function MortalityManagement() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{totalMortality}</div>
-                <p className="text-xs text-muted-foreground">birds this month</p>
+                <p className="text-xs text-muted-foreground">{t('stats.birdsThisMonth')}</p>
               </>
             )}
           </CardContent>
@@ -362,7 +364,7 @@ export function MortalityManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Disease Related</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.diseaseRelated')}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -374,7 +376,7 @@ export function MortalityManagement() {
               <>
                 <div className="text-2xl font-bold text-red-600">{diseaseMortality}</div>
                 <p className="text-xs text-muted-foreground">
-                  {totalMortality > 0 ? Math.round((diseaseMortality / totalMortality) * 100) : 0}% of total
+                  {totalMortality > 0 ? Math.round((diseaseMortality / totalMortality) * 100) : 0}% {t('stats.ofTotal')}
                 </p>
               </>
             )}
@@ -383,7 +385,7 @@ export function MortalityManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Injury Related</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.injuryRelated')}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -395,7 +397,7 @@ export function MortalityManagement() {
               <>
                 <div className="text-2xl font-bold text-orange-600">{injuryMortality}</div>
                 <p className="text-xs text-muted-foreground">
-                  {totalMortality > 0 ? Math.round((injuryMortality / totalMortality) * 100) : 0}% of total
+                  {totalMortality > 0 ? Math.round((injuryMortality / totalMortality) * 100) : 0}% {t('stats.ofTotal')}
                 </p>
               </>
             )}
@@ -404,7 +406,7 @@ export function MortalityManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mortality Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.mortalityRate')}</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -416,7 +418,7 @@ export function MortalityManagement() {
               <>
                 <div className="text-2xl font-bold">{mortalityRate.toFixed(2)}%</div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">-0.2%</span> from last month
+                  <span className="text-green-600">-0.2%</span> {t('stats.fromLastMonth')}
                 </p>
               </>
             )}
@@ -429,25 +431,25 @@ export function MortalityManagement() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Mortality Records ({mortalityRecords.length})</CardTitle>
+              <CardTitle>{t('recordsCount', { count: mortalityRecords.length })}</CardTitle>
               <CardDescription>
-                Manage and track mortality records for your poultry flocks
+                {t('cardDescription')}
               </CardDescription>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Record
+                  {t('addButton')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh]">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingRecord ? "Edit Mortality Record" : "Add New Mortality Record"}
+                    {editingRecord ? t('editTitle') : t('addNewTitle')}
                   </DialogTitle>
                   <DialogDescription>
-                    Record mortality details including cause and description.
+                    {t('addNewDescription')}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -460,12 +462,12 @@ export function MortalityManagement() {
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="flex items-center gap-1">
-                              Flock ID <span className="text-red-500">*</span>
+                              {t('form.flockId')} <span className="text-red-500">*</span>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="w-full h-10">
-                                  <SelectValue placeholder="Select flock" />
+                                  <SelectValue placeholder={t('form.selectFlock')} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -486,7 +488,7 @@ export function MortalityManagement() {
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="flex items-center gap-1">
-                              Date <span className="text-red-500">*</span>
+                              {t('form.date')} <span className="text-red-500">*</span>
                             </FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
@@ -501,7 +503,7 @@ export function MortalityManagement() {
                                     {field.value ? (
                                       format(field.value, "MMM dd, yyyy")
                                     ) : (
-                                      <span>Pick a date</span>
+                                      <span>{t('form.pickDate')}</span>
                                     )}
                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                   </Button>
@@ -529,7 +531,7 @@ export function MortalityManagement() {
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="flex items-center gap-1 whitespace-nowrap">
-                              Number of Deaths <span className="text-red-500">*</span>
+                              {t('form.numberOfDeaths')} <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -557,12 +559,12 @@ export function MortalityManagement() {
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="flex items-center gap-1">
-                              Recorded By <span className="text-red-500">*</span>
+                              {t('form.recordedBy')} <span className="text-red-500">*</span>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="w-full h-10">
-                                  <SelectValue placeholder="Select staff member" />
+                                  <SelectValue placeholder={t('form.selectStaff')} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -583,19 +585,19 @@ export function MortalityManagement() {
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="flex items-center gap-1">
-                              Cause of Death <span className="text-red-500">*</span>
+                              {t('form.causeOfDeath')} <span className="text-red-500">*</span>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="w-full h-10">
-                                  <SelectValue placeholder="Select cause" />
+                                  <SelectValue placeholder={t('form.selectCause')} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="disease">Disease</SelectItem>
-                                <SelectItem value="injury">Injury</SelectItem>
-                                <SelectItem value="environmental">Environmental</SelectItem>
-                                <SelectItem value="unknown">Unknown</SelectItem>
+                                <SelectItem value="disease">{t('causeTypes.disease')}</SelectItem>
+                                <SelectItem value="injury">{t('causeTypes.injury')}</SelectItem>
+                                <SelectItem value="environmental">{t('causeTypes.environmental')}</SelectItem>
+                                <SelectItem value="unknown">{t('causeTypes.unknown')}</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -611,11 +613,11 @@ export function MortalityManagement() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="flex items-center gap-1">
-                            Cause Description <span className="text-red-500">*</span>
+                            {t('form.causeDescription')} <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Detailed description of the cause of death..."
+                              placeholder={t('form.causeDescriptionPlaceholder')}
                               rows={3}
                               className="resize-none min-h-[80px]"
                               {...field}
@@ -628,11 +630,11 @@ export function MortalityManagement() {
 
                     <DialogFooter>
                       <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                        Cancel
+                        {t('cancelButton')}
                       </Button>
                       <Button type="submit" disabled={loading}>
                         {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        {loading ? "Saving..." : editingRecord ? "Update Record" : "Add Record"}
+                        {loading ? t('saving') : editingRecord ? t('updateButton') : t('addButton')}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -646,7 +648,7 @@ export function MortalityManagement() {
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('loadingData')}</p>
               </div>
             </div>
           ) : (
@@ -664,22 +666,10 @@ export function MortalityManagement() {
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title={
-          confirmDialog.type === 'delete'
-            ? 'Delete Mortality Record'
-            : 'Confirm Action'
-        }
-        desc={
-          confirmDialog.type === 'delete'
-            ? 'Are you sure you want to delete this mortality record? This action cannot be undone.'
-            : 'Are you sure you want to proceed?'
-        }
-        confirmText={
-          confirmDialog.type === 'delete'
-            ? 'Delete'
-            : 'Continue'
-        }
-        cancelBtnText="Cancel"
+        title={t('deleteConfirmTitle')}
+        desc={t('deleteConfirmDesc')}
+        confirmText={t('deleteButton')}
+        cancelBtnText={t('cancelButton')}
         destructive={confirmDialog.type === 'delete'}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.record?.id}

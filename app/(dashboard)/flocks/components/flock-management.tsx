@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +65,7 @@ import {
 import { FlockFormData } from "./flock-types";
 import { format } from "date-fns";
 import { FlockTable } from "./flock-table";
-import { flockColumns } from "./flock-table-columns";
+import { getFlockColumns } from "./flock-table-columns";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 
@@ -87,6 +88,7 @@ export function FlockManagementMerged({
   onRefresh,
   loading: pageLoading = false
 }: FlockManagementMergedProps) {
+  const t = useTranslations('flocks');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -109,18 +111,18 @@ export function FlockManagementMerged({
       if (result.success) {
         onFlockCreated(result.data);
         setIsCreateDialogOpen(false);
-        toast.success("Flock created successfully!", {
-          description: `Batch ${data.batchCode} has been added to your flocks.`
+        toast.success(t('toasts.createSuccess'), {
+          description: t('toasts.createSuccessDesc', { batchCode: data.batchCode })
         });
       } else {
-        toast.error("Failed to create flock", {
-          description: result.message || "An unexpected error occurred."
+        toast.error(t('toasts.createError'), {
+          description: result.message || t('toasts.unexpectedError')
         });
       }
     } catch (error) {
       console.error('Error creating flock:', error);
-      toast.error("Failed to create flock", {
-        description: "An unexpected error occurred. Please try again."
+      toast.error(t('toasts.createError'), {
+        description: t('toasts.tryAgain')
       });
     } finally {
       setLoading(false);
@@ -138,18 +140,18 @@ export function FlockManagementMerged({
         onFlockUpdated(result.data);
         setIsEditDialogOpen(false);
         setEditingFlock(null);
-        toast.success("Flock updated successfully!", {
-          description: `Batch ${data.batchCode} has been updated.`
+        toast.success(t('toasts.updateSuccess'), {
+          description: t('toasts.updateSuccessDesc', { batchCode: data.batchCode })
         });
       } else {
-        toast.error("Failed to update flock", {
-          description: result.message || "An unexpected error occurred."
+        toast.error(t('toasts.updateError'), {
+          description: result.message || t('toasts.unexpectedError')
         });
       }
     } catch (error) {
       console.error('Error updating flock:', error);
-      toast.error("Failed to update flock", {
-        description: "An unexpected error occurred. Please try again."
+      toast.error(t('toasts.updateError'), {
+        description: t('toasts.tryAgain')
       });
     } finally {
       setLoading(false);
@@ -177,18 +179,18 @@ export function FlockManagementMerged({
       if (result.success) {
         onFlockDeleted(confirmDialog.flock.id);
         setConfirmDialog({ open: false, flock: null });
-        toast.success("Flock deleted successfully!", {
-          description: `Batch ${confirmDialog.flock.batchCode} has been removed from your flocks.`
+        toast.success(t('toasts.deleteSuccess'), {
+          description: t('toasts.deleteSuccessDesc', { batchCode: confirmDialog.flock.batchCode })
         });
       } else {
-        toast.error("Failed to delete flock", {
-          description: result.message || "An unexpected error occurred."
+        toast.error(t('toasts.deleteError'), {
+          description: result.message || t('toasts.unexpectedError')
         });
       }
     } catch (error) {
       console.error('Error deleting flock:', error);
-      toast.error("Failed to delete flock", {
-        description: "An unexpected error occurred. Please try again."
+      toast.error(t('toasts.deleteError'), {
+        description: t('toasts.tryAgain')
       });
     } finally {
       setDeletingId(null);
@@ -251,7 +253,7 @@ export function FlockManagementMerged({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Birds</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('statistics.totalBirds')}</CardTitle>
             <Bird className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -265,7 +267,7 @@ export function FlockManagementMerged({
                   {totalBirds.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Across all flocks
+                  {t('statistics.acrossAllFlocks')}
                 </p>
               </>
             )}
@@ -274,7 +276,7 @@ export function FlockManagementMerged({
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Mortality</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('statistics.averageMortality')}</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -288,7 +290,7 @@ export function FlockManagementMerged({
                   {averageMortalityRate.toFixed(1)}%
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Across all flocks
+                  {t('statistics.acrossAllFlocks')}
                 </p>
               </>
             )}
@@ -297,7 +299,7 @@ export function FlockManagementMerged({
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Risk Flocks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('statistics.highRiskFlocks')}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -311,7 +313,7 @@ export function FlockManagementMerged({
                   {highRiskFlocks}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Mortality rate &gt; 15%
+                  {t('statistics.mortalityRateHigh')}
                 </p>
               </>
             )}
@@ -320,7 +322,7 @@ export function FlockManagementMerged({
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Healthy Flocks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('statistics.healthyFlocks')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -334,7 +336,7 @@ export function FlockManagementMerged({
                   {healthyFlocks}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Mortality rate &le; 5%
+                  {t('statistics.mortalityRateLow')}
                 </p>
               </>
             )}
@@ -347,16 +349,16 @@ export function FlockManagementMerged({
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Flock Management ({flocks.length})</CardTitle>
+              <CardTitle>{t('table.title')} ({flocks.length})</CardTitle>
               <CardDescription>
-                Manage and track your poultry flocks with population monitoring
+                {t('table.description')}
               </CardDescription>
             </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Flock
+                  {t('addFlock')}
                 </Button>
               </DialogTrigger>
             </Dialog>
@@ -374,9 +376,9 @@ export function FlockManagementMerged({
                   ageInDays: 0,
                   notes: "",
                 },
-                title: "Add New Flock",
-                description: "Create a new flock with unique batch code and tracking information",
-                submitText: "Create Flock",
+                title: t('dialogs.addTitle'),
+                description: t('dialogs.addDescription'),
+                submitText: t('dialogs.createButton'),
                 onSubmit: handleCreateFlock,
                 maxWidth: "max-w-3xl",
                 children: (form) => (
@@ -384,6 +386,7 @@ export function FlockManagementMerged({
                     form={form} 
                     flocks={flocks}
                     onGenerateBatchCode={handleGenerateBatchCode}
+                    t={t}
                   />
                 ),
               }}
@@ -393,7 +396,7 @@ export function FlockManagementMerged({
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <FlockTable
-            columns={flockColumns}
+            columns={getFlockColumns(t)}
             data={flocks}
             toolbar={undefined}
             onEdit={handleEditClick}
@@ -430,9 +433,9 @@ export function FlockManagementMerged({
             ageInDays: 0,
             notes: "",
           },
-          title: "Edit Flock",
-          description: "Update flock information and tracking details",
-          submitText: "Update Flock",
+          title: t('dialogs.editTitle'),
+          description: t('dialogs.editDescription'),
+          submitText: t('dialogs.updateButton'),
           onSubmit: handleEditFlock,
           maxWidth: "max-w-3xl",
           children: (form) => (
@@ -440,6 +443,7 @@ export function FlockManagementMerged({
               form={form} 
               flocks={flocks}
               onGenerateBatchCode={handleGenerateBatchCode}
+              t={t}
             />
           ),
         }}
@@ -455,36 +459,36 @@ export function FlockManagementMerged({
       }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Flock Details</DialogTitle>
+            <DialogTitle>{t('dialogs.viewTitle')}</DialogTitle>
             <DialogDescription>
-              View detailed information for batch {viewingFlock?.batchCode}
+              {t('dialogs.viewDescription')} {viewingFlock?.batchCode}
             </DialogDescription>
           </DialogHeader>
           {viewingFlock && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Batch Code</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.batchCode')}</label>
                   <div className="text-lg font-semibold">{viewingFlock.batchCode}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Arrival Date</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.arrivalDate')}</label>
                   <div className="text-lg font-semibold">{format(new Date(viewingFlock.arrivalDate), 'MMM dd, yyyy')}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Initial Count</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.initialCount')}</label>
                   <div className="text-lg font-semibold">{viewingFlock.initialCount.toLocaleString()}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Current Count</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.currentCount')}</label>
                   <div className="text-lg font-semibold">{viewingFlock.currentCount.toLocaleString()}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Age at Arrival</label>
-                  <div className="text-lg font-semibold">{viewingFlock.ageInDays || 0} days</div>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.ageAtArrival')}</label>
+                  <div className="text-lg font-semibold">{viewingFlock.ageInDays || 0} {t('fields.days')}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Current Age</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.currentAge')}</label>
                   <div className="text-lg font-semibold">
                     {(() => {
                       const arrivalDate = new Date(viewingFlock.arrivalDate);
@@ -494,7 +498,7 @@ export function FlockManagementMerged({
                       const totalAgeInDays = ageAtArrival + daysSinceArrival;
                       const weeks = Math.floor(totalAgeInDays / 7);
                       const days = totalAgeInDays % 7;
-                      return `${weeks > 0 ? `${weeks}w ` : ''}${days}d (${totalAgeInDays} days)`;
+                      return `${weeks > 0 ? `${weeks}${t('fields.weeks')} ` : ''}${days}${t('fields.daysShort')} (${totalAgeInDays} ${t('fields.days')})`;
                     })()}
                   </div>
                 </div>
@@ -502,14 +506,14 @@ export function FlockManagementMerged({
               
               {viewingFlock.notes && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.notes')}</label>
                   <div className="text-sm bg-muted p-3 rounded-md mt-1">{viewingFlock.notes}</div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Population Change</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.populationChange')}</label>
                   <div className="text-lg font-semibold">
                     {(() => {
                       const change = viewingFlock.currentCount - viewingFlock.initialCount;
@@ -533,15 +537,15 @@ export function FlockManagementMerged({
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Mortality Rate</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.mortalityRate')}</label>
                   <div className="text-lg font-semibold">
                     {(() => {
                       const totalMortality = viewingFlock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
                       const mortalityRate = viewingFlock.initialCount > 0 ? (totalMortality / viewingFlock.initialCount) * 100 : 0;
                       const getMortalityStatus = (rate: number) => {
-                        if (rate > 15) return { status: 'HIGH RISK', color: 'text-red-600' };
-                        if (rate > 5) return { status: 'MEDIUM', color: 'text-yellow-600' };
-                        return { status: 'HEALTHY', color: 'text-green-600' };
+                        if (rate > 15) return { status: t('status.highRisk'), color: 'text-red-600' };
+                        if (rate > 5) return { status: t('status.medium'), color: 'text-yellow-600' };
+                        return { status: t('status.healthy'), color: 'text-green-600' };
                       };
                       const status = getMortalityStatus(mortalityRate);
                       return (
@@ -560,13 +564,13 @@ export function FlockManagementMerged({
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-              Close
+              {t('dialogs.closeButton')}
             </Button>
             <Button onClick={() => {
               setIsViewDialogOpen(false);
               handleEditClick(viewingFlock!);
             }}>
-              Edit Flock
+              {t('dialogs.editButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -576,14 +580,14 @@ export function FlockManagementMerged({
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title="Delete Flock"
+        title={t('dialogs.deleteTitle')}
         desc={
           confirmDialog.flock
-            ? `Delete flock "${confirmDialog.flock.batchCode}"? This action cannot be undone.`
+            ? t('dialogs.deleteDescription', { batchCode: confirmDialog.flock.batchCode })
             : 'Are you sure you want to proceed?'
         }
-        confirmText="Delete Flock"
-        cancelBtnText="Cancel"
+        confirmText={t('dialogs.deleteButton')}
+        cancelBtnText={t('dialogs.cancelButton')}
         destructive={true}
         handleConfirm={handleConfirmDelete}
         isLoading={deletingId === confirmDialog.flock?.id}

@@ -23,15 +23,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const feedTypeLabels = {
-  LAYER_STARTER: "Layer Starter",
-  REARING: "Rearing",
-  PULLET_FEED: "Pullet Feed",
-  LAYER: "Layer",
-  LAYER_PHASE_1: "Layer Phase 1",
-  CUSTOM: "Custom"
-};
-
 const feedTypeColors = {
   LAYER_STARTER: "bg-blue-100 text-blue-800",
   REARING: "bg-green-100 text-green-800",
@@ -52,19 +43,22 @@ const formatNumber = (num: number) => {
 export const inventoryColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
-  onDelete: (record: any) => void
+  onDelete: (record: any) => void,
+  t: any,
+  tCommon: any,
+  tFeedTypes: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "feedType",
-    header: "Feed Type",
+    header: t('columns.feedType'),
     cell: ({ row }) => {
       const record = row.original;
-      const type = record.feedType as keyof typeof feedTypeLabels;
+      const feedType = record.feedType;
       return (
         <div className="flex items-center space-x-2">
           <Package className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="outline" className={feedTypeColors[type as keyof typeof feedTypeColors]}>
-            {feedTypeLabels[type as keyof typeof feedTypeLabels]}
+          <Badge variant="outline" className={feedTypeColors[feedType as keyof typeof feedTypeColors]}>
+            {feedType ? tFeedTypes(feedType, { defaultValue: feedType }) : tCommon('unknown')}
           </Badge>
         </div>
       );
@@ -72,7 +66,7 @@ export const inventoryColumns = (
   },
   {
     accessorKey: "supplier",
-    header: "Supplier",
+    header: t('columns.supplier'),
     cell: ({ row }) => {
       const record = row.original;
       return record.supplier ? (
@@ -81,13 +75,13 @@ export const inventoryColumns = (
           <span className="text-sm">{record.supplier.name}</span>
         </div>
       ) : (
-        <span className="text-muted-foreground text-sm">No supplier</span>
+        <span className="text-muted-foreground text-sm">{t('noSupplier')}</span>
       );
     },
   },
   {
     accessorKey: "quantity",
-    header: "Quantity",
+    header: t('columns.quantity'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -100,38 +94,38 @@ export const inventoryColumns = (
   },
   {
     accessorKey: "costPerUnit",
-    header: "Cost/Unit",
+    header: t('columns.costPerUnit'),
     cell: ({ row }) => {
       const record = row.original;
       return record.costPerUnit ? (
         <div className="flex items-center space-x-1">
           <DollarSign className="h-3 w-3 text-muted-foreground" />
-          <span className="text-sm font-medium">{formatNumber(record.costPerUnit)} ETB</span>
+          <span className="text-sm font-medium">{formatNumber(record.costPerUnit)} {tCommon('birr')}</span>
         </div>
       ) : (
-        <span className="text-muted-foreground text-sm">N/A</span>
+        <span className="text-muted-foreground text-sm">{tCommon('na')}</span>
       );
     },
   },
   {
     accessorKey: "totalCost",
-    header: "Total Cost",
+    header: t('columns.totalCost'),
     cell: ({ row }) => {
       const record = row.original;
       const totalCost = record.totalCost || (record.quantity * (record.costPerUnit || 0));
       return totalCost > 0 ? (
         <div className="flex items-center space-x-1">
           <DollarSign className="h-3 w-3 text-muted-foreground" />
-          <span className="text-sm font-medium">{formatNumber(totalCost)} ETB</span>
+          <span className="text-sm font-medium">{formatNumber(totalCost)} {tCommon('birr')}</span>
         </div>
       ) : (
-        <span className="text-muted-foreground text-sm">N/A</span>
+        <span className="text-muted-foreground text-sm">{tCommon('na')}</span>
       );
     },
   },
   {
     accessorKey: "createdAt",
-    header: "Created",
+    header: t('columns.created'),
     cell: ({ row }) => {
       const record = row.original;
       return (
@@ -146,13 +140,13 @@ export const inventoryColumns = (
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t('columns.notes'),
     cell: ({ row }) => {
       const record = row.original;
       return (
         <div className="text-sm">
           <div className="truncate max-w-48" title={record.notes}>
-            {record.notes || "N/A"}
+            {record.notes || tCommon('na')}
           </div>
         </div>
       );
@@ -160,7 +154,7 @@ export const inventoryColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('columns.actions'),
     cell: ({ row }) => {
       const record = row.original;
       
@@ -173,22 +167,22 @@ export const inventoryColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onView(record)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
+              {tCommon('viewDetails')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onEdit(record)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Item
+              {tCommon('editRecord')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onDelete(record)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Item
+              {tCommon('deleteRecord')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

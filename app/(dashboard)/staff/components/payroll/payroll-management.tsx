@@ -40,6 +40,7 @@ import { PayrollTable } from "./payroll-table";
 import { createPayrollTableColumns, PayrollRecord } from "./payroll-table-columns";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
+import { useTranslations } from 'next-intl';
 
 // Types
 interface StaffMember {
@@ -54,6 +55,7 @@ interface StaffMember {
 
 
 export function PayrollManagement() {
+  const t = useTranslations('staff');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState<PayrollRecord | null>(null);
@@ -170,17 +172,17 @@ export function PayrollManagement() {
       const response = await deletePayroll(payroll.id);
       if (response.success) {
         await fetchPayrollData();
-        toast.success("Payroll record deleted successfully!", {
-          description: `The payroll record for ${payroll.staff.name} has been removed`,
+        toast.success(t('payroll.toasts.deleteSuccess'), {
+          description: t('payroll.toasts.deleteSuccessDescription', { name: payroll.staff.name }),
         });
       } else {
-        toast.error("Failed to delete payroll record", {
-          description: response.message || "An unexpected error occurred",
+        toast.error(t('payroll.toasts.deleteError'), {
+          description: response.message || t('payroll.toasts.unexpectedError'),
         });
       }
     } catch (err) {
-      toast.error("Failed to delete payroll record", {
-        description: "An unexpected error occurred",
+      toast.error(t('payroll.toasts.deleteError'), {
+        description: t('payroll.toasts.unexpectedError'),
       });
     } finally {
       setActionLoading(null);
@@ -224,17 +226,17 @@ export function PayrollManagement() {
           paidOn: new Date().toISOString().split('T')[0],
           period: ""
         });
-        toast.success("Payroll record created successfully!", {
-          description: "The new payroll record has been added",
+        toast.success(t('payroll.toasts.createSuccess'), {
+          description: t('payroll.toasts.createSuccessDescription'),
         });
       } else {
-        toast.error("Failed to create payroll record", {
-          description: response.message || "An unexpected error occurred",
+        toast.error(t('payroll.toasts.createError'), {
+          description: response.message || t('payroll.toasts.unexpectedError'),
         });
       }
     } catch (err) {
-      toast.error("Failed to create payroll record", {
-        description: "An unexpected error occurred",
+      toast.error(t('payroll.toasts.createError'), {
+        description: t('payroll.toasts.unexpectedError'),
       });
     }
   };
@@ -255,17 +257,17 @@ export function PayrollManagement() {
         await fetchPayrollData();
         setIsEditDialogOpen(false);
         setSelectedPayroll(null);
-        toast.success("Payroll record updated successfully!", {
-          description: `The payroll record for ${selectedPayroll.staff.name} has been updated`,
+        toast.success(t('payroll.toasts.updateSuccess'), {
+          description: t('payroll.toasts.updateSuccessDescription', { name: selectedPayroll.staff.name }),
         });
       } else {
-        toast.error("Failed to update payroll record", {
-          description: response.message || "An unexpected error occurred",
+        toast.error(t('payroll.toasts.updateError'), {
+          description: response.message || t('payroll.toasts.unexpectedError'),
         });
       }
     } catch (err) {
-      toast.error("Failed to update payroll record", {
-        description: "An unexpected error occurred",
+      toast.error(t('payroll.toasts.updateError'), {
+        description: t('payroll.toasts.unexpectedError'),
       });
     }
   };
@@ -274,6 +276,7 @@ export function PayrollManagement() {
   const payrollColumns = createPayrollTableColumns({
     onEdit: handleEditPayroll,
     onDelete: handleDeletePayroll,
+    t,
   });
 
   const totalStats = {
@@ -290,7 +293,7 @@ export function PayrollManagement() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Loading payroll data...</p>
+            <p className="mt-2 text-muted-foreground">{t('payroll.loading')}</p>
           </div>
         </div>
       </div>
@@ -303,7 +306,7 @@ export function PayrollManagement() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={() => fetchPayrollData()}>Retry</Button>
+            <Button onClick={() => fetchPayrollData()}>{t('payroll.retry')}</Button>
           </div>
         </div>
       </div>
@@ -314,9 +317,9 @@ export function PayrollManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Payroll Management</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t('payroll.pageTitle')}</h2>
         <p className="text-muted-foreground">
-          Manage staff salaries, bonuses, and payroll processing.
+          {t('payroll.pageDescription')}
         </p>
       </div>
 
@@ -324,7 +327,7 @@ export function PayrollManagement() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Payroll</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('payroll.stats.totalPayroll')}</CardTitle>
             <span className="text-sm font-medium text-muted-foreground">ETB</span>
           </CardHeader>
           <CardContent>
@@ -336,7 +339,7 @@ export function PayrollManagement() {
               <>
                 <div className="text-2xl font-bold">{totalStats.totalPayroll.toLocaleString()} ETB</div>
                 <p className="text-xs text-muted-foreground">
-                  This month
+                  {t('payroll.stats.thisMonth')}
                 </p>
               </>
             )}
@@ -345,7 +348,7 @@ export function PayrollManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Paid Amount</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('payroll.stats.paidAmount')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -357,7 +360,7 @@ export function PayrollManagement() {
               <>
                 <div className="text-2xl font-bold text-green-600">{totalStats.paidAmount.toLocaleString()} ETB</div>
                 <p className="text-xs text-muted-foreground">
-                  Successfully processed
+                  {t('payroll.stats.successfullyProcessed')}
                 </p>
               </>
             )}
@@ -366,7 +369,7 @@ export function PayrollManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Amount</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('payroll.stats.pendingAmount')}</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -378,7 +381,7 @@ export function PayrollManagement() {
               <>
                 <div className="text-2xl font-bold text-yellow-600">{totalStats.pendingAmount.toLocaleString()} ETB</div>
                 <p className="text-xs text-muted-foreground">
-                  Awaiting processing
+                  {t('payroll.stats.awaitingProcessing')}
                 </p>
               </>
             )}
@@ -387,7 +390,7 @@ export function PayrollManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Salary</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('payroll.stats.averageSalary')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -399,7 +402,7 @@ export function PayrollManagement() {
               <>
                 <div className="text-2xl font-bold">{totalStats.averageSalary.toLocaleString()} ETB</div>
                 <p className="text-xs text-muted-foreground">
-                  Per staff member
+                  {t('payroll.stats.perStaffMember')}
                 </p>
               </>
             )}
@@ -412,14 +415,14 @@ export function PayrollManagement() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Payroll Records</CardTitle>
+              <CardTitle>{t('payroll.table.title')}</CardTitle>
               <CardDescription>
-                All payroll records for staff members with advanced filtering.
+                {t('payroll.table.description')}
               </CardDescription>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Create Payroll
+              {t('payroll.buttons.createPayroll')}
             </Button>
           </div>
         </CardHeader>
@@ -435,20 +438,20 @@ export function PayrollManagement() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="max-w-[calc(32rem-80px)]">
           <DialogHeader>
-            <DialogTitle>Create Payroll Record</DialogTitle>
+            <DialogTitle>{t('payroll.dialogs.create.title')}</DialogTitle>
             <DialogDescription>
-              Add a new payroll record for a staff member.
+              {t('payroll.dialogs.create.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Staff Member <span className="text-red-500">*</span>
+                  {t('payroll.dialogs.create.staffMember')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                 </label>
                 <Select value={formData.staffId} onValueChange={(value) => setFormData({...formData, staffId: value})}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select staff member" />
+                    <SelectValue placeholder={t('payroll.dialogs.create.staffMemberPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                       {staffList.map((staff) => (
@@ -461,7 +464,7 @@ export function PayrollManagement() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Pay Period <span className="text-red-500">*</span>
+                  {t('payroll.dialogs.create.payPeriod')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                 </label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -475,7 +478,7 @@ export function PayrollManagement() {
                       {selectedPayPeriod ? (
                         EthiopianDateFormatter.formatForTable(selectedPayPeriod)
                       ) : (
-                        <span>Select pay period</span>
+                        <span>{t('payroll.dialogs.create.payPeriodPlaceholder')}</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
@@ -494,7 +497,7 @@ export function PayrollManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Paid Date <span className="text-red-500">*</span>
+                  {t('payroll.dialogs.create.paidDate')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                 </label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -508,7 +511,7 @@ export function PayrollManagement() {
                       {selectedPaidDate ? (
                         EthiopianDateFormatter.formatForTable(selectedPaidDate)
                       ) : (
-                        <span>Select paid date</span>
+                        <span>{t('payroll.dialogs.create.paidDatePlaceholder')}</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
@@ -528,16 +531,16 @@ export function PayrollManagement() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Payment Method <span className="text-red-500">*</span>
+                  {t('payroll.dialogs.create.paymentMethod')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                 </label>
                 <Select>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select payment method" />
+                    <SelectValue placeholder={t('payroll.dialogs.create.paymentMethodPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="check">Check</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank-transfer">{t('payroll.dialogs.create.bankTransfer')}</SelectItem>
+                    <SelectItem value="check">{t('payroll.dialogs.create.check')}</SelectItem>
+                    <SelectItem value="cash">{t('payroll.dialogs.create.cash')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -545,31 +548,31 @@ export function PayrollManagement() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  Base Salary <span className="text-red-500">*</span>
+                  {t('payroll.dialogs.create.baseSalary')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                 </label>
                 <Input 
                   type="number" 
-                  placeholder="5000" 
+                  placeholder={t('payroll.dialogs.create.baseSalaryPlaceholder')}
                   value={formData.salary}
                   onChange={(e) => setFormData({...formData, salary: Number(e.target.value)})}
                   className="w-full"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Bonus</label>
+                <label className="text-sm font-medium">{t('payroll.dialogs.create.bonus')}</label>
                 <Input 
                   type="number" 
-                  placeholder="500" 
+                  placeholder={t('payroll.dialogs.create.bonusPlaceholder')}
                   value={formData.bonus}
                   onChange={(e) => setFormData({...formData, bonus: Number(e.target.value)})}
                   className="w-full"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Deductions</label>
+                <label className="text-sm font-medium">{t('payroll.dialogs.create.deductions')}</label>
                 <Input 
                   type="number" 
-                  placeholder="200" 
+                  placeholder={t('payroll.dialogs.create.deductionsPlaceholder')}
                   value={formData.deductions}
                   onChange={(e) => setFormData({...formData, deductions: Number(e.target.value)})}
                   className="w-full"
@@ -580,7 +583,7 @@ export function PayrollManagement() {
               {/* Net Salary Display */}
               <div className="space-y-2">
                 <div className="bg-muted/50 p-3 rounded-lg text-center">
-                  <div className="text-sm text-muted-foreground mb-1">Net Salary</div>
+                  <div className="text-sm text-muted-foreground mb-1">{t('payroll.dialogs.create.netSalary')}</div>
                   <div className="text-xl font-semibold">
                     {new Intl.NumberFormat("en-ET", {
                       style: "currency",
@@ -592,10 +595,10 @@ export function PayrollManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
+              {t('payroll.buttons.cancel')}
             </Button>
             <Button onClick={handleCreatePayroll}>
-              Create Payroll
+              {t('payroll.buttons.createPayroll')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -605,21 +608,21 @@ export function PayrollManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-[calc(32rem-80px)]">
           <DialogHeader>
-            <DialogTitle>Edit Payroll Record</DialogTitle>
+            <DialogTitle>{t('payroll.dialogs.edit.title')}</DialogTitle>
             <DialogDescription>
-              Update payroll record information.
+              {t('payroll.dialogs.edit.description')}
             </DialogDescription>
           </DialogHeader>
           {selectedPayroll && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Staff Member</label>
+                  <label className="text-sm font-medium">{t('payroll.dialogs.edit.staffMember')}</label>
                   <Input value={selectedPayroll.staff.name} disabled className="w-full" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium flex items-center gap-1">
-                    Pay Period <span className="text-red-500">*</span>
+                    {t('payroll.dialogs.create.payPeriod')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                   </label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -633,7 +636,7 @@ export function PayrollManagement() {
                         {selectedPayPeriod ? (
                           EthiopianDateFormatter.formatForTable(selectedPayPeriod)
                         ) : (
-                          <span>Select pay period</span>
+                          <span>{t('payroll.dialogs.create.payPeriodPlaceholder')}</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -652,7 +655,7 @@ export function PayrollManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium flex items-center gap-1">
-                    Paid Date <span className="text-red-500">*</span>
+                    {t('payroll.dialogs.create.paidDate')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                   </label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -666,7 +669,7 @@ export function PayrollManagement() {
                           {selectedPaidDate ? (
                             EthiopianDateFormatter.formatForTable(selectedPaidDate)
                           ) : (
-                          <span>Select paid date</span>
+                          <span>{t('payroll.dialogs.create.paidDatePlaceholder')}</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -691,7 +694,7 @@ export function PayrollManagement() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium flex items-center gap-1">
-                    Base Salary <span className="text-red-500">*</span>
+                    {t('payroll.dialogs.create.baseSalary')} <span className="text-red-500">{t('payroll.dialogs.create.required')}</span>
                   </label>
                   <Input 
                     type="number" 
@@ -701,7 +704,7 @@ export function PayrollManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Bonus</label>
+                  <label className="text-sm font-medium">{t('payroll.dialogs.create.bonus')}</label>
                   <Input 
                     type="number" 
                     value={formData.bonus}
@@ -710,7 +713,7 @@ export function PayrollManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Deductions</label>
+                  <label className="text-sm font-medium">{t('payroll.dialogs.create.deductions')}</label>
                   <Input 
                     type="number" 
                     value={formData.deductions}
@@ -723,7 +726,7 @@ export function PayrollManagement() {
               {/* Net Salary Display */}
               <div className="space-y-2">
                 <div className="bg-muted/50 p-3 rounded-lg text-center">
-                  <div className="text-sm text-muted-foreground mb-1">Net Salary</div>
+                  <div className="text-sm text-muted-foreground mb-1">{t('payroll.dialogs.create.netSalary')}</div>
                   <div className="text-xl font-semibold">
                     {new Intl.NumberFormat("en-ET", {
                       style: "currency",
@@ -736,10 +739,10 @@ export function PayrollManagement() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
+              {t('payroll.buttons.cancel')}
             </Button>
             <Button onClick={handleUpdatePayroll}>
-              Save Changes
+              {t('payroll.buttons.saveChanges')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -749,14 +752,14 @@ export function PayrollManagement() {
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title="Delete Payroll Record"
+        title={t('payroll.dialogs.delete.title')}
         desc={
           confirmDialog.payroll
-            ? `Are you sure you want to delete the payroll record for ${confirmDialog.payroll.staff.name}? This action cannot be undone and the payroll record will be permanently removed.`
+            ? t('payroll.dialogs.delete.description', { name: confirmDialog.payroll.staff.name })
             : 'Are you sure you want to proceed?'
         }
-        confirmText="Delete Payroll Record"
-        cancelBtnText="Cancel"
+        confirmText={t('payroll.dialogs.delete.confirmText')}
+        cancelBtnText={t('payroll.buttons.cancel')}
         destructive={true}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.payroll?.id}

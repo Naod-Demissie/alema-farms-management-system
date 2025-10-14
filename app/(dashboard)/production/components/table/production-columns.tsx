@@ -34,11 +34,12 @@ const eggGradeColors = {
 export const eggProductionColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
-  onDelete: (record: any) => void
+  onDelete: (record: any) => void,
+  t: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flockId",
-    header: "Flock",
+    header: t('columns.flock'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -98,20 +99,20 @@ export const eggProductionColumns = (
   },
   {
     accessorKey: "gradeCounts",
-    header: "Grade Breakdown",
+    header: t('columns.gradeBreakdown'),
     cell: ({ row }) => {
       const production = row.original;
       const counts = production.gradeCounts as { normal: number; cracked: number; spoiled: number } || {};
       return (
         <div className="flex gap-2 text-xs">
           <span className="px-2 py-1 rounded bg-green-100 text-green-800">
-            Normal: {counts.normal || 0}
+            {t('grades.normal')}: {counts.normal || 0}
           </span>
           <span className="px-2 py-1 rounded bg-orange-100 text-orange-800">
-            Cracked: {counts.cracked || 0}
+            {t('grades.cracked')}: {counts.cracked || 0}
           </span>
           <span className="px-2 py-1 rounded bg-red-100 text-red-800">
-            Spoiled: {counts.spoiled || 0}
+            {t('grades.spoiled')}: {counts.spoiled || 0}
           </span>
         </div>
       );
@@ -119,21 +120,21 @@ export const eggProductionColumns = (
   },
   {
     accessorKey: "totalCount",
-    header: "Total Count",
+    header: t('columns.totalCount'),
     cell: ({ row }) => {
       const production = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Egg className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{production.totalCount || 0}</span>
-          <span className="text-muted-foreground">eggs</span>
+          <span className="text-muted-foreground">{t('columns.eggs')}</span>
         </div>
       );
     },
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t('columns.notes'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -145,7 +146,7 @@ export const eggProductionColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('columns.actions'),
     cell: ({ row }) => {
       const production = row.original;
       
@@ -157,22 +158,22 @@ export const eggProductionColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('actions.label')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onView(production)}>
               <Eye className="h-4 w-4 mr-2" />
-              View Details
+              {t('actions.viewDetails')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(production)}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {t('actions.edit')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(production)}
               className="text-red-600"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {t('actions.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -184,11 +185,12 @@ export const eggProductionColumns = (
 export const broilerProductionColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
-  onDelete: (record: any) => void
+  onDelete: (record: any) => void,
+  t: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flockId",
-    header: "Flock",
+    header: t('columns.flock'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -205,7 +207,7 @@ export const broilerProductionColumns = (
   },
   {
     accessorKey: "date",
-    header: "Date",
+    header: t('columns.date'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -248,21 +250,21 @@ export const broilerProductionColumns = (
   },
   {
     accessorKey: "quantity",
-    header: "Quantity",
+    header: t('columns.quantity'),
     cell: ({ row }) => {
       const production = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Bird className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{production.quantity || 0}</span>
-          <span className="text-muted-foreground">birds</span>
+          <span className="text-muted-foreground">{t('columns.birds')}</span>
         </div>
       );
     },
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t('columns.notes'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -274,7 +276,7 @@ export const broilerProductionColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('columns.actions'),
     cell: ({ row }) => {
       const production = row.original;
       
@@ -286,22 +288,22 @@ export const broilerProductionColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('actions.label')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onView(production)}>
               <Eye className="h-4 w-4 mr-2" />
-              View Details
+              {t('actions.viewDetails')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(production)}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {t('actions.edit')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(production)}
               className="text-red-600"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {t('actions.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -313,11 +315,12 @@ export const broilerProductionColumns = (
 export const manureProductionColumns = (
   onView: (record: any) => void,
   onEdit: (record: any) => void,
-  onDelete: (record: any) => void
+  onDelete: (record: any) => void,
+  t: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flockId",
-    header: "Flock",
+    header: t('columns.flock'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -334,7 +337,7 @@ export const manureProductionColumns = (
   },
   {
     accessorKey: "date",
-    header: "Date",
+    header: t('columns.date'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -377,21 +380,21 @@ export const manureProductionColumns = (
   },
   {
     accessorKey: "quantity",
-    header: "Quantity",
+    header: t('columns.quantity'),
     cell: ({ row }) => {
       const production = row.original;
       return (
         <div className="flex items-center space-x-2">
           <Droplets className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{production.quantity || 0}</span>
-          <span className="text-muted-foreground">{production.unit || "bags"}</span>
+          <span className="text-muted-foreground">{production.unit || t('columns.bags')}</span>
         </div>
       );
     },
   },
   {
     accessorKey: "notes",
-    header: "Notes",
+    header: t('columns.notes'),
     cell: ({ row }) => {
       const production = row.original;
       return (
@@ -403,7 +406,7 @@ export const manureProductionColumns = (
   },
   {
     id: "actions",
-    header: "Actions",
+    header: t('columns.actions'),
     cell: ({ row }) => {
       const production = row.original;
       
@@ -415,22 +418,22 @@ export const manureProductionColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('actions.label')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onView(production)}>
               <Eye className="h-4 w-4 mr-2" />
-              View Details
+              {t('actions.viewDetails')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(production)}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {t('actions.edit')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(production)}
               className="text-red-600"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {t('actions.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -29,17 +29,19 @@ export interface PayrollRecord {
 interface PayrollTableColumnsProps {
   onEdit: (payroll: PayrollRecord) => void;
   onDelete: (payroll: PayrollRecord) => void;
+  t: any; // Translation function
 }
 
 export const createPayrollTableColumns = ({
   onEdit,
   onDelete,
+  t,
 }: PayrollTableColumnsProps): ColumnDef<PayrollRecord>[] => [
   {
     id: "staffName",
     accessorFn: (row) => row.staff.name,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Staff Member" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.staffMember')} />
     ),
     cell: ({ row }) => {
       const staff = row.original.staff;
@@ -72,7 +74,7 @@ export const createPayrollTableColumns = ({
     id: "staffRole",
     accessorFn: (row) => row.staff.role,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Role" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.role')} />
     ),
     cell: ({ row }) => {
       const role = row.getValue("staffRole") as string;
@@ -82,9 +84,15 @@ export const createPayrollTableColumns = ({
         WORKER: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       };
 
+      const roleTranslations: Record<string, string> = {
+        ADMIN: t('directory.roles.admin'),
+        VETERINARIAN: t('directory.roles.veterinarian'),
+        WORKER: t('directory.roles.worker'),
+      };
+
       return (
         <Badge className={roleColors[role as keyof typeof roleColors]}>
-          {role}
+          {roleTranslations[role] || role}
         </Badge>
       );
     },
@@ -95,7 +103,7 @@ export const createPayrollTableColumns = ({
   {
     accessorKey: "paidOn",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Period" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.period')} />
     ),
     cell: ({ row }) => {
       const date = row.getValue("paidOn") as Date;
@@ -120,7 +128,7 @@ export const createPayrollTableColumns = ({
   {
     accessorKey: "salary",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Base Salary" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.baseSalary')} />
     ),
     cell: ({ row }) => {
       const salary = row.getValue("salary") as number;
@@ -134,7 +142,7 @@ export const createPayrollTableColumns = ({
   {
     accessorKey: "bonus",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Bonus" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.bonus')} />
     ),
     cell: ({ row }) => {
       const bonus = row.getValue("bonus") as number | null;
@@ -148,7 +156,7 @@ export const createPayrollTableColumns = ({
   {
     accessorKey: "deductions",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Deductions" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.deductions')} />
     ),
     cell: ({ row }) => {
       const deductions = row.getValue("deductions") as number | null;
@@ -162,7 +170,7 @@ export const createPayrollTableColumns = ({
   {
     accessorKey: "netSalary",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Net Salary" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.netSalary')} />
     ),
     cell: ({ row }) => {
       const netSalary = row.getValue("netSalary") as number;
@@ -177,7 +185,7 @@ export const createPayrollTableColumns = ({
     accessorKey: "paidOn",
     id: "paidDate",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Paid Date" />
+      <DataTableColumnHeader column={column} title={t('payroll.table.columns.paidDate')} />
     ),
     cell: ({ row }) => {
       const date = row.getValue("paidOn") as Date;

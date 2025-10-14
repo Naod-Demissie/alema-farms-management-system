@@ -65,9 +65,11 @@ import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useTranslations } from 'next-intl';
 
 
 export function DiseaseTreatment() {
+  const t = useTranslations('health.treatment');
   const [treatments, setTreatments] = useState<any[]>([]);
   const [flocks, setFlocks] = useState<any[]>([]);
   const [veterinarians, setVeterinarians] = useState<any[]>([]);
@@ -113,7 +115,7 @@ export function DiseaseTreatment() {
       }
     } catch (error) {
       console.error("Error loading data:", error);
-      toast.error("Failed to load data");
+      toast.error(t('loadDataError'));
     } finally {
       setLoading(false);
     }
@@ -131,15 +133,15 @@ export function DiseaseTreatment() {
       const result = await createTreatment(treatmentData);
       
       if (result.success) {
-        toast.success("Treatment created successfully");
+        toast.success(t('createSuccess'));
         await loadData();
         setIsAddDialogOpen(false);
       } else {
-        toast.error(result.error || "Failed to create treatment");
+        toast.error(result.error || t('createError'));
       }
     } catch (error) {
       console.error("Error creating treatment:", error);
-      toast.error("Failed to create treatment");
+      toast.error(t('createError'));
     } finally {
       setActionLoading(null);
     }
@@ -165,16 +167,16 @@ export function DiseaseTreatment() {
       const result = await updateTreatment(editingTreatment.id, treatmentData);
       
       if (result.success) {
-        toast.success("Treatment updated successfully");
+        toast.success(t('updateSuccess'));
         await loadData();
         setIsAddDialogOpen(false);
         setEditingTreatment(null);
       } else {
-        toast.error(result.error || "Failed to update treatment");
+        toast.error(result.error || t('updateError'));
       }
     } catch (error) {
       console.error("Error updating treatment:", error);
-      toast.error("Failed to update treatment");
+      toast.error(t('updateError'));
     } finally {
       setActionLoading(null);
     }
@@ -196,14 +198,14 @@ export function DiseaseTreatment() {
       const result = await deleteTreatment(confirmDialog.treatment.id);
       
       if (result.success) {
-        toast.success("Treatment deleted successfully");
+        toast.success(t('deleteSuccess'));
         await loadData();
       } else {
-        toast.error(result.error || "Failed to delete treatment");
+        toast.error(result.error || t('deleteError'));
       }
     } catch (error) {
       console.error("Error deleting treatment:", error);
-      toast.error("Failed to delete treatment");
+      toast.error(t('deleteError'));
     } finally {
       setActionLoading(null);
       setConfirmDialog({
@@ -255,9 +257,9 @@ export function DiseaseTreatment() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Disease Treatment</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t('pageTitle')}</h2>
         <p className="text-muted-foreground">
-          Track disease classification, medication, and treatment response monitoring
+          {t('pageDescription')}
         </p>
       </div>
 
@@ -266,16 +268,16 @@ export function DiseaseTreatment() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <CardTitle>Treatment Records</CardTitle>
+              <CardTitle>{t('title')}</CardTitle>
               <CardDescription>
-                {treatments.length} treatment records found
+                {t('recordsCount', { count: treatments.length })}
               </CardDescription>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Treatment
+                  {t('addTreatment')}
                 </Button>
               </DialogTrigger>
             </Dialog>
@@ -318,11 +320,11 @@ export function DiseaseTreatment() {
                   notes: "",
                   symptoms: "",
                 },
-                title: editingTreatment ? "Edit Treatment" : "Add New Treatment",
+                title: editingTreatment ? t('editTitle') : t('addNewTitle'),
                 description: editingTreatment  
-                  ? "Update the treatment information below."
-                  : "Fill in the details below to add a new treatment record.",
-                submitText: editingTreatment ? "Update Treatment" : "Add Treatment",
+                  ? t('editDescription')
+                  : t('addNewDescription'),
+                submitText: editingTreatment ? t('updateButton') : t('addButton'),
                 onSubmit: editingTreatment ? handleUpdate : handleSubmit,
                 children: (form) => (
                   <TreatmentForm 
@@ -341,7 +343,7 @@ export function DiseaseTreatment() {
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('loadingData')}</p>
               </div>
             </div>
           ) : (
@@ -360,10 +362,10 @@ export function DiseaseTreatment() {
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
         handleConfirm={confirmDelete}
-        title="Delete Treatment"
-        desc="Are you sure you want to delete this treatment record? This action cannot be undone."
-        confirmText="Delete"
-        cancelBtnText="Cancel"
+        title={t('deleteConfirmTitle')}
+        desc={t('deleteConfirmDesc')}
+        confirmText={t('deleteButton')}
+        cancelBtnText={t('cancelButton')}
         isLoading={actionLoading === "delete"}
         destructive
       />

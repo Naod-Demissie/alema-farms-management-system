@@ -14,6 +14,7 @@ interface InviteSentColumnsProps {
   onCancel: (invite: Invite) => void;
   onCopyLink: (invite: Invite) => void;
   actionLoading?: string | null;
+  t: any; // Translation function
 }
 
 export const createInviteSentColumns = ({
@@ -21,11 +22,12 @@ export const createInviteSentColumns = ({
   onCancel,
   onCopyLink,
   actionLoading,
+  t,
 }: InviteSentColumnsProps): ColumnDef<Invite>[] => [
   {
     accessorKey: "email",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Email" />
+      <DataTableColumnHeader column={column} title={t('invites.columns.email')} />
     ),
     cell: ({ row }) => {
       const invite = row.original;
@@ -40,13 +42,18 @@ export const createInviteSentColumns = ({
   {
     accessorKey: "role",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Role" />
+      <DataTableColumnHeader column={column} title={t('invites.columns.role')} />
     ),
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
+      const roleTranslations: Record<string, string> = {
+        ADMIN: t('directory.roles.admin'),
+        VETERINARIAN: t('directory.roles.veterinarian'),
+        WORKER: t('directory.roles.worker'),
+      };
       return (
         <Badge className={getRoleColor(role)}>
-          {role}
+          {roleTranslations[role] || role}
         </Badge>
       );
     },
@@ -57,19 +64,25 @@ export const createInviteSentColumns = ({
   {
     accessorKey: "status",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
+      <DataTableColumnHeader column={column} title={t('invites.columns.status')} />
     ),
     cell: ({ row }) => {
       const invite = row.original;
       const status = computeInviteStatus(invite);
       
+      const statusTranslations: Record<string, string> = {
+        PENDING: t('invites.status.pending'),
+        ACCEPTED: t('invites.status.accepted'),
+        CANCELLED: t('invites.status.cancelled'),
+      };
+      
       return (
         <div className="flex items-center space-x-2">
           <Badge className={getInviteStatusColor(status)}>
-            {status}
+            {statusTranslations[status] || status}
           </Badge>
           {status === "PENDING" && invite.expiresAt < new Date() && (
-            <Badge variant="destructive">Expired</Badge>
+            <Badge variant="destructive">{t('invites.status.expired')}</Badge>
           )}
         </div>
       );
@@ -83,7 +96,7 @@ export const createInviteSentColumns = ({
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Sent Date" />
+      <DataTableColumnHeader column={column} title={t('invites.columns.sentDate')} />
     ),
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as Date;
@@ -100,7 +113,7 @@ export const createInviteSentColumns = ({
   {
     accessorKey: "expiresAt",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Expires" />
+      <DataTableColumnHeader column={column} title={t('invites.columns.expires')} />
     ),
     cell: ({ row }) => {
       const expiresAt = row.getValue("expiresAt") as Date;
@@ -119,21 +132,27 @@ export const createInviteSentColumns = ({
   {
     accessorKey: "createdBy",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Sent By" />
+      <DataTableColumnHeader column={column} title={t('invites.columns.sentBy')} />
     ),
     cell: ({ row }) => {
       const createdBy = row.getValue("createdBy") as { name: string; role: string } | null;
       
       if (!createdBy) {
-        return <span className="text-muted-foreground">Unknown</span>;
+        return <span className="text-muted-foreground">{t('invites.columns.unknown')}</span>;
       }
+      
+      const roleTranslations: Record<string, string> = {
+        ADMIN: t('directory.roles.admin'),
+        VETERINARIAN: t('directory.roles.veterinarian'),
+        WORKER: t('directory.roles.worker'),
+      };
       
       return (
         <div className="flex items-center space-x-2">
           <User className="h-3 w-3" />
           <div>
             <div className="text-sm font-medium">{createdBy.name}</div>
-            <div className="text-xs text-muted-foreground">{createdBy.role}</div>
+            <div className="text-xs text-muted-foreground">{roleTranslations[createdBy.role] || createdBy.role}</div>
           </div>
         </div>
       );
