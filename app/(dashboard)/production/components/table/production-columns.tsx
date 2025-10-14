@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
+import { EthiopianCalendarUtils } from "@/lib/ethiopian-calendar";
 
 const eggGradeColors = {
   normal: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
@@ -70,31 +71,35 @@ export const eggProductionColumns = (
     },
     filterFn: (row, id, value) => {
       if (!value) return true;
+      
       const production = row.original;
       const productionDate = new Date(production.date);
-      const filterDate = new Date(value);
       
-      // Check if it's a specific date filter (has day component) or month filter
-      const isSpecificDate = filterDate.getDate() !== 1 || 
-        filterDate.getHours() !== 0 || 
-        filterDate.getMinutes() !== 0 || 
-        filterDate.getSeconds() !== 0 ||
-        filterDate.getMilliseconds() !== 0;
-      
-      if (isSpecificDate) {
-        // Specific date filtering - match exact date
-        return (
-          productionDate.getFullYear() === filterDate.getFullYear() &&
-          productionDate.getMonth() === filterDate.getMonth() &&
-          productionDate.getDate() === filterDate.getDate()
-        );
-      } else {
-        // Month filtering - match month and year
-        return (
-          productionDate.getMonth() === filterDate.getMonth() &&
-          productionDate.getFullYear() === filterDate.getFullYear()
-        );
+      // Handle new filter value structure
+      if (typeof value === 'object' && value.date) {
+        const { date: filterDate, isMonthFilter } = value;
+        
+        // Convert both dates to Ethiopian calendar
+        const productionEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(productionDate);
+        const filterEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(filterDate);
+        
+        if (isMonthFilter) {
+          // Month filtering - match Ethiopian month and year
+          return (
+            productionEthiopian.month === filterEthiopian.month &&
+            productionEthiopian.year === filterEthiopian.year
+          );
+        } else {
+          // Specific date filtering - match Ethiopian date
+          return (
+            productionEthiopian.day === filterEthiopian.day &&
+            productionEthiopian.month === filterEthiopian.month &&
+            productionEthiopian.year === filterEthiopian.year
+          );
+        }
       }
+      
+      return true;
     },
   },
   {
@@ -221,31 +226,35 @@ export const broilerProductionColumns = (
     },
     filterFn: (row, id, value) => {
       if (!value) return true;
+      
       const production = row.original;
       const productionDate = new Date(production.date);
-      const filterDate = new Date(value);
       
-      // Check if it's a specific date filter (has day component) or month filter
-      const isSpecificDate = filterDate.getDate() !== 1 || 
-        filterDate.getHours() !== 0 || 
-        filterDate.getMinutes() !== 0 || 
-        filterDate.getSeconds() !== 0 ||
-        filterDate.getMilliseconds() !== 0;
-      
-      if (isSpecificDate) {
-        // Specific date filtering - match exact date
-        return (
-          productionDate.getFullYear() === filterDate.getFullYear() &&
-          productionDate.getMonth() === filterDate.getMonth() &&
-          productionDate.getDate() === filterDate.getDate()
-        );
-      } else {
-        // Month filtering - match month and year
-        return (
-          productionDate.getMonth() === filterDate.getMonth() &&
-          productionDate.getFullYear() === filterDate.getFullYear()
-        );
+      // Handle new filter value structure
+      if (typeof value === 'object' && value.date) {
+        const { date: filterDate, isMonthFilter } = value;
+        
+        // Convert both dates to Ethiopian calendar
+        const productionEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(productionDate);
+        const filterEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(filterDate);
+        
+        if (isMonthFilter) {
+          // Month filtering - match Ethiopian month and year
+          return (
+            productionEthiopian.month === filterEthiopian.month &&
+            productionEthiopian.year === filterEthiopian.year
+          );
+        } else {
+          // Specific date filtering - match Ethiopian date
+          return (
+            productionEthiopian.day === filterEthiopian.day &&
+            productionEthiopian.month === filterEthiopian.month &&
+            productionEthiopian.year === filterEthiopian.year
+          );
+        }
       }
+      
+      return true;
     },
   },
   {
@@ -351,31 +360,35 @@ export const manureProductionColumns = (
     },
     filterFn: (row, id, value) => {
       if (!value) return true;
+      
       const production = row.original;
       const productionDate = new Date(production.date);
-      const filterDate = new Date(value);
       
-      // Check if it's a specific date filter (has day component) or month filter
-      const isSpecificDate = filterDate.getDate() !== 1 || 
-        filterDate.getHours() !== 0 || 
-        filterDate.getMinutes() !== 0 || 
-        filterDate.getSeconds() !== 0 ||
-        filterDate.getMilliseconds() !== 0;
-      
-      if (isSpecificDate) {
-        // Specific date filtering - match exact date
-        return (
-          productionDate.getFullYear() === filterDate.getFullYear() &&
-          productionDate.getMonth() === filterDate.getMonth() &&
-          productionDate.getDate() === filterDate.getDate()
-        );
-      } else {
-        // Month filtering - match month and year
-        return (
-          productionDate.getMonth() === filterDate.getMonth() &&
-          productionDate.getFullYear() === filterDate.getFullYear()
-        );
+      // Handle new filter value structure
+      if (typeof value === 'object' && value.date) {
+        const { date: filterDate, isMonthFilter } = value;
+        
+        // Convert both dates to Ethiopian calendar
+        const productionEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(productionDate);
+        const filterEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(filterDate);
+        
+        if (isMonthFilter) {
+          // Month filtering - match Ethiopian month and year
+          return (
+            productionEthiopian.month === filterEthiopian.month &&
+            productionEthiopian.year === filterEthiopian.year
+          );
+        } else {
+          // Specific date filtering - match Ethiopian date
+          return (
+            productionEthiopian.day === filterEthiopian.day &&
+            productionEthiopian.month === filterEthiopian.month &&
+            productionEthiopian.year === filterEthiopian.year
+          );
+        }
       }
+      
+      return true;
     },
   },
   {

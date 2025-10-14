@@ -12,26 +12,21 @@ import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { EthiopianCalendarUtils, ETHIOPIAN_MONTHS } from "@/lib/ethiopian-calendar";
+import { DataTableFacetedFilter } from "@/components/table/data-table-faceted-filter";
 
-interface ProductionTableToolbarProps<TData> {
+interface RevenueTableToolbarProps<TData> {
   table: Table<TData>;
-  flocks: Array<{ id: string; batchCode: string; currentCount: number }>;
+  sourceOptions: Array<{ label: string; value: string }>;
 }
 
-export function ProductionTableToolbar<TData>({
+export function RevenueTableToolbar<TData>({
   table,
-  flocks,
-}: ProductionTableToolbarProps<TData>) {
-  const t = useTranslations('production.table');
+  sourceOptions,
+}: RevenueTableToolbarProps<TData>) {
+  const t = useTranslations('financial.revenue');
   const isFiltered = table.getState().columnFilters.length > 0;
   const [selectedMonth, setSelectedMonth] = React.useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined);
-
-  // Flock options for filtering
-  const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} birds)`,
-    value: flock.id,
-  }));
 
   // Handle month picker change
   const handleMonthSelect = (date: Date | undefined) => {
@@ -40,7 +35,6 @@ export function ProductionTableToolbar<TData>({
     if (date) {
       setSelectedDate(undefined);
       // Set the filter value with a flag to indicate it's a month filter
-      // We'll pass an object with the date and a flag
       table.getColumn("date")?.setFilterValue({ date, isMonthFilter: true });
     } else {
       table.getColumn("date")?.setFilterValue(undefined);
@@ -70,18 +64,27 @@ export function ProductionTableToolbar<TData>({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
-        {/* Search Input for Flock */}
+        {/* Search Input for Description */}
         <Input
-          placeholder={t('searchPlaceholder')}
-          value={(table.getColumn("flockId")?.getFilterValue() as string) ?? ""}
+          placeholder={t('table.searchPlaceholder')}
+          value={(table.getColumn("description")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("flockId")?.setFilterValue(event.target.value)
+            table.getColumn("description")?.setFilterValue(event.target.value)
           }
           className="h-8 w-full sm:w-[150px] lg:w-[250px]"
         />
         
         {/* Filters */}
         <div className="flex flex-wrap gap-2">
+          {/* Source Filter */}
+          {table.getColumn("source") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("source")}
+              title={t('sources.filterTitle')}
+              options={sourceOptions}
+            />
+          )}
+
           {/* Month Filter */}
           <Popover>
             <PopoverTrigger asChild>
@@ -99,7 +102,7 @@ export function ProductionTableToolbar<TData>({
                     return `${ETHIOPIAN_MONTHS[ethDate.month - 1]} ${ethDate.year} ዓ.ም`;
                   })()
                 ) : (
-                  <span>{t('filterByMonth')}</span>
+                  <span>{t('table.filterByMonth') || 'Filter by month'}</span>
                 )}
                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
               </Button>
@@ -126,7 +129,7 @@ export function ProductionTableToolbar<TData>({
                 {selectedDate ? (
                   EthiopianDateFormatter.formatForTable(selectedDate)
                 ) : (
-                  <span>{t('filterByDate')}</span>
+                  <span>{t('table.filterByDate') || 'Filter by date'}</span>
                 )}
                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
               </Button>
@@ -150,7 +153,7 @@ export function ProductionTableToolbar<TData>({
             onClick={clearFilters}
             className="h-8 px-2 lg:px-3"
           >
-            {t('reset')}
+            {t('table.reset') || 'Reset'}
             <X className="ml-2 h-4 w-4" />
           </Button>
         )}
@@ -158,3 +161,4 @@ export function ProductionTableToolbar<TData>({
     </div>
   );
 }
+

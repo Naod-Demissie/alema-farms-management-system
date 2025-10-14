@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
+import { EthiopianCalendarUtils } from "@/lib/ethiopian-calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
@@ -45,31 +46,35 @@ export const getRevenueColumns = (
     },
     filterFn: (row: any, id: string, value: any) => {
       if (!value) return true;
+      
       const revenue = row.original;
       const revenueDate = new Date(revenue.date);
-      const filterDate = new Date(value);
       
-      // Check if it's a specific date filter (has day component) or month filter
-      const isSpecificDate = filterDate.getDate() !== 1 || 
-        filterDate.getHours() !== 0 || 
-        filterDate.getMinutes() !== 0 || 
-        filterDate.getSeconds() !== 0 ||
-        filterDate.getMilliseconds() !== 0;
-      
-      if (isSpecificDate) {
-        // Specific date filtering - match exact date
-        return (
-          revenueDate.getFullYear() === filterDate.getFullYear() &&
-          revenueDate.getMonth() === filterDate.getMonth() &&
-          revenueDate.getDate() === filterDate.getDate()
-        );
-      } else {
-        // Month filtering - match month and year
-        return (
-          revenueDate.getMonth() === filterDate.getMonth() &&
-          revenueDate.getFullYear() === filterDate.getFullYear()
-        );
+      // Handle new filter value structure
+      if (typeof value === 'object' && value.date) {
+        const { date: filterDate, isMonthFilter } = value;
+        
+        // Convert both dates to Ethiopian calendar
+        const revenueEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(revenueDate);
+        const filterEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(filterDate);
+        
+        if (isMonthFilter) {
+          // Month filtering - match Ethiopian month and year
+          return (
+            revenueEthiopian.month === filterEthiopian.month &&
+            revenueEthiopian.year === filterEthiopian.year
+          );
+        } else {
+          // Specific date filtering - match Ethiopian date
+          return (
+            revenueEthiopian.day === filterEthiopian.day &&
+            revenueEthiopian.month === filterEthiopian.month &&
+            revenueEthiopian.year === filterEthiopian.year
+          );
+        }
       }
+      
+      return true;
     },
   },
   {

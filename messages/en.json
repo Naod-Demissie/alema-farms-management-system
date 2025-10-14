@@ -687,7 +687,8 @@
       "deleteRecord": "Delete Record",
       "unknown": "Unknown",
       "na": "N/A",
-      "kg": "kg"
+      "kg": "kg",
+      "birr": "Birr"
     },
     "inventory": {
       "title": "Feed Inventory",
@@ -1384,7 +1385,11 @@
       "table": {
         "searchPlaceholder": "Search expenses...",
         "loadingMessage": "Loading expenses...",
-        "filterByCategory": "Category"
+        "noRecordsFound": "No expense records found",
+        "filterByCategory": "Category",
+        "filterByMonth": "Filter by month",
+        "filterByDate": "Filter by date",
+        "reset": "Reset"
       }
     },
     "revenue": {
@@ -1509,7 +1514,11 @@
       "table": {
         "searchPlaceholder": "Search revenues...",
         "loadingMessage": "Loading revenues...",
-        "filterBySource": "Source"
+        "noRecordsFound": "No revenue records found",
+        "filterBySource": "Source",
+        "filterByMonth": "Filter by month",
+        "filterByDate": "Filter by date",
+        "reset": "Reset"
       }
     }
   },

@@ -3,10 +3,31 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
-import { useReactTable, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, getFacetedRowModel, getFacetedUniqueValues, ColumnFiltersState, ColumnVisibility, VisibilityState } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui/data-table";
-import { DataTableToolbar } from "@/components/table/data-table-toolbar";
-import { FinancialDateFilter } from "../shared/financial-date-filter";
+import { 
+  useReactTable, 
+  getCoreRowModel, 
+  getFilteredRowModel, 
+  getPaginationRowModel, 
+  getSortedRowModel, 
+  getFacetedRowModel, 
+  getFacetedUniqueValues, 
+  ColumnFiltersState, 
+  SortingState,
+  VisibilityState,
+  flexRender 
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DataTablePagination } from "@/components/table/data-table-pagination";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { DollarSign } from "lucide-react";
+import { ExpenseTableToolbar } from "./expense-table-toolbar";
 import { getExpenseColumns } from "./expense-columns";
 
 interface Expense {
@@ -39,25 +60,33 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
   const tCommon = useTranslations('financial.common');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([]);
   
   const columns = getExpenseColumns(onView, onEdit, onDelete, t, tCommon);
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
-    columns: getExpenseColumns(onView, onEdit, onDelete, t, tCommon),
+    columns,
     state: {
       columnFilters,
       columnVisibility: mobileColumnVisibility,
+      sorting,
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   // Prepare category options for filter
@@ -72,20 +101,9 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar
+      <ExpenseTableToolbar
         table={table}
-        filterColumnId="description"
-        filterPlaceholder={t('table.searchPlaceholder')}
-        facetedFilters={[
-          {
-            columnId: "category",
-            title: t('categories.filterTitle'),
-            options: categoryOptions,
-          },
-        ]}
-        customFilters={[
-          <FinancialDateFilter key="date-filter" table={table} />
-        ]}
+        categoryOptions={categoryOptions}
       />
       {loading ? (
         <div className="flex items-center justify-center py-8">
@@ -95,14 +113,63 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
           </div>
         </div>
       ) : (
-        <DataTable
-          columns={getExpenseColumns(onView, onEdit, onDelete, t, tCommon)}
-          data={data}
-          enableFiltering={true}
-          enablePagination={true}
-          enableSorting={true}
-          pageSize={10}
-        />
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      <NoDataIcon 
+                        icon={DollarSign}
+                        title={t('table.noRecordsFound') || 'No records found'}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <DataTablePagination table={table} />
+        </>
       )}
     </div>
   );

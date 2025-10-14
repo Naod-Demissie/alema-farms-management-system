@@ -684,7 +684,8 @@
       "deleteRecord": "መዝገብ ሰርዝ",
       "unknown": "ያልታወቀ",
       "na": "የለም",
-      "kg": "ኪ.ግ"
+      "kg": "ኪ.ግ",
+      "birr": "ብር"
     },
     "inventory": {
       "title": "የመኖ እቃ",
@@ -1381,7 +1382,11 @@
       "table": {
         "searchPlaceholder": "ወጪን ፈልግ...",
         "loadingMessage": "ወጪ በመጫን ላይ...",
-        "filterByCategory": "ምድብ"
+        "noRecordsFound": "ምንም የወጪ መዝገቦች አልተገኙም",
+        "filterByCategory": "ምድብ",
+        "filterByMonth": "በወር ያጣሩ",
+        "filterByDate": "በቀን ያጣሩ",
+        "reset": "ዳግም ያስጀምሩ"
       }
     },
     "revenue": {
@@ -1506,7 +1511,11 @@
       "table": {
         "searchPlaceholder": "ገቢዎችን ፈልግ...",
         "loadingMessage": "ገቢ በመጫን ላይ...",
-        "filterBySource": "ምንጭ"
+        "noRecordsFound": "ምንም የገቢ መዝገቦች አልተገኙም",
+        "filterBySource": "ምንጭ",
+        "filterByMonth": "በወር ያጣሩ",
+        "filterByDate": "በቀን ያጣሩ",
+        "reset": "ዳግም ያስጀምሩ"
       }
     }
   },

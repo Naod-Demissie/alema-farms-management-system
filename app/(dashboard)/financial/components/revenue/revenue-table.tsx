@@ -3,10 +3,31 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
-import { useReactTable, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, getFacetedRowModel, getFacetedUniqueValues, ColumnFiltersState, ColumnVisibility, VisibilityState } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui/data-table";
-import { DataTableToolbar } from "@/components/table/data-table-toolbar";
-import { FinancialDateFilter } from "../shared/financial-date-filter";
+import { 
+  useReactTable, 
+  getCoreRowModel, 
+  getFilteredRowModel, 
+  getPaginationRowModel, 
+  getSortedRowModel, 
+  getFacetedRowModel, 
+  getFacetedUniqueValues, 
+  ColumnFiltersState, 
+  SortingState,
+  VisibilityState,
+  flexRender 
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DataTablePagination } from "@/components/table/data-table-pagination";
+import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { TrendingUp } from "lucide-react";
+import { RevenueTableToolbar } from "./revenue-table-toolbar";
 import { getRevenueColumns } from "./revenue-columns";
 
 interface Revenue {
@@ -34,25 +55,33 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
   const tCommon = useTranslations('financial.common');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([]);
   
   const columns = getRevenueColumns(onView, onEdit, onDelete, t, tCommon);
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
-    columns: getRevenueColumns(onView, onEdit, onDelete, t, tCommon),
+    columns,
     state: {
       columnFilters,
       columnVisibility: mobileColumnVisibility,
+      sorting,
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   // Prepare source options for filter
@@ -65,20 +94,9 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar
+      <RevenueTableToolbar
         table={table}
-        filterColumnId="description"
-        filterPlaceholder={t('table.searchPlaceholder')}
-        facetedFilters={[
-          {
-            columnId: "source",
-            title: t('sources.filterTitle'),
-            options: sourceOptions,
-          },
-        ]}
-        customFilters={[
-          <FinancialDateFilter key="date-filter" table={table} />
-        ]}
+        sourceOptions={sourceOptions}
       />
       {loading ? (
         <div className="flex items-center justify-center py-8">
@@ -88,14 +106,63 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
           </div>
         </div>
       ) : (
-        <DataTable
-          columns={getRevenueColumns(onView, onEdit, onDelete, t, tCommon)}
-          data={data}
-          enableFiltering={true}
-          enablePagination={true}
-          enableSorting={true}
-          pageSize={10}
-        />
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      <NoDataIcon 
+                        icon={TrendingUp}
+                        title={t('table.noRecordsFound') || 'No records found'}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <DataTablePagination table={table} />
+        </>
       )}
     </div>
   );
