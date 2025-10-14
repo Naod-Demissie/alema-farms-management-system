@@ -1228,6 +1228,16 @@
       "cracked": "የተሰነጠቀ",
       "spoiled": "የተበላሸ"
     },
+    "aggregates": {
+      "total": "ጠቅላላ",
+      "normal": "መደበኛ",
+      "cracked": "የተሰነጠቀ",
+      "spoiled": "የተበላሸ",
+      "totalBirds": "ጠቅላላ ወፎች",
+      "birdsInFilter": "በተጣራ መረጃ ውስጥ ያሉ ወፎች",
+      "totalQuantity": "ጠቅላላ ብዛት",
+      "bagsInFilter": "በተጣራ መረጃ ውስጥ ያሉ ከረጢቶች"
+    },
     "loading": {
       "data": "መረጃ በመጫን ላይ..."
     },
@@ -1262,6 +1272,16 @@
     "tabs": {
       "expenses": "የወጪ ክትትል",
       "revenue": "የገቢ ክትትል"
+    },
+    "aggregates": {
+      "totalExpenses": "ጠቅላላ ወጪዎች",
+      "totalRevenue": "ጠቅላላ ገቢ",
+      "recordCount": "የመዝገብ ብዛት",
+      "expenseRecords": "የወጪ መዝገቦች",
+      "revenueRecords": "የገቢ መዝገቦች",
+      "avgExpense": "አማካይ ወጪ",
+      "avgRevenue": "አማካይ ገቢ",
+      "perRecord": "በአንድ መዝገብ"
     },
     "common": {
       "date": "ቀን",

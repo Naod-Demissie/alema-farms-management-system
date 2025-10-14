@@ -16,8 +16,9 @@ export interface Flock {
     mortality: number;
     feedUsage: number;
     eggProduction: number;
-    expenses: number;
-    revenue: number;
+    broilerProduction: number;
+    manureProduction: number;
+    notifications: number;
   };
 }
 

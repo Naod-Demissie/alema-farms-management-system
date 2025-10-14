@@ -31,11 +31,13 @@ import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Egg } from "lucide-react";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
 import { ProductionTableToolbar } from "./production-table-toolbar";
+import { ProductionAggregates } from "./production-aggregates";
 
 interface ProductionTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   flocks: Array<{ id: string; batchCode: string; currentCount: number }>;
+  productionType: "eggs" | "broiler" | "manure";
   enableRowSelection?: boolean;
   enableSorting?: boolean;
   enableFiltering?: boolean;
@@ -50,6 +52,7 @@ export function ProductionTable<TData, TValue>({
   columns,
   data,
   flocks,
+  productionType,
   enableRowSelection = true,
   enableSorting = true,
   enableFiltering = true,
@@ -109,6 +112,12 @@ export function ProductionTable<TData, TValue>({
       <ProductionTableToolbar
         table={table}
         flocks={flocks}
+      />
+      
+      {/* Aggregates Display */}
+      <ProductionAggregates
+        table={table}
+        productionType={productionType}
       />
       
       <div className="rounded-md border">

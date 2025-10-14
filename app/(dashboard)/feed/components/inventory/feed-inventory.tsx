@@ -26,6 +26,7 @@ import {
   deleteFeedInventoryAction 
 } from "@/app/(dashboard)/feed/server/feed-inventory";
 import { getFeedSuppliersAction } from "@/app/(dashboard)/feed/server/feed-suppliers";
+import { feedTypeLabels } from "@/app/(dashboard)/feed/utils/feed-program";
 
 const feedInventorySchema = z.object({
   feedType: z.enum(["LAYER_STARTER", "REARING", "PULLET_FEED", "LAYER", "LAYER_PHASE_1", "CUSTOM"]),
@@ -163,7 +164,6 @@ export function FeedInventory() {
       quantity: item.quantity,
       unit: item.unit,
       costPerUnit: item.costPerUnit || 0,
-      minStock: item.minStock || 0,
       notes: item.notes || "",
     });
     setIsAddDialogOpen(true);
@@ -475,7 +475,7 @@ export function FeedInventory() {
                               }).format(
                                 // Calculate total cost: quantity * costPerUnit
                                 // The costPerUnit is already per the selected unit (KG or Quintal)
-                                form.watch('quantity') * form.watch('costPerUnit')
+                                form.watch('quantity') * (form.watch('costPerUnit') ?? 0)
                               )
                             : `0.00 ${tCommon('birr')}`
                           }

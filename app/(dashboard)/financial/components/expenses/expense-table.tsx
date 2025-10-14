@@ -29,6 +29,7 @@ import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { DollarSign } from "lucide-react";
 import { ExpenseTableToolbar } from "./expense-table-toolbar";
 import { getExpenseColumns } from "./expense-columns";
+import { FinancialAggregates } from "../financial-aggregates";
 
 interface Expense {
   id: string;
@@ -105,6 +106,13 @@ export function ExpenseTable({ data, onView, onEdit, onDelete, loading = false }
         table={table}
         categoryOptions={categoryOptions}
       />
+      
+      {/* Aggregates Display */}
+      <FinancialAggregates
+        table={table}
+        type="expense"
+      />
+      
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <div className="text-center">

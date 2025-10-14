@@ -29,6 +29,7 @@ import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { TrendingUp } from "lucide-react";
 import { RevenueTableToolbar } from "./revenue-table-toolbar";
 import { getRevenueColumns } from "./revenue-columns";
+import { FinancialAggregates } from "../financial-aggregates";
 
 interface Revenue {
   id: string;
@@ -98,6 +99,13 @@ export function RevenueTable({ data, onView, onEdit, onDelete, loading = false }
         table={table}
         sourceOptions={sourceOptions}
       />
+      
+      {/* Aggregates Display */}
+      <FinancialAggregates
+        table={table}
+        type="revenue"
+      />
+      
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <div className="text-center">

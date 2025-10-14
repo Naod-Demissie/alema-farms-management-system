@@ -1231,6 +1231,16 @@
       "cracked": "Cracked",
       "spoiled": "Spoiled"
     },
+    "aggregates": {
+      "total": "Total",
+      "normal": "Normal",
+      "cracked": "Cracked",
+      "spoiled": "Spoiled",
+      "totalBirds": "Total Birds",
+      "birdsInFilter": "Birds in filtered data",
+      "totalQuantity": "Total Quantity",
+      "bagsInFilter": "Bags in filtered data"
+    },
     "loading": {
       "data": "Loading data..."
     },
@@ -1265,6 +1275,16 @@
     "tabs": {
       "expenses": "Expense Tracking",
       "revenue": "Revenue Management"
+    },
+    "aggregates": {
+      "totalExpenses": "Total Expenses",
+      "totalRevenue": "Total Revenue",
+      "recordCount": "Record Count",
+      "expenseRecords": "expense records",
+      "revenueRecords": "revenue records",
+      "avgExpense": "Avg. Expense",
+      "avgRevenue": "Avg. Revenue",
+      "perRecord": "per record"
     },
     "common": {
       "date": "Date",

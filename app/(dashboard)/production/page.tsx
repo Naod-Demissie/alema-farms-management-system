@@ -480,6 +480,7 @@ export default function ProductionManagementPage() {
                   columns={getColumns()}
                   data={data}
                   flocks={flocks}
+                  productionType={activeTab as "eggs" | "broiler" | "manure"}
                   enableFiltering={true}
                   enablePagination={true}
                   enableSorting={true}

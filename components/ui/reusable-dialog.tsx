@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 
-export interface DialogFormConfig<T extends z.ZodType> {
+export interface DialogFormConfig<T extends z.ZodType<any, any, any>> {
   schema: T;
   defaultValues: z.infer<T>;
   title: string;
@@ -30,7 +30,7 @@ export interface DialogFormConfig<T extends z.ZodType> {
   maxHeight?: string;
 }
 
-interface ReusableDialogProps<T extends z.ZodType> {
+interface ReusableDialogProps<T extends z.ZodType<any, any, any>> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   config: DialogFormConfig<T>;
@@ -38,7 +38,7 @@ interface ReusableDialogProps<T extends z.ZodType> {
   disabled?: boolean;
 }
 
-export function ReusableDialog<T extends z.ZodType>({
+export function ReusableDialog<T extends z.ZodType<any, any, any>>({
   open,
   onOpenChange,
   config,
@@ -60,7 +60,7 @@ export function ReusableDialog<T extends z.ZodType>({
   } = config;
 
   const form = useForm<z.infer<T>>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues,
   });
 
@@ -198,7 +198,7 @@ export function SimpleDialog({
           >
             {cancelText}
           </Button>
-          <Button onClick={handleSubmit} disabled={loading || disabled}>
+          <Button type="button" onClick={handleSubmit} disabled={loading || disabled}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {submitText}
           </Button>
