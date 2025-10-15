@@ -21,6 +21,8 @@ export async function createExpense(data: {
   amount: number;
   date: Date;
   description?: string;
+  sourceId?: string;
+  sourceType?: string;
 }) {
   try {
     const expense = await prisma.expenses.create({
@@ -31,6 +33,8 @@ export async function createExpense(data: {
         amount: data.amount,
         date: data.date,
         description: data.description,
+        sourceId: data.sourceId,
+        sourceType: data.sourceType,
       },
     });
 
@@ -60,6 +64,8 @@ export async function updateExpense(id: string, data: {
   amount?: number;
   date?: Date;
   description?: string;
+  sourceId?: string;
+  sourceType?: string;
 }) {
   try {
     // Get the existing expense record to calculate inventory differences
@@ -141,6 +147,28 @@ export async function deleteExpense(id: string) {
   } catch (error) {
     console.error("Error deleting expense:", error);
     return { success: false, message: "Failed to delete expense" };
+  }
+}
+
+export async function deleteExpenseBySource(sourceId: string, sourceType: string) {
+  try {
+    // Find the expense record by sourceId and sourceType
+    const expense = await prisma.expenses.findFirst({
+      where: { 
+        sourceId: sourceId,
+        sourceType: sourceType 
+      }
+    });
+
+    if (!expense) {
+      return { success: true, message: "No linked expense found" };
+    }
+
+    // Delete the expense using the existing deleteExpense function
+    return await deleteExpense(expense.id);
+  } catch (error) {
+    console.error("Error deleting expense by source:", error);
+    return { success: false, message: "Failed to delete expense by source" };
   }
 }
 

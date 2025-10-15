@@ -35,17 +35,15 @@ export async function createFeedInventoryAction(data: {
   notes?: string;
 }) {
   try {
-    // Convert quantity to kg if unit is quintal
-    const quantityInKg = data.unit === 'QUINTAL' ? data.quantity * 100 : data.quantity;
-    
-    // Calculate total cost based on kg quantity
-    const totalCost = data.costPerUnit ? quantityInKg * data.costPerUnit : null;
+    // Calculate total cost: quantity * costPerUnit
+    // costPerUnit is per the selected unit (KG or Quintal)
+    const totalCost = data.costPerUnit ? data.quantity * data.costPerUnit : null;
     
     const feed = await prisma.feedInventory.create({
       data: {
         feedType: data.feedType,
         supplierId: data.supplierId && data.supplierId !== "none" ? data.supplierId : null,
-        quantity: quantityInKg,
+        quantity: data.quantity,
         unit: data.unit as any,
         costPerUnit: data.costPerUnit,
         totalCost,
@@ -80,15 +78,10 @@ export async function updateFeedInventoryAction(id: string, data: {
       return { success: false, error: "Feed inventory not found" };
     }
     
-    // Calculate total cost if quantity or costPerUnit changed
-    let quantity = data.quantity ?? currentRecord.quantity;
+    // Calculate total cost: quantity * costPerUnit
+    // costPerUnit is per the selected unit (KG or Quintal)
+    const quantity = data.quantity ?? currentRecord.quantity;
     const costPerUnit = data.costPerUnit ?? currentRecord.costPerUnit;
-    
-    // Convert quantity to kg if unit is quintal
-    if (data.unit === 'QUINTAL' && data.quantity) {
-      quantity = data.quantity * 100;
-    }
-    
     const totalCost = costPerUnit ? quantity * costPerUnit : null;
     
     const feed = await prisma.feedInventory.update({

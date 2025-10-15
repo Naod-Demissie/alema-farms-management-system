@@ -1,4 +1,6 @@
-import { PrismaClient } from '../lib/generated/prisma';
+import { PrismaClient } from '../lib/generated/prisma/client';
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import type { 
   StaffRole, 
   FeedType, 
@@ -15,7 +17,23 @@ import type {
   InventoryType
 } from '../lib/generated/prisma';
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  query_timeout: 30000,
+});
+
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({ 
+  adapter,
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  transactionOptions: {
+    timeout: 30000,
+  },
+});
 
 // Ethiopian names data
 const ethiopianFirstNames = {

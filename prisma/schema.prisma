@@ -11,31 +11,34 @@ datasource db {
 
 
 model Staff {
-  id               String          @id @default(uuid())
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  firstName        String
-  lastName         String
-  name             String
-  email            String?         @unique
-  emailVerified    Boolean         @default(false)
-  image            String? @db.Text
-  phoneNumber      String?
-  role             StaffRole       @default(WORKER)
-  isActive         Boolean         @default(true)
-  isSystemUser     Boolean         @default(false)
-  attendance       Attendance[]
-  invitesCreated   Invite[]        @relation("InviteCreatedByStaff")
-  leaveBalance     LeaveBalance?
-  approvedLeaves   LeaveRequest[]  @relation("ApprovedLeaves")
-  leaveRequests    LeaveRequest[]  @relation("StaffLeave")
-  payrolls         Payroll[]
-  accounts         Accounts[]
-  feedUsageRecords FeedUsage[]     @relation("FeedUsageRecordedBy")
-  mortalityRecords Mortality[]     @relation("RecordedByStaff")
-  notifications    Notifications[] @relation("StaffNotifications")
-  sessions         Sessions[]
-  treatments       Treatments[]    @relation("TreatedByStaff")
+  id                 String               @id @default(uuid())
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  firstName          String
+  lastName           String
+  name               String
+  email              String?              @unique
+  emailVerified      Boolean              @default(false)
+  image              String? @db.Text
+  phoneNumber        String?
+  role               StaffRole            @default(WORKER)
+  isActive           Boolean              @default(true)
+  isSystemUser       Boolean              @default(false)
+  attendance         Attendance[]
+  invitesCreated     Invite[]             @relation("InviteCreatedByStaff")
+  leaveBalance       LeaveBalance?
+  approvedLeaves     LeaveRequest[]       @relation("ApprovedLeaves")
+  leaveRequests      LeaveRequest[]       @relation("StaffLeave")
+  payrolls           Payroll[]
+  accounts           Accounts[]
+  feedUsageRecords   FeedUsage[]          @relation("FeedUsageRecordedBy")
+  mortalityRecords   Mortality[]          @relation("RecordedByStaff")
+  notifications      Notifications[]      @relation("StaffNotifications")
+  sessions           Sessions[]
+  treatments         Treatments[]         @relation("TreatedByStaff")
+  waterRecords       WaterConsumption[]   @relation("WaterRecordedBy")
+  temperatureRecords TemperatureReading[] @relation("TemperatureRecordedBy")
+  lightingRecords    LightingSchedule[]   @relation("LightingRecordedBy")
 
   @@index([role])
   @@index([isActive])
@@ -182,23 +185,26 @@ model LeaveBalance {
 }
 
 model Flocks {
-  id                String              @id @default(uuid())
-  batchCode         String              @unique
-  arrivalDate       DateTime
-  initialCount      Int
-  currentCount      Int
-  ageInDays         Int?
-  notes             String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  broilerProduction BroilerProduction[]
-  eggProduction     EggProduction[]
-  feedUsage         FeedUsage[]
-  manureProduction  ManureProduction[]
-  mortality         Mortality[]
-  notifications     Notifications[]
-  treatments        Treatments[]
-  vaccinations      Vaccinations[]
+  id                 String               @id @default(uuid())
+  batchCode          String               @unique
+  arrivalDate        DateTime
+  initialCount       Int
+  currentCount       Int
+  ageInDays          Int?
+  notes              String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  broilerProduction  BroilerProduction[]
+  eggProduction      EggProduction[]
+  feedUsage          FeedUsage[]
+  manureProduction   ManureProduction[]
+  mortality          Mortality[]
+  notifications      Notifications[]
+  treatments         Treatments[]
+  vaccinations       Vaccinations[]
+  waterConsumption   WaterConsumption[]
+  temperatureReadings TemperatureReading[]
+  lightingSchedules  LightingSchedule[]
 
   @@index([arrivalDate])
   @@index([currentCount])
@@ -334,6 +340,76 @@ model ManureProduction {
   @@map("manure_production")
 }
 
+model WaterConsumption {
+  id           String   @id @default(uuid())
+  flockId      String
+  date         DateTime
+  consumption  Float    // in liters
+  recordedById String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  flock        Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  recordedBy   Staff?   @relation("WaterRecordedBy", fields: [recordedById], references: [id])
+
+  @@index([flockId])
+  @@index([date])
+  @@index([recordedById])
+  @@index([createdAt])
+  @@index([flockId, date])
+  @@index([date, createdAt])
+  @@map("water_consumption")
+}
+
+model TemperatureReading {
+  id           String   @id @default(uuid())
+  flockId      String
+  date         DateTime
+  minTemp      Float    // Minimum temperature in Celsius
+  maxTemp      Float    // Maximum temperature in Celsius
+  avgTemp      Float?   // Average temperature (calculated)
+  recordedById String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  flock        Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  recordedBy   Staff?   @relation("TemperatureRecordedBy", fields: [recordedById], references: [id])
+
+  @@index([flockId])
+  @@index([date])
+  @@index([recordedById])
+  @@index([createdAt])
+  @@index([flockId, date])
+  @@index([date, createdAt])
+  @@map("temperature_readings")
+}
+
+model LightingSchedule {
+  id              String   @id @default(uuid())
+  flockId         String
+  date            DateTime
+  lightOnTime     String   // Time when lights turn on (HH:mm format)
+  lightOffTime    String   // Time when lights turn off (HH:mm format)
+  totalHours      Float    // Total hours of light
+  interruptedHours Float?  // Hours of interruption if any
+  recordedById    String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  flock        Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  recordedBy   Staff?   @relation("LightingRecordedBy", fields: [recordedById], references: [id])
+
+  @@index([flockId])
+  @@index([date])
+  @@index([recordedById])
+  @@index([createdAt])
+  @@index([flockId, date])
+  @@index([date, createdAt])
+  @@map("lighting_schedules")
+}
+
 model Expenses {
   id              String          @id @default(uuid())
   category        ExpenseCategory
@@ -342,12 +418,15 @@ model Expenses {
   amount          Float
   date            DateTime
   description     String?
+  sourceId        String?         // ID of the source record (feed inventory, payroll, etc.)
+  sourceType      String?         // Type of source: 'feed_inventory', 'payroll', etc.
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
   @@index([category])
   @@index([date])
   @@index([createdAt])
+  @@index([sourceId, sourceType])
   @@map("expenses")
 }
 

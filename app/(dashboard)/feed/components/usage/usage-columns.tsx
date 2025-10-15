@@ -73,6 +73,7 @@ export const usageColumns = (
   },
   {
     accessorKey: "date",
+    id: "date",
     header: t('columns.date'),
     cell: ({ row }) => {
       const record = row.original;
@@ -84,6 +85,22 @@ export const usageColumns = (
           </div>
         </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      
+      const rowDate = new Date(row.getValue(id));
+      const filterDate = value.date;
+      const isMonthFilter = value.isMonthFilter;
+      
+      if (isMonthFilter) {
+        // Filter by month
+        return rowDate.getFullYear() === filterDate.getFullYear() && 
+               rowDate.getMonth() === filterDate.getMonth();
+      } else {
+        // Filter by specific date
+        return rowDate.toDateString() === filterDate.toDateString();
+      }
     },
   },
   {

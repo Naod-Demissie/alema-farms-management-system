@@ -38,6 +38,7 @@ export function FeedUsage() {
   const currentUser = session?.user;
   
   const [feedUsage, setFeedUsage] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [viewingItem, setViewingItem] = useState<any>(null);
@@ -57,6 +58,7 @@ export function FeedUsage() {
   // Fetch data on component mount
   useEffect(() => {
     fetchFeedUsage();
+    fetchFlocks();
   }, []);
 
   const fetchFeedUsage = async () => {
@@ -74,6 +76,23 @@ export function FeedUsage() {
       setFeedUsage([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFlocks = async () => {
+    try {
+      // Import the getFlocksAction function
+      const { getFlocksAction } = await import("@/app/(dashboard)/flocks/server/flocks");
+      const result = await getFlocksAction();
+      if (result && result.success) {
+        setFlocks(result.data || []);
+      } else {
+        console.error("Failed to fetch flocks:", result?.error || "Unknown error");
+        setFlocks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching flocks:", error);
+      setFlocks([]);
     }
   };
 
@@ -305,6 +324,7 @@ export function FeedUsage() {
             <UsageTable
               columns={usageColumns(handleView, handleEdit, handleDeleteClick, t, tCommon)}
               data={feedUsage}
+              flocks={flocks}
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}

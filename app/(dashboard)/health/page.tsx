@@ -26,6 +26,7 @@ import {
 import { VaccinationRecords } from "./components/vaccination/vaccination-records";
 import { DiseaseTreatment } from "./components/treatment/disease-treatment";
 import { MortalityManagement } from "./components/mortality/mortality-management";
+import { HealthAnalytics } from "./components/analytics/health-analytics";
 import { PageBanner } from "@/components/ui/page-banner";
 
 export default function HealthManagementPage() {
@@ -57,10 +58,11 @@ export default function HealthManagementPage() {
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="vaccinations">{t('vaccination.title')}</TabsTrigger>
           <TabsTrigger value="treatments">{t('treatment.title')}</TabsTrigger>
           <TabsTrigger value="mortality">{t('mortality.title')}</TabsTrigger>
+          <TabsTrigger value="analytics">{t('analytics.title')}</TabsTrigger>
         </TabsList>
 
         {/* Vaccination Records Tab */}
@@ -76,6 +78,11 @@ export default function HealthManagementPage() {
         {/* Mortality Management Tab */}
         <TabsContent value="mortality">
           <MortalityManagement />
+        </TabsContent>
+
+        {/* Health Analytics Tab */}
+        <TabsContent value="analytics">
+          <HealthAnalytics />
         </TabsContent>
       </Tabs>
     </div>

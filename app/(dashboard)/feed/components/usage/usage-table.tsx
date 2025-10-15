@@ -30,6 +30,8 @@ import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Wheat } from "lucide-react";
+import { FeedUsageTableToolbar } from "./feed-usage-table-toolbar";
+import { FeedUsageAggregates } from "./feed-usage-aggregates";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -55,12 +57,13 @@ interface UsageTableProps {
   columns: ColumnDef<any>[];
   data: any[];
   toolbar?: React.ReactNode;
+  flocks?: Array<{ id: string; batchCode: string; currentCount: number }>;
   onView?: (record: any) => void;
   onEdit?: (record: any) => void;
   onDelete?: (record: any) => void;
 }
 
-export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }: UsageTableProps) {
+export function UsageTable({ columns, data, toolbar, flocks = [], onView, onEdit, onDelete }: UsageTableProps) {
   const t = useTranslations('feed.usage');
   const tCommon = useTranslations('feed.common');
   const tFeedTypes = useTranslations('feed.feedTypes');
@@ -132,27 +135,16 @@ export function UsageTable({ columns, data, toolbar, onView, onEdit, onDelete }:
 
   return (
     <div className="space-y-4">
+      {/* Toolbar */}
       {toolbar || (
-        <DataTableToolbar
+        <FeedUsageTableToolbar
           table={table}
-          filterColumnId="flock"
-          filterPlaceholder={t('noUsage')}
-          facetedFilters={[
-            {
-              columnId: "feed",
-              title: t('columns.feedType'),
-              options: [
-                { label: tFeedTypes('LAYER_STARTER'), value: "LAYER_STARTER" },
-                { label: tFeedTypes('REARING'), value: "REARING" },
-                { label: tFeedTypes('PULLET_FEED'), value: "PULLET_FEED" },
-                { label: tFeedTypes('LAYER'), value: "LAYER" },
-                { label: tFeedTypes('LAYER_PHASE_1'), value: "LAYER_PHASE_1" },
-                { label: tFeedTypes('CUSTOM'), value: "CUSTOM" },
-              ],
-            },
-          ]}
+          flocks={flocks}
         />
       )}
+      
+      {/* Aggregates */}
+      <FeedUsageAggregates table={table} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

@@ -26,6 +26,7 @@ import {
   Egg,
   DollarSign,
   BarChart3,
+  Thermometer,
 } from "lucide-react";
 
 import {
@@ -117,6 +118,12 @@ function getSidebarData(t: any): SidebarData {
             title: t('navigation.feedManagement'),
             url: "/feed",
             icon: Wheat,
+            visible: ["admin", "veterinarian", "worker"],
+          },
+          {
+            title: t('navigation.environmentMonitoring'),
+            url: "/environment",
+            icon: Thermometer,
             visible: ["admin", "veterinarian", "worker"],
           },
           {
