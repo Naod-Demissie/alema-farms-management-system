@@ -4,7 +4,7 @@
     "edit": "አርትዕ",
     "delete": "ሰርዝ",
     "cancel": "ሰርዝ",
-    "save": "አስቀምጥ",
+    "save": "መዝግብ",
     "search": "ፈልግ",
     "filter": "አጣራ",
     "export": "ወደ ውጭ ላክ",
@@ -51,7 +51,9 @@
     "clearFilters": "ማጣሪያዎችን አጽዳ",
     "resetFilters": "ማጣሪያዎችን ዳግም አስጀምር",
     "selected": "ተመርጧል",
-    "currency": "ብር"
+    "currency": "ብር",
+    "rowsSelected": "ረድፍ(ዎች) ተመርጧል",
+    "pageOf": "ገጽ {current} ከ {total}"
   },
   "auth": {
     "welcomeBack": "እንኳን በደህና መጡ",
@@ -182,6 +184,7 @@
       "title": "ፈጣን ድርጊቶች",
       "description": "በስርዓቱ ውስጥ የተለመዱ ተግባራት",
       "recordFeedUsage": "የመኖ አጠቃቀም መዝግብ",
+      "addFeedInventory": "የመኖ አቅርቦት መዝግብ",
       "recordEggProduction": "የእንቁላል ምርት መዝግብ",
       "recordBroilerProduction": "የብሮይለር ምርት መዝግብ",
       "recordManureProduction": "የፍግ ምርት መዝግብ",
@@ -264,14 +267,14 @@
       "title": "ማስጠንቀቂያዎች እና ማሳወቂያዎች",
       "description": "በስርዓቱ ውስጥ አስፈላጊ ማስታወሻዎች",
       "tabAlerts": "ማስጠንቀቂያዎች",
-      "tabAttendance": "መገኘት",
+      "tabAttendance": "ቀሪ ዝርዝር",
       "noAlertsTitle": "ምንም ማስጠንቀቂያዎች የሉም",
       "noAlertsDescription": "አዲስ ማስጠንቀቂያዎች በሚገኙበት ጊዜ እዚህ ይታያሉ።",
-      "eggsAvailable": "እንቁላሎች በእቃ ውስጥ ይገኛሉ",
-      "feedAvailable": "ኪ.ግ መኖ በእቃ ውስጥ ይገኛል",
-      "medicineAvailable": "የመድሃኒት ክፍሎች በእቃ ውስጥ ይገኛሉ",
-      "broilersAvailable": "ብሮይለሮች በእቃ ውስጥ ይገኛሉ",
-      "manureAvailable": "ኪ.ግ ፍግ በእቃ ውስጥ ይገኛል"
+      "eggsAvailable": "እንቁላሎች በቋት ውስጥ ይገኛሉ",
+      "feedAvailable": "ኪ.ግ መኖ በቋት ውስጥ ይገኛል",
+      "medicineAvailable": "የመድሃኒት ክፍሎች በቋት ውስጥ ይገኛሉ",
+      "broilersAvailable": "ብሮይለሮች በቋት ውስጥ ይገኛሉ",
+      "manureAvailable": "ኪ.ግ ፍግ በቋት ውስጥ ይገኛል"
     },
     "dialogs": {
       "addNewFlock": "አዲስ በጎ መዝግብ",
@@ -284,14 +287,17 @@
       "recordFeedUsageDescription": "ከመነሻ ገጽ ለማንኛውም በጎ የመኖ አጠቃቀምን በፍጥነት ይመዝግቡ።",
       "recordUsage": "አጠቃቀም መዝግብ",
       "feedUsageRecorded": "የመኖ አጠቃቀም በተሳካ ሁኔታ ተመዝግቧል!",
-      "feedUsageFailed": "የመኖ አጠቃቀም መመዝገብ አልተሳካም"
+      "feedUsageFailed": "የመኖ አጠቃቀም መመዝገብ አልተሳካም",
+      "addFeedInventoryTitle": "የመኖ አቅርቦት መዝግብ",
+      "addFeedInventoryDescription": "አቅርቦት መረጃ እና የዋጋ አሰጣጥ ጋር አዲስ የመኖ አቅርቦት ወደ ስርዓትዎ ያክሉ።",
+      "addFeedInventory": "አቅርቦት መዝግብ"
     },
     "inventory": {
-      "eggsCount": "እንቁላሎች በእቃ ውስጥ ይገኛሉ",
-      "feedCount": "ኪ.ግ መኖ በእቃ ውስጥ ይገኛል",
-      "medicineCount": "የመድሃኒት ክፍሎች በእቃ ውስጥ ይገኛሉ",
-      "broilersCount": "ብሮይለሮች በእቃ ውስጥ ይገኛሉ",
-      "manureCount": "ኪ.ግ ፍግ በእቃ ውስጥ ይገኛል"
+      "eggsCount": "እንቁላሎች በቋት ውስጥ ይገኛሉ",
+      "feedCount": "ኪ.ግ መኖ በቋት ውስጥ ይገኛል",
+      "medicineCount": "የመድሃኒት ክፍሎች በቋት ውስጥ ይገኛሉ",
+      "broilersCount": "ብሮይለሮች በቋት ውስጥ ይገኛሉ",
+      "manureCount": "ኪ.ግ ፍግ በቋት ውስጥ ይገኛል"
     },
     "attendance": {
       "in": "ገባ",
@@ -330,7 +336,7 @@
     "flockUpdated": "በጎ በተሳካ ሁኔታ ተሻሽሏል",
     "flockDeleted": "በጎ በተሳካ ሁኔታ ተሰርዟል",
     "statistics": {
-      "totalBirds": "ጠቅላላ ወፎች",
+      "totalBirds": "ጠቅላላ ዶሮዎች",
       "averageMortality": "አማካይ ሞት",
       "highRiskFlocks": "ከፍተኛ ስጋት ያላቸው ዶሮዎች",
       "healthyFlocks": "ጤናማ ዶሮዎች",
@@ -346,13 +352,13 @@
       "addTitle": "አዲስ በጎ መዝግብ",
       "addDescription": "ልዩ የባች ኮድ እና የክትትል መረጃ ያለው አዲስ በጎ ፍጠር",
       "editTitle": "በጎ አርትዕ",
-      "editDescription": "የበጎ መረጃ እና የክትትል ዝርዝሮችን ያዘምኑ",
+      "editDescription": "የበጎ መረጃ እና የክትትል ዝርዝሮችን ይለውጡ",
       "viewTitle": "የበጎ ዝርዝሮች",
       "viewDescription": "ለባች ዝርዝር መረጃ ይመልከቱ",
       "deleteTitle": "በጎ ሰርዝ",
       "deleteDescription": "በጎ \"{batchCode}\" ይሰረዝ? ይህ ድርጊት መልሰው ሊያወጡት አይችሉም።",
       "createButton": "በጎ ፍጠር",
-      "updateButton": "በጎ አዘምን",
+      "updateButton": "በጎ ለውጥ",
       "closeButton": "ዝጋ",
       "editButton": "በጎ አርትዕ",
       "deleteButton": "በጎ ሰርዝ",
@@ -383,7 +389,7 @@
       "createError": "በጎ መፍጠር አልተሳካም",
       "updateSuccess": "በጎ በተሳካ ሁኔታ ተሻሽሏል!",
       "updateSuccessDesc": "ባች {batchCode} ተሻሽሏል።",
-      "updateError": "በጎ ማዘመን አልተሳካም",
+      "updateError": "በጎ መለወጥ አልተሳካም",
       "deleteSuccess": "በጎ በተሳካ ሁኔታ ተሰርዟል!",
       "deleteSuccessDesc": "ባች {batchCode} ከዶሮዎችዎ ተወግዷል።",
       "deleteError": "በጎ መሰረዝ አልተሳካም",
@@ -442,7 +448,7 @@
       "administeredBy": "የተሰጠ በ",
       "by": "በ",
       "quantity": "ብዛት",
-      "birds": "ወፎች",
+      "birds": "ዶሮዎች",
       "dosage": "መጠን",
       "noRecords": "ምንም የክትባት መዝገቦች አልተገኙም",
       "recordsCount": "የክትባት መዝገቦች ({count})",
@@ -450,9 +456,9 @@
       "addNewTitle": "አዲስ የክትባት መዝገብ መዝግብ",
       "addNewDescription": "የክትባት ክትትል ዝርዝሮችን ጨምሮ መጠን እና የክትትል መረጃዎችን ይመዝግቡ።",
       "editTitle": "የክትባት መዝገብ አስተካክል",
-      "editDescription": "የክትባት መዝገብ መረጃን ያዘምኑ።",
+      "editDescription": "የክትባት መዝገብ መረጃን ይለውጡ።",
       "addButton": "መዝገብ መዝግብ",
-      "updateButton": "መዝገብ አዘምን",
+      "updateButton": "መዝገብ ለውጥ",
       "loadingData": "መረጃ በመጫን ላይ...",
       "actions": "ድርጊቶች",
       "viewDetails": "ዝርዝሮችን እይ",
@@ -465,9 +471,9 @@
       "createSuccess": "የክትባት መዝገብ በተሳካ ሁኔታ ተፈጠረ!",
       "createSuccessDesc": "{vaccineName} ክትባት ለበጎቹ ተመዝግቧል",
       "createError": "የክትባት መዝገብ መፍጠር አልተሳካም",
-      "updateSuccess": "የክትባት መዝገብ በተሳካ ሁኔታ ተዘምኗል!",
-      "updateSuccessDesc": "{vaccineName} የክትባት መዝገብ ተዘምኗል",
-      "updateError": "የክትባት መዝገብ ማዘመን አልተሳካም",
+      "updateSuccess": "የክትባት መዝገብ በተሳካ ሁኔታ ተለውጧል!",
+      "updateSuccessDesc": "{vaccineName} የክትባት መዝገብ ተለውጧል",
+      "updateError": "የክትባት መዝገብ መለወጥ አልተሳካም",
       "deleteSuccess": "የክትባት መዝገብ በተሳካ ሁኔታ ተሰርዟል!",
       "deleteSuccessDesc": "{vaccineName} የክትባት መዝገብ ተወግዷል",
       "deleteError": "የክትባት መዝገብ መሰረዝ አልተሳካም",
@@ -483,7 +489,7 @@
         "dateAdministered": "የተሰጠበት ቀን",
         "by": "በ",
         "quantity": "ብዛት",
-        "birds": "ወፎች",
+        "birds": "ዶሮዎች",
         "dosage": "መጠን",
         "status": "ሁኔታ",
         "notes": "ማስታወሻዎች",
@@ -520,9 +526,9 @@
       "addNewTitle": "አዲስ ህክምና መዝግብ",
       "addNewDescription": "አዲስ የህክምና መዝገብ ለመጨመር ከታች ያሉትን ዝርዝሮች ይሙሉ።",
       "editTitle": "ህክምና አስተካክል",
-      "editDescription": "ከታች ያለውን የህክምና መረጃ ያዘምኑ።",
+      "editDescription": "ከታች ያለውን የህክምና መረጃ ይለውጡ።",
       "addButton": "ህክምና መዝግብ",
-      "updateButton": "ህክምና አዘምን",
+      "updateButton": "ህክምና ለውጥ",
       "loadingData": "መረጃ በመጫን ላይ...",
       "actions": "ድርጊቶች",
       "viewDetails": "ዝርዝሮችን እይ",
@@ -533,10 +539,10 @@
       "deleteButton": "ሰርዝ",
       "cancelButton": "ሰርዝ",
       "createSuccess": "ህክምና በተሳካ ሁኔታ ተፈጠረ",
-      "updateSuccess": "ህክምና በተሳካ ሁኔታ ተዘምኗል",
+      "updateSuccess": "ህክምና በተሳካ ሁኔታ ተለውጧል",
       "deleteSuccess": "ህክምና በተሳካ ሁኔታ ተሰርዟል",
       "createError": "ህክምናን መፍጠር አልተሳካም",
-      "updateError": "ህክምናን ማዘመን አልተሳካም",
+      "updateError": "ህክምናን መለወጥ አልተሳካም",
       "deleteError": "ህክምናን መሰረዝ አልተሳካም",
       "loadDataError": "መረጃን መጫን አልተሳካም",
       "diseaseTypes": {
@@ -590,11 +596,11 @@
       "addNewTitle": "አዲስ የሞት መዝገብ መዝግብ",
       "addNewDescription": "የሞት ዝርዝሮችን ጨምሮ ምክንያቱን እና መግለጫውን ይመዝግቡ።",
       "editTitle": "የሞት መዝገብ አስተካክል",
-      "editDescription": "የሞት መዝገብ መረጃን ያዘምኑ።",
+      "editDescription": "የሞት መዝገብ መረጃን ይለውጡ።",
       "addButton": "መዝገብ መዝግብ",
-      "updateButton": "መዝገብ አዘምን",
+      "updateButton": "መዝገብ ለውጥ",
       "loadingData": "መረጃ በመጫን ላይ...",
-      "saving": "በማስቀመጥ ላይ...",
+      "saving": "በመመዝገብ ላይ...",
       "actions": "ድርጊቶች",
       "viewDetails": "ዝርዝሮችን እይ",
       "editRecord": "መዝገብ አስተካክል",
@@ -606,9 +612,9 @@
       "createSuccess": "የሞት መዝገብ በተሳካ ሁኔታ ተፈጠረ!",
       "createSuccessDesc": "ለ {count} ሞቶች መዝገብ ታክሏል",
       "createError": "የሞት መዝገብ መፍጠር አልተሳካም",
-      "updateSuccess": "የሞት መዝገብ በተሳካ ሁኔታ ተዘምኗል!",
-      "updateSuccessDesc": "የሞት መዝገብ ተዘምኗል",
-      "updateError": "የሞት መዝገብ ማዘመን አልተሳካም",
+      "updateSuccess": "የሞት መዝገብ በተሳካ ሁኔታ ተለውጧል!",
+      "updateSuccessDesc": "የሞት መዝገብ ተለውጧል",
+      "updateError": "የሞት መዝገብ መለወጥ አልተሳካም",
       "deleteSuccess": "የሞት መዝገብ በተሳካ ሁኔታ ተሰርዟል!",
       "deleteSuccessDesc": "የሞት መዝገብ ተወግዷል",
       "deleteError": "የሞት መዝገብ መሰረዝ አልተሳካም",
@@ -618,7 +624,7 @@
         "diseaseRelated": "ከበሽታ ጋር የተያያዘ",
         "injuryRelated": "ከጉዳት ጋር የተያያዘ",
         "mortalityRate": "የሞት መጠን",
-        "birdsThisMonth": "ወፎች በዚህ ወር",
+        "birdsThisMonth": "ዶሮዎች በዚህ ወር",
         "ofTotal": "ከጠቅላላው",
         "fromLastMonth": "ካለፈው ወር"
       },
@@ -663,13 +669,13 @@
       "weekDeaths": "የዚህ ሳምንት",
       "monthDeaths": "የዚህ ወር",
       "activeTreatments": "ንቁ ሕክምናዎች",
-      "birdsToday": "ወፎች ዛሬ",
+      "birdsToday": "ዶሮዎች ዛሬ",
       "thisWeek": "በዚህ ሳምንት",
       "thisMonth": "በዚህ ወር",
       "underTreatment": "በሕክምና ላይ",
       "overallHealth": "አጠቃላይ የጤና ስታቲስቲክስ",
       "overallHealthDescription": "በሁሉም ዶሮዎች ላይ የተሰበሰቡ የጤና መለኪያዎች",
-      "totalBirds": "ጠቅላላ ወፎች",
+      "totalBirds": "ጠቅላላ ዶሮዎች",
       "mortalityRate": "የሞት መጠን",
       "morbidityRate": "የበሽታ መጠን",
       "healthyRate": "ጤናማ መጠን",
@@ -717,7 +723,7 @@
       "minTemp": "ዝቅተኛ ሙቀት (°C)",
       "maxTemp": "ከፍተኛ ሙቀት (°C)",
       "avgTemp": "አማካይ ሙቀት",
-      "recordedBy": "የተመዘገበ በ",
+      "recordedBy": "የመዝጋቢ ስም",
       "actions": "ድርጊቶች",
       "edit": "አርትዕ",
       "delete": "ሰርዝ",
@@ -727,15 +733,15 @@
       "addTitle": "የሙቀት መጠን መዝግብ",
       "addDescription": "ለዶሮዎች አዲስ የሙቀት መጠን መዝገብ ያስገቡ",
       "editTitle": "የሙቀት መዝገብ አርትዕ",
-      "editDescription": "የሙቀት መጠን መዝገብ ዝርዝሮች ያዘምኑ",
+      "editDescription": "የሙቀት መጠን መዝገብ ዝርዝሮች ይለውጡ",
       "selectFlock": "ዶሮዎች ይምረጡ",
       "pickDate": "ቀን ይምረጡ",
       "notes": "ማስታወሻዎች",
       "notesPlaceholder": "ተጨማሪ ምልከታዎች...",
       "cancel": "ሰርዝ",
       "add": "መዝገብ ጨምር",
-      "update": "መዝገብ አዘምን",
-      "saving": "በማስቀመጥ ላይ...",
+      "update": "መዝገብ ለውጥ",
+      "saving": "በመመዝገብ ላይ...",
       "deleting": "በመሰረዝ ላይ...",
       "deleteTitle": "የሙቀት መዝገብ ሰርዝ",
       "deleteDescription": "እርግጠኛ ነዎት ይህን የሙቀት መጠን መዝገብ መሰረዝ ይፈልጋሉ?",
@@ -747,8 +753,8 @@
       "maxTempRange": "የሙቀት መጠን በ -50°C እና 100°C መካከል መሆን አለበት",
       "createSuccess": "የሙቀት መጠን መዝገብ በተሳካ ሁኔታ ተፈጥሯል",
       "createSuccessDesc": "የሙቀት መጠን ንባብ ተመዝግቧል",
-      "updateSuccess": "የሙቀት መጠን መዝገብ በተሳካ ሁኔታ ተዘምኗል",
-      "updateSuccessDesc": "የሙቀት መጠን ንባብ ተዘምኗል",
+      "updateSuccess": "የሙቀት መጠን መዝገብ በተሳካ ሁኔታ ተለውጧል",
+      "updateSuccessDesc": "የሙቀት መጠን ንባብ ተለውጧል",
       "deleteSuccess": "የሙቀት መጠን መዝገብ በተሳካ ሁኔታ ተሰርዟል",
       "deleteSuccessDesc": "የሙቀት መጠን ንባብ ተወግዷል",
       "error": "ስህተት",
@@ -778,7 +784,7 @@
       "lightOff": "ብርሃን ዘጋ",
       "totalHours": "ጠቅላላ ሰዓቶች",
       "interrupted": "የተቋረጠ",
-      "recordedBy": "የተመዘገበ በ",
+      "recordedBy": "የመዝጋቢ ስም",
       "actions": "ድርጊቶች",
       "edit": "አርትዕ",
       "delete": "ሰርዝ",
@@ -788,7 +794,7 @@
       "addTitle": "የብርሃን መርሃግብር መዝግብ",
       "addDescription": "ለዶሮዎች አዲስ የብርሃን መርሃግብር ያስገቡ",
       "editTitle": "የብርሃን መዝገብ አርትዕ",
-      "editDescription": "የብርሃን መርሃግብር ዝርዝሮች ያዘምኑ",
+      "editDescription": "የብርሃን መርሃግብር ዝርዝሮች ይለውጡ",
       "selectFlock": "ዶሮዎች ይምረጡ",
       "pickDate": "ቀን ይምረጡ",
       "lightOnTime": "ብርሃን የከፈተበት ሰዓት",
@@ -798,8 +804,8 @@
       "notesPlaceholder": "ተጨማሪ ምልከታዎች...",
       "cancel": "ሰርዝ",
       "add": "መዝገብ ጨምር",
-      "update": "መዝገብ አዘምን",
-      "saving": "በማስቀመጥ ላይ...",
+      "update": "መዝገብ ለውጥ",
+      "saving": "በመመዝገብ ላይ...",
       "deleting": "በመሰረዝ ላይ...",
       "deleteTitle": "የብርሃን መዝገብ ሰርዝ",
       "deleteDescription": "እርግጠኛ ነዎት ይህን የብርሃን መዝገብ መሰረዝ ይፈልጋሉ?",
@@ -811,8 +817,8 @@
       "totalHoursRange": "ጠቅላላ ሰዓቶች በ 0 እና 24 መካከል መሆን አለበት",
       "createSuccess": "የብርሃን መዝገብ በተሳካ ሁኔታ ተፈጥሯል",
       "createSuccessDesc": "የብርሃን መርሃግብር ተመዝግቧል",
-      "updateSuccess": "የብርሃን መዝገብ በተሳካ ሁኔታ ተዘምኗል",
-      "updateSuccessDesc": "የብርሃን መርሃግብር ተዘምኗል",
+      "updateSuccess": "የብርሃን መዝገብ በተሳካ ሁኔታ ተለውጧል",
+      "updateSuccessDesc": "የብርሃን መርሃግብር ተለውጧል",
       "deleteSuccess": "የብርሃን መዝገብ በተሳካ ሁኔታ ተሰርዟል",
       "deleteSuccessDesc": "የብርሃን መርሃግብር ተወግዷል",
       "error": "ስህተት",
@@ -827,9 +833,9 @@
   },
   "feed": {
     "title": "የመኖ ክትትል",
-    "description": "የመኖ እቃ፣ አጠቃቀም፣ እቅድ እና አቅራቢዎችን ያስተዳድሩ",
+    "description": "የመኖ ቋት፣ አጠቃቀም፣ እቅድ እና አቅራቢዎችን ያስተዳድሩ",
     "tabs": {
-      "inventory": "እቃ",
+      "inventory": "ቋት",
       "usage": "አጠቃቀም",
       "planning": "እቅድ",
       "program": "ፕሮግራም",
@@ -857,16 +863,16 @@
       "birr": "ብር"
     },
     "inventory": {
-      "title": "የመኖ እቃ",
-      "description": "የመኖ እቃን ያስተዳድሩ እና የእቃ ደረጃዎችን ይከታተሉ",
+      "title": "የመኖ ቋት",
+      "description": "የመኖ ቋትን ያስተዳድሩ እና የቋት ደረጃዎችን ይከታተሉ",
       "tabs": {
-        "inventory": "የመኖ እቃ",
+        "inventory": "የመኖ ቋት",
         "suppliers": "የመኖ አቅራቢዎች"
       },
-      "addInventory": "እቃ መዝግብ",
-      "editInventory": "እቃ አርትዕ",
-      "deleteInventory": "እቃ ሰርዝ",
-      "viewInventory": "እቃ ተመልከት",
+      "addInventory": "ቋት መዝግብ",
+      "editInventory": "ቋት አርትዕ",
+      "deleteInventory": "ቋት ሰርዝ",
+      "viewInventory": "ቋት ተመልከት",
       "feedType": "የመኖ አይነት",
       "supplier": "አቅራቢ",
       "quantity": "ብዛት",
@@ -878,39 +884,39 @@
       "batchNumber": "የቡድን ቁጥር",
       "storageLocation": "የማከማቻ ቦታ",
       "notes": "ማስታወሻዎች",
-      "noInventory": "ምንም የመኖ እቃ አልተገኘም",
+      "noInventory": "ምንም የመኖ ቋት አልተገኘም",
       "noSupplier": "አቅራቢ የለም",
       "selectSupplier": "አቅራቢ ይምረጡ",
       "selectFeedType": "የመኖ አይነት ይምረጡ",
       "optional": "አማራጭ",
       "required": "ያስፈልጋል",
       "cards": {
-        "totalStock": "ጠቅላላ እቃ",
-        "kgInInventory": "ኪ.ግ በእቃ ውስጥ",
+        "totalStock": "ጠቅላላ ቋት",
+        "kgInInventory": "ኪ.ግ በቋት ውስጥ",
         "totalValue": "ጠቅላላ ዋጋ",
         "worthOfFeed": "የመኖ ዋጋ",
-        "activeItems": "ንቁ እቃዎች",
-        "inventoryRecords": "የእቃ መዝገቦች",
-        "lowStock": "ዝቅተኛ እቃ",
-        "itemsNeedReorder": "እቃዎች እንደገና ማዘዝ ያስፈልጋቸዋል"
+        "activeItems": "ንቁ ቋትዎች",
+        "inventoryRecords": "የቋት መዝገቦች",
+        "lowStock": "ዝቅተኛ ቋት",
+        "itemsNeedReorder": "ቋትዎች እንደገና ማዘዝ ያስፈልጋቸዋል"
       },
       "table": {
-        "title": "የእቃ መዝገቦች",
-        "description": "ሁሉንም የመኖ እቃ መዝገቦች ይመልከቱ እና ያስተዳድሩ",
+        "title": "የቋት መዝገቦች",
+        "description": "ሁሉንም የመኖ ቋት መዝገቦች ይመልከቱ እና ያስተዳድሩ",
         "searchPlaceholder": "በመኖ አይነት ወይም አቅራቢ ይፈልጉ...",
         "filterByFeedType": "የመኖ አይነት",
         "filterBySupplier": "አቅራቢ",
-        "loadingMessage": "የእቃ መዝገቦችን በመጫን ላይ..."
+        "loadingMessage": "የቋት መዝገቦችን በመጫን ላይ..."
       },
       "dialog": {
-        "addTitle": "የመኖ እቃ መዝግብ",
-        "addDescription": "አዲስ የመኖ እቃ መዝገብ ወደ ስርዓትዎ ያክሉ።",
-        "editTitle": "የመኖ እቃ አርትዕ",
-        "editDescription": "የመኖ እቃ መዝገብ ዝርዝሮች ያዘምኑ።",
-        "deleteTitle": "የእቃ መዝገብ ሰርዝ",
-        "deleteDescription": "እርግጠኛ ነዎት ይህን የእቃ መዝገብ መሰረዝ ይፈልጋሉ? ይህ ድርጊት መመለስ አይቻልም።",
-        "viewTitle": "የእቃ ዝርዝሮች",
-        "viewDescription": "ስለዚህ የእቃ መዝገብ ዝርዝር መረጃ ይመልከቱ።"
+        "addTitle": "የመኖ ቋት መዝግብ",
+        "addDescription": "አዲስ የመኖ ቋት መዝገብ ወደ ስርዓትዎ ያክሉ።",
+        "editTitle": "የመኖ ቋት አርትዕ",
+        "editDescription": "የመኖ ቋት መዝገብ ዝርዝሮች ይለውጡ።",
+        "deleteTitle": "የቋት መዝገብ ሰርዝ",
+        "deleteDescription": "እርግጠኛ ነዎት ይህን የቋት መዝገብ መሰረዝ ይፈልጋሉ? ይህ ድርጊት መመለስ አይቻልም።",
+        "viewTitle": "የቋት ዝርዝሮች",
+        "viewDescription": "ስለዚህ የቋት መዝገብ ዝርዝር መረጃ ይመልከቱ።"
       },
       "form": {
         "feedTypeLabel": "የመኖ አይነት",
@@ -931,8 +937,8 @@
         "storageLocationPlaceholder": "የማከማቻ ቦታ ያስገቡ",
         "notesLabel": "ማስታወሻዎች",
         "notesPlaceholder": "ተጨማሪ ማስታወሻዎች ያስገቡ",
-        "submitButton": "እቃ መዝግብ",
-        "updateButton": "እቃ አዘምን",
+        "submitButton": "ቋት መዝግብ",
+        "updateButton": "ቋት ለውጥ",
         "cancelButton": "ሰርዝ",
         "deleteButton": "ሰርዝ",
         "closeButton": "ዝጋ"
@@ -946,12 +952,12 @@
         "purchaseDateRequired": "የግዢ ቀን ያስፈልጋል"
       },
       "toasts": {
-        "created": "የመኖ እቃ መዝገብ በተሳካ ሁኔታ ተፈጥሯል",
-        "updated": "የመኖ እቃ መዝገብ በተሳካ ሁኔታ ተሻሽሏል",
-        "deleted": "የመኖ እቃ መዝገብ በተሳካ ሁኔታ ተሰርዟል",
-        "createError": "የመኖ እቃ መዝገብ መፍጠር አልተሳካም",
-        "updateError": "የመኖ እቃ መዝገብ ማዘመን አልተሳካም",
-        "deleteError": "የመኖ እቃ መዝገብ መሰረዝ አልተሳካም",
+        "created": "የመኖ ቋት መዝገብ በተሳካ ሁኔታ ተፈጥሯል",
+        "updated": "የመኖ ቋት መዝገብ በተሳካ ሁኔታ ተሻሽሏል",
+        "deleted": "የመኖ ቋት መዝገብ በተሳካ ሁኔታ ተሰርዟል",
+        "createError": "የመኖ ቋት መዝገብ መፍጠር አልተሳካም",
+        "updateError": "የመኖ ቋት መዝገብ መለወጥ አልተሳካም",
+        "deleteError": "የመኖ ቋት መዝገብ መሰረዝ አልተሳካም",
         "unexpectedError": "ያልተጠበቀ ስህተት ተከስቷል"
       },
       "columns": {
@@ -977,11 +983,12 @@
       "noUsage": "ምንም የመኖ አጠቃቀም መዝገቦች አልተገኙም",
       "dialog": {
         "addTitle": "የመኖ አጠቃቀም መዝግብ",
-        "addDescription": "ለበጎ አዲስ የመኖ አጠቃቀም መዝግብ።",
+        "addDescription": "አዲስ የመኖ አጠቃቀም መዝግብ።",
         "editTitle": "የመኖ አጠቃቀም አርትዕ",
-        "editDescription": "የመኖ አጠቃቀም መዝገብ ዝርዝሮች ያዘምኑ።",
+        "editDescription": "የመኖ አጠቃቀም መዝገብ ዝርዝሮች ይለውጡ።",
         "deleteTitle": "የአጠቃቀም መዝገብ ሰርዝ",
-        "deleteDescription": "እርግጠኛ ነዎት ይህን የአጠቃቀም መዝገብ መሰረዝ ይፈልጋሉ? ይህ ድርጊት መመለስ አይቻልም።"
+        "deleteDescription": "እርግጠኛ ነዎት ይህን የአጠቃቀም መዝገብ መሰረዝ ይፈልጋሉ? ይህ ድርጊት መመለስ አይቻልም።",
+        "deleteButton": "መዝገብ ሰርዝ"
       },
       "form": {
         "flockLabel": "ዶሮዎች",
@@ -993,11 +1000,11 @@
         "notesLabel": "ማስታወሻዎች",
         "notesPlaceholder": "ስለዚህ መመገብ ተጨማሪ ማስታወሻዎች...",
         "submitButton": "አጠቃቀም መዝግብ",
-        "updateButton": "አጠቃቀም አዘምን",
+        "updateButton": "አጠቃቀም ለውጥ",
         "cancelButton": "ሰርዝ",
         "closeButton": "ዝጋ",
         "useRecommendation": "ምክር ተጠቀም",
-        "birds": "ወፎች"
+        "birds": "ዶሮዎች"
       },
       "recommendation": {
         "title": "የመኖ ፕሮግራም ምክር",
@@ -1032,7 +1039,7 @@
         "date": "ቀን",
         "amountUsed": "የተጠቀመበት መጠን",
         "unit": "አሀድ",
-        "recordedBy": "የተመዘገበ በ",
+        "recordedBy": "የመዝጋቢ ስም",
         "notes": "ማስታወሻዎች",
         "actions": "ድርጊቶች"
       },
@@ -1040,18 +1047,18 @@
         "todayUsage": "የዛሬ አጠቃቀም",
         "weekUsage": "የሳምንቱ አጠቃቀም",
         "monthUsage": "የወሩ አጠቃቀም",
-        "totalStock": "ጠቅላላ እቃ",
+        "totalStock": "ጠቅላላ ቋት",
         "totalUsage": "ጠቅላላ አጠቃቀም",
         "activeFlocks": "ንቁ ዶሮዎች",
         "totalRecords": "ጠቅላላ መዝገቦች",
         "kgUsed": "ኪ.ግ ዛሬ ጥቅም ላይ ውሏል",
         "kgUsedWeek": "ኪ.ግ በዚህ ሳምንት ጥቅም ላይ ውሏል",
         "kgUsedMonth": "ኪ.ግ በዚህ ወር ጥቅም ላይ ውሏል",
-        "kgInStock": "ኪ.ግ በእቃ ውስጥ",
+        "kgInStock": "ኪ.ግ በቋት ውስጥ",
         "allTimeFeedConsumption": "የሁሉም ጊዜ የመኖ ፍጆታ",
-        "flocksWithUsageRecords": "የአጠቃቀም መዝገቦች ያላቸው ዶሮዎች",
+        "flocksWithUsageRecords": "የመኖ አጠቃቀም መዝገቦች ያላቸው ዶሮዎች",
         "feedConsumedToday": "ዛሬ የተጠቀመ መኖ",
-        "usageRecordsTracked": "የተከታተሉ የአጠቃቀም መዝገቦች"
+        "usageRecordsTracked": "የተመዘገቡ የአጠቃቀም መዝገቦች"
       },
       "table": {
         "title": "የመኖ አጠቃቀም ክትትል",
@@ -1060,10 +1067,10 @@
       },
       "toasts": {
         "created": "የመኖ አጠቃቀም መዝገብ በተሳካ ሁኔታ ተፈጥሯል!",
-        "updated": "የመኖ አጠቃቀም መዝገብ በተሳካ ሁኔታ ተዘምኗል!",
+        "updated": "የመኖ አጠቃቀም መዝገብ በተሳካ ሁኔታ ተለውጧል!",
         "deleted": "የመኖ አጠቃቀም መዝገብ በተሳካ ሁኔታ ተሰርዟል!",
         "createError": "የመኖ አጠቃቀም መዝገብ መፍጠር አልተሳካም",
-        "updateError": "የመኖ አጠቃቀም መዝገብ ማዘመን አልተሳካም",
+        "updateError": "የመኖ አጠቃቀም መዝገብ መለወጥ አልተሳካም",
         "deleteError": "የመኖ አጠቃቀም መዝገብ መሰረዝ አልተሳካም",
         "unexpectedError": "ያልተጠበቀ ስህተት ተከስቷል"
       }
@@ -1080,8 +1087,8 @@
         "consumption": "ፍጆታ",
         "liters": "ሊ",
         "litersPerBird": "ሊ/ወፍ",
-        "birds": "ወፎች",
-        "recordedBy": "የተመዘገበ በ"
+        "birds": "ዶሮዎች",
+        "recordedBy": "የመዝጋቢ ስም"
       },
       "stats": {
         "todayConsumption": "የዛሬ ፍጆታ",
@@ -1098,7 +1105,7 @@
         "description": "ከተሳተፉ መዝገቦች የውሃ ፍጆታ አጠቃላይ እይታ",
         "totalConsumption": "ጠቅላላ ፍጆታ",
         "avgPerBird": "አማካይ በወፍ",
-        "totalBirds": "ጠቅላላ ወፎች",
+        "totalBirds": "ጠቅላላ ዶሮዎች",
         "recordCount": "ጠቅላላ መዝገቦች",
         "records": "መዝገቦች",
         "liters": "ሊትሮች",
@@ -1116,11 +1123,11 @@
         "addTitle": "የውሃ ፍጆታ መዝግብ",
         "addDescription": "ለዶሮዎች የዕለት ተዕለት የውሃ ፍጆታ ይመዝግቡ።",
         "editTitle": "የውሃ መዝገብ አርትዕ",
-        "editDescription": "የውሃ ፍጆታ መዝገብ ዝርዝሮች ያዘምኑ።",
+        "editDescription": "የውሃ ፍጆታ መዝገብ ዝርዝሮች ይለውጡ።",
         "deleteTitle": "የውሃ መዝገብ ሰርዝ",
         "deleteDescription": "እርግጠኛ ነዎት ይህን የውሃ ፍጆታ መዝገብ መሰረዝ ይፈልጋሉ?",
         "addButton": "ውሃ መዝግብ",
-        "updateButton": "መዝገብ አዘምን",
+        "updateButton": "መዝገብ ለውጥ",
         "deleteButton": "ሰርዝ",
         "cancelButton": "ሰርዝ"
       },
@@ -1137,7 +1144,7 @@
         "totalConsumption": "ጠቅላላ",
         "perBird": "በወፍ",
         "flockSize": "የዶሮ መጠን",
-        "birds": "ወፎች",
+        "birds": "ዶሮዎች",
         "liters": "ሊትሮች",
         "litersPerBird": "ሊ/ወፍ",
         "noFlocks": "ምንም ዶሮዎች የሉም"
@@ -1147,10 +1154,10 @@
       },
       "toasts": {
         "created": "የውሃ ፍጆታ መዝገብ በተሳካ ሁኔታ ተፈጥሯል!",
-        "updated": "የውሃ ፍጆታ መዝገብ በተሳካ ሁኔታ ተዘምኗል!",
+        "updated": "የውሃ ፍጆታ መዝገብ በተሳካ ሁኔታ ተለውጧል!",
         "deleted": "የውሃ ፍጆታ መዝገብ በተሳካ ሁኔታ ተሰርዟል!",
         "createError": "የውሃ ፍጆታ መዝገብ መፍጠር አልተሳካም",
-        "updateError": "የውሃ ፍጆታ መዝገብ ማዘመን አልተሳካም",
+        "updateError": "የውሃ ፍጆታ መዝገብ መለወጥ አልተሳካም",
         "deleteError": "የውሃ ፍጆታ መዝገብ መሰረዝ አልተሳካም",
         "loadError": "የውሃ ፍጆታ መረጃ መጫን አልተሳካም"
       }
@@ -1197,16 +1204,16 @@
       "cards": {
         "dailyRequirements": "የዕለታዊ ፍላጎቶች",
         "weeklyRequirements": "የሳምንታዊ ፍላጎቶች",
-        "availableStock": "የሚገኝ እቃ",
+        "availableStock": "በአቅርቦት ውስጥ የቀረ መኖ",
         "coverage": "ሽፋን",
-        "stockAlerts": "የእቃ ማስጠንቀቂያዎች",
+        "stockAlerts": "የቋት ማስጠንቀቂያዎች",
         "feedTypes": "የመኖ አይነቶች",
-        "activeItems": "ንቁ እቃዎች",
+        "activeItems": "ንቁ ቋትዎች",
         "avg": "አማካይ",
         "kgPerDay": "ኪ.ግ/ቀን",
-        "stockVsRequirements": "እቃ እና ፍላጎት",
+        "stockVsRequirements": "ቋት እና ፍላጎት",
         "critical": "ወሳኝ",
-        "lowStock": "ዝቅተኛ እቃ"
+        "lowStock": "ዝቅተኛ ቋት"
       },
       "requirements": {
         "title": "የመኖ ፍላጎቶች",
@@ -1222,7 +1229,7 @@
       },
       "status": {
         "sufficient": "በቂ",
-        "lowStock": "ዝቅተኛ እቃ",
+        "lowStock": "ዝቅተኛ ቋት",
         "critical": "ወሳኝ",
         "insufficient": "በቂ ያልሆነ",
         "missing": "የለም"
@@ -1233,7 +1240,7 @@
         "flocks": "ዶሮዎች",
         "age": "እድሜ",
         "days": "ቀናት",
-        "birds": "ወፎች",
+        "birds": "ዶሮዎች",
         "total": "ጠቅላላ",
         "requiredToday": "ዛሬ ያስፈልጋል",
         "requiredThisWeek": "በዚህ ሳምንት ያስፈልጋል",
@@ -1275,7 +1282,7 @@
         "addTitle": "የመኖ ፕሮግራም መዝግብ",
         "addDescription": "አዲስ የመኖ መርሃ ግብር ወደ ፕሮግራምዎ ያክሉ።",
         "editTitle": "የመኖ ፕሮግራም አርትዕ",
-        "editDescription": "የመኖ መርሃ ግብር ዝርዝሮች ያዘምኑ።",
+        "editDescription": "የመኖ መርሃ ግብር ዝርዝሮች ይለውጡ።",
         "deleteTitle": "የፕሮግራም ግቤት ሰርዝ",
         "deleteDescription": "እርግጠኛ ነዎት ይህን የፕሮግራም ግቤት መሰረዝ ይፈልጋሉ? ይህ ድርጊት መመለስ አይቻልም።",
         "viewTitle": "የፕሮግራም ዝርዝሮች",
@@ -1295,7 +1302,7 @@
         "notesLabel": "ማስታወሻዎች",
         "notesPlaceholder": "ተጨማሪ ማስታወሻዎች ያስገቡ",
         "submitButton": "ፕሮግራም መዝግብ",
-        "updateButton": "ፕሮግራም አዘምን",
+        "updateButton": "ፕሮግራም ለውጥ",
         "cancelButton": "ሰርዝ",
         "deleteButton": "ሰርዝ",
         "closeButton": "ዝጋ"
@@ -1314,7 +1321,7 @@
         "updated": "የመኖ ፕሮግራም ግቤት በተሳካ ሁኔታ ተሻሽሏል",
         "deleted": "የመኖ ፕሮግራም ግቤት በተሳካ ሁኔታ ተሰርዟል",
         "createError": "የመኖ ፕሮግራም ግቤት መፍጠር አልተሳካም",
-        "updateError": "የመኖ ፕሮግራም ግቤት ማዘመን አልተሳካም",
+        "updateError": "የመኖ ፕሮግራም ግቤት መለወጥ አልተሳካም",
         "deleteError": "የመኖ ፕሮግራም ግቤት መሰረዝ አልተሳካም",
         "unexpectedError": "ያልተጠበቀ ስህተት ተከስቷል"
       },
@@ -1360,7 +1367,7 @@
         "addTitle": "የመኖ አቅራቢ መዝግብ",
         "addDescription": "አዲስ አቅራቢ ወደ ማውጫዎ ያክሉ።",
         "editTitle": "አቅራቢ አርትዕ",
-        "editDescription": "የአቅራቢ ዕውቂያ ዝርዝሮች ያዘምኑ።",
+        "editDescription": "የአቅራቢ ዕውቂያ ዝርዝሮች ይለውጡ።",
         "deleteTitle": "አቅራቢ ሰርዝ",
         "deleteDescription": "እርግጠኛ ነዎት ይህን አቅራቢ መሰረዝ ይፈልጋሉ? ይህ ድርጊት መመለስ አይቻልም።",
         "viewTitle": "የአቅራቢ ዝርዝሮች",
@@ -1380,7 +1387,7 @@
         "notesLabel": "ማስታወሻዎች",
         "notesPlaceholder": "ተጨማሪ ማስታወሻዎች ያስገቡ",
         "submitButton": "አቅራቢ መዝግብ",
-        "updateButton": "አቅራቢ አዘምን",
+        "updateButton": "አቅራቢ ለውጥ",
         "cancelButton": "ሰርዝ",
         "deleteButton": "ሰርዝ",
         "closeButton": "ዝጋ"
@@ -1395,7 +1402,7 @@
         "updated": "አቅራቢ በተሳካ ሁኔታ ተሻሽሏል",
         "deleted": "አቅራቢ በተሳካ ሁኔታ ተሰርዟል",
         "createError": "አቅራቢ መፍጠር አልተሳካም",
-        "updateError": "አቅራቢ ማዘመን አልተሳካም",
+        "updateError": "አቅራቢ መለወጥ አልተሳካም",
         "deleteError": "አቅራቢ መሰረዝ አልተሳካም",
         "unexpectedError": "ያልተጠበቀ ስህተት ተከስቷል"
       },
@@ -1428,9 +1435,9 @@
       "eggsCollectedToday": "ዛሬ የተሰበሰቡ እንቁላሎች",
       "eggsCollectedWeek": "በዚህ ሳምንት የተሰበሰቡ እንቁላሎች",
       "eggsCollectedMonth": "በዚህ ወር የተሰበሰቡ እንቁላሎች",
-      "birdsAvailableToday": "ዛሬ ያሉ ወፎች",
-      "birdsAvailableWeek": "በዚህ ሳምንት ያሉ ወፎች",
-      "birdsAvailableMonth": "በዚህ ወር ያሉ ወፎች",
+      "birdsAvailableToday": "ዛሬ ያሉ ዶሮዎች",
+      "birdsAvailableWeek": "በዚህ ሳምንት ያሉ ዶሮዎች",
+      "birdsAvailableMonth": "በዚህ ወር ያሉ ዶሮዎች",
       "bagsProducedToday": "ዛሬ የተመረቱ ከረጢቶች",
       "bagsProducedWeek": "በዚህ ሳምንት የተመረቱ ከረጢቶች",
       "bagsProducedMonth": "በዚህ ወር የተመረቱ ከረጢቶች",
@@ -1456,7 +1463,7 @@
       "notes": "ማስታወሻዎች",
       "actions": "ድርጊቶች",
       "eggs": "እንቁላሎች",
-      "birds": "ወፎች",
+      "birds": "ዶሮዎች",
       "bags": "ከረጢቶች"
     },
     "actions": {
@@ -1486,8 +1493,8 @@
         "eggTitle": "የእንቁላል ምርትን አርትዕ",
         "broilerTitle": "የብሮይለር ምርትን አርትዕ",
         "manureTitle": "የእበት ምርትን አርትዕ",
-        "description": "ከዚህ በታች ያለውን የምርት መዝገብ ዝርዝር ያዘምኑ።",
-        "submit": "አዘምን"
+        "description": "ከዚህ በታች ያለውን የምርት መዝገብ ዝርዝር ይለውጡ።",
+        "submit": "ለውጥ"
       }
     },
     "form": {
@@ -1506,7 +1513,7 @@
       "required": "*",
       "loadingFlocks": "ዶሮዎች በመጫን ላይ...",
       "noFlocks": "ምንም ዶሮዎች የሉም",
-      "birds": "ወፎች",
+      "birds": "ዶሮዎች",
       "validation": {
         "selectFlock": "እባክዎ ዶሮዎች ይምረጡ",
         "minZero": "{field} 0 ወይም ከዚያ በላይ መሆን አለበት"
@@ -1514,7 +1521,7 @@
     },
     "toasts": {
       "created": "{type} የምርት መዝገብ በተሳካ ሁኔታ ተፈጥሯል",
-      "updated": "{type} የምርት መዝገብ በተሳካ ሁኔታ ተዘምኗል",
+      "updated": "{type} የምርት መዝገብ በተሳካ ሁኔታ ተለውጧል",
       "createFailed": "የምርት መዝገብ {action} አልተሳካም",
       "error": "የምርት መዝገብን በመፍጠር ላይ ስህተት ተከስቷል"
     },
@@ -1525,7 +1532,7 @@
       "gradeBreakdown": "የደረጃ ክፍፍል",
       "quantity": "ብዛት",
       "eggs": "እንቁላሎች",
-      "birds": "ወፎች",
+      "birds": "ዶሮዎች",
       "bags": "ከረጢቶች",
       "units": "ክፍሎች",
       "notes": "ማስታወሻዎች"
@@ -1540,8 +1547,8 @@
       "normal": "መደበኛ",
       "cracked": "የተሰነጠቀ",
       "spoiled": "የተበላሸ",
-      "totalBirds": "ጠቅላላ ወፎች",
-      "birdsInFilter": "በተጣራ መረጃ ውስጥ ያሉ ወፎች",
+      "totalBirds": "ጠቅላላ ዶሮዎች",
+      "birdsInFilter": "በተጣራ መረጃ ውስጥ ያሉ ዶሮዎች",
       "totalQuantity": "ጠቅላላ ብዛት",
       "bagsInFilter": "በተጣራ መረጃ ውስጥ ያሉ ከረጢቶች"
     },
@@ -1605,7 +1612,7 @@
       "error": "ስህተት",
       "success": "ተሳክቷል",
       "cancel": "ሰርዝ",
-      "save": "አስቀምጥ",
+      "save": "መዝግብ",
       "submit": "ያስገቡ",
       "close": "ዝጋ",
       "confirm": "አረጋግጥ",
@@ -1660,8 +1667,8 @@
         "addDescription": "ለእርሻዎ አዲስ ወጪ ያስገቡ",
         "addButton": "ወጪ ጨምር",
         "editTitle": "ወጪ አርትዕ",
-        "editDescription": "የወጪውን ዝርዝር ያዘምኑ",
-        "updateButton": "ወጪ አዘምን",
+        "editDescription": "የወጪውን ዝርዝር ይለውጡ",
+        "updateButton": "ወጪ ለውጥ",
         "cancelButton": "ሰርዝ"
       },
       "dialogs": {
@@ -1671,7 +1678,7 @@
         },
         "edit": {
           "title": "ወጪን አርትዕ",
-          "description": "የወጪ ዝርዝሮችን ያዘምኑ።"
+          "description": "የወጪ ዝርዝሮችን ይለውጡ።"
         },
         "view": {
           "title": "የወጪ ዝርዝሮች",
@@ -1680,7 +1687,7 @@
         },
         "delete": {
           "title": "ወጪን ሰርዝ",
-          "description": "እርግጠኛ ነዎት ይህን የወጪ መዝገብ መሰረዝ ይፈልጋሉ? ይህ እርምጃ መልሰው ማስቀመጥ አይቻልም።"
+          "description": "እርግጠኛ ነዎት ይህን የወጪ መዝገብ መሰረዝ ይፈልጋሉ? ይህ እርምጃ መልሰው መመዝገብ አይቻልም።"
         }
       },
       "form": {
@@ -1700,8 +1707,8 @@
       "toasts": {
         "createSuccess": "ወጪ በተሳካ ሁኔታ ተፈጥሯል",
         "createError": "ወጪ መፍጠር አልተሳካም",
-        "updateSuccess": "ወጪ በተሳካ ሁኔታ ተዘምኗል",
-        "updateError": "ወጪን ማዘመን አልተሳካም",
+        "updateSuccess": "ወጪ በተሳካ ሁኔታ ተለውጧል",
+        "updateError": "ወጪን መለወጥ አልተሳካም",
         "deleteSuccess": "ወጪ በተሳካ ሁኔታ ተሰርዟል",
         "deleteError": "ወጪን መሰረዝ አልተሳካም",
         "fetchError": "ወጪዎችን ማምጣት አልተሳካም"
@@ -1783,8 +1790,8 @@
         "addDescription": "ለእርሻዎ አዲስ ገቢ ያስገቡ",
         "addButton": "ገቢ ጨምር",
         "editTitle": "ገቢ አርትዕ",
-        "editDescription": "የገቢውን ዝርዝር ያዘምኑ",
-        "updateButton": "ገቢ አዘምን",
+        "editDescription": "የገቢውን ዝርዝር ይለውጡ",
+        "updateButton": "ገቢ ለውጥ",
         "cancelButton": "ሰርዝ"
       },
       "dialogs": {
@@ -1794,7 +1801,7 @@
         },
         "edit": {
           "title": "ገቢን አርትዕ",
-          "description": "የገቢ ዝርዝሮችን ያዘምኑ።"
+          "description": "የገቢ ዝርዝሮችን ይለውጡ።"
         },
         "view": {
           "title": "የገቢ ዝርዝሮች",
@@ -1803,7 +1810,7 @@
         },
         "delete": {
           "title": "ገቢን ሰርዝ",
-          "description": "እርግጠኛ ነዎት ይህን የገቢ መዝገብ መሰረዝ ይፈልጋሉ? ይህ እርምጃ መልሰው ማስቀመጥ አይቻልም።"
+          "description": "እርግጠኛ ነዎት ይህን የገቢ መዝገብ መሰረዝ ይፈልጋሉ? ይህ እርምጃ መልሰው መመዝገብ አይቻልም።"
         }
       },
       "form": {
@@ -1829,8 +1836,8 @@
       "toasts": {
         "createSuccess": "ገቢ በተሳካ ሁኔታ ተፈጥሯል",
         "createError": "ገቢ መፍጠር አልተሳካም",
-        "updateSuccess": "ገቢ በተሳካ ሁኔታ ተዘምኗል",
-        "updateError": "ገቢን ማዘመን አልተሳካም",
+        "updateSuccess": "ገቢ በተሳካ ሁኔታ ተለውጧል",
+        "updateError": "ገቢን መለወጥ አልተሳካም",
         "deleteSuccess": "ገቢ በተሳካ ሁኔታ ተሰርዟል",
         "deleteError": "ገቢን መሰረዝ አልተሳካም",
         "fetchError": "ገቢን ማምጣት አልተሳካም"
@@ -1900,22 +1907,22 @@
     "flock": {
       "totalFlocks": "ጠቅላላ ዶሮዎች",
       "activeFlocksCount": "ንቁ ዶሮዎች",
-      "totalBirds": "ጠቅላላ ወፎች",
-      "birdsInActiveFlock": "በንቁ ዶሮዎች ውስጥ ያሉ ወፎች",
+      "totalBirds": "ጠቅላላ ዶሮዎች",
+      "birdsInActiveFlock": "በንቁ ዶሮዎች ውስጥ ያሉ ዶሮዎች",
       "mortalityRate": "የሞት መጠን",
       "averageAcrossFlocks": "በዶሮዎች መካከል አማካይ",
       "healthyFlocks": "ጤናማ ዶሮዎች",
       "flocksInGoodHealth": "በጥሩ ጤና ያሉ ዶሮዎች",
       "flocksByBreed": "የዶሮዎች ስርጭት በዝርያ",
-      "flocksByBreedDesc": "በዝርያ አይነት የወፎች ቁጥር እና መቶኛ",
-      "birdsPerFlockTrend": "በሰዓት በዶሮዎች ውስጥ ያሉ ወፎች",
+      "flocksByBreedDesc": "በዝርያ አይነት የዶሮዎች ቁጥር እና መቶኛ",
+      "birdsPerFlockTrend": "በሰዓት በዶሮዎች ውስጥ ያሉ ዶሮዎች",
       "birdsPerFlockTrendDesc": "የወፍ ህዝብ በዶሮዎች ውስጥ እንዴት እንደሚቀየር ይከታተሉ",
       "healthStatusDistribution": "የጤና ሁኔታ ስርጭት",
       "healthStatusDistributionDesc": "የሁሉም ዶሮዎች የአሁኑ የጤና ሁኔታ",
       "loading": "የዶሮዎች መረጃ በመጫን ላይ...",
       "noFlocks": "ምንም የዶሮዎች መረጃ የለም",
       "flocks": "ዶሮዎች",
-      "birds": "ወፎች",
+      "birds": "ዶሮዎች",
       "of": "ከ"
     },
     "production": {
@@ -1980,19 +1987,26 @@
   },
   "staff": {
     "title": "የሰራተኞች ክትትል",
-    "description": "ሰራተኞችዎን፣ መገኘትን፣ ፈቃድን እና ደሞዝን ያስተዳድሩ",
+    "description": "ሰራተኞችዎን፣ ቀሪ ዝርዝርን፣ ፈቃድን እና ደሞዝን ያስተዳድሩ",
     "addStaff": "ሰራተኛ መዝግብ",
-    "editStaff": "ሰራተኛ አርትዕ",
+    "editStaff": "የሰራተኛ መረጃ ይለውጡ",
     "deleteStaff": "ሰራተኛ ሰርዝ",
     "staffDetails": "የሰራተኛ ዝርዝሮች",
-    "name": "ስም",
+    "name": "የሰራተኞች ዝርዝር",
     "role": "ሚና",
     "hireDate": "የተቀጠረበት ቀን",
     "salary": "ደሞዝ",
     "directory": {
-      "title": "የሰራተኞች ማውጫ",
+      "title": "የሰራተኞች ዝርዝር",
       "description": "ሁሉንም ሰራተኞች ይመልከቱ እና ያስተዳድሩ",
       "manageDescription": "ሰራተኞችዎን እና መረጃቸውን ያስተዳድሩ።",
+      "backToStaff": "ወደ ሰራተኞች ተመለስ",
+      "staffDetails": "የሰራተኛ ዝርዝሮች",
+      "staffDetailsDescription": "የሰራተኛ መረጃ ይመልከቱ እና ያርትዑ።",
+      "edit": "አርትዕ",
+      "cancel": "ሰርዝ",
+      "save": "መዝግብ",
+      "saving": "በማስቀመጥ ላይ...",
       "tabs": {
         "staffMembers": "ሰራተኞች",
         "invitesSent": "የተላኩ ግብዣዎች"
@@ -2000,7 +2014,13 @@
       "filters": {
         "role": "ሚና",
         "status": "ሁኔታ",
-        "reset": "ዳግም አስጀምር"
+        "reset": "ዳግም አስጀምር",
+        "searchPlaceholder": "ሰራተኞችን ይፈልጉ..."
+      },
+      "invites": {
+        "filters": {
+          "searchPlaceholder": "ግብዣዎችን ይፈልጉ..."
+        }
       },
       "filterOptions": {
         "active": "ንቁ",
@@ -2030,7 +2050,7 @@
       "buttons": {
         "addStaff": "ሰራተኛ መዝግብ",
         "inviteStaff": "ሰራተኛ ጋብዝ",
-        "editStaff": "ሰራተኛ አርትዕ",
+        "editStaff": "የሰራተኛ መረጃ ይለውጡ",
         "close": "ዝጋ"
       },
       "viewDialog": {
@@ -2063,9 +2083,9 @@
       "toasts": {
         "dataRefreshed": "መረጃ በተሳካ ሁኔታ ታድሷል!",
         "dataRefreshedDescription": "ሰራተኞች እና ግብዣዎች ተዘምነዋል",
-        "staffUpdated": "ሰራተኛ በተሳካ ሁኔታ ተዘምኗል!",
-        "staffUpdatedDescription": "{name} ተዘምኗል",
-        "staffUpdateFailed": "ሰራተኛን ማዘመን አልተሳካም",
+        "staffUpdated": "ሰራተኛ በተሳካ ሁኔታ ተለውጧል!",
+        "staffUpdatedDescription": "{name} ተለውጧል",
+        "staffUpdateFailed": "ሰራተኛን መለወጥ አልተሳካም",
         "staffDeleted": "ሰራተኛ በተሳካ ሁኔታ ተሰርዟል!",
         "staffDeletedDescription": "{name} ከስርዓቱ ተወግዷል",
         "staffDeleteFailed": "ሰራተኛን መሰረዝ አልተሳካም",
@@ -2113,9 +2133,9 @@
           "phonePlaceholder": "+251912345678",
           "cancel": "ሰርዝ",
           "submit": "ሰራተኛ መዝግብ",
-          "adding": "በማከል ላይ...",
+          "adding": "በመመዝገብ ላይ...",
           "successMessage": "ሰራተኛ በተሳካ ሁኔታ ታክሏል!",
-          "errorMessage": "ሰራተኛ ማከል አልተሳካም",
+          "errorMessage": "ሰራተኛ መመዝገብ አልተሳካም",
           "imageTypeError": "እባክዎ ትክክለኛ የምስል ፋይል ይምረጡ",
           "imageSizeError": "የምስል መጠን ከ2MB ያነሰ መሆን አለበት",
           "imageProcessError": "ምስሉን ማስኬድ አልተሳካም",
@@ -2126,8 +2146,8 @@
           }
         },
         "edit": {
-          "title": "ሰራተኛ አርትዕ",
-          "description": "የሰራተኛ መረጃ እና ቅንብሮችን ያዘምኑ።",
+          "title": "የሰራተኛ መረጃ ይለውጡ",
+          "description": "የሰራተኛ መረጃ እና ቅንብሮችን ይለውጡ።",
           "uploadPicture": "የመገለጫ ምስል ይስቀሉ",
           "removePicture": "ምስል አስወግድ",
           "imageHelp": "JPG, PNG ወይም GIF። ከፍተኛ መጠን 2MB።",
@@ -2141,9 +2161,9 @@
           "emailPlaceholder": "example@email.com",
           "phonePlaceholder": "+251912345678",
           "cancel": "ሰርዝ",
-          "submit": "ለውጦችን አስቀምጥ",
-          "saving": "በማስቀመጥ ላይ...",
-          "errorMessage": "ሰራተኛ ማዘመን አልተሳካም",
+          "submit": "ለውጦችን መዝግብ",
+          "saving": "በመመዝገብ ላይ...",
+          "errorMessage": "ሰራተኛ መለወጥ አልተሳካም",
           "imageTypeError": "እባክዎ ትክክለኛ የምስል ፋይል ይምረጡ",
           "imageSizeError": "የምስል መጠን ከ2MB ያነሰ መሆን አለበት",
           "imageProcessError": "ምስሉን ማስኬድ አልተሳካም",
@@ -2195,8 +2215,8 @@
       }
     },
     "attendance": {
-      "title": "መገኘት",
-      "loadingStaff": "የሰራተኞች መገኘት በመጫን ላይ...",
+      "title": "ቀሪ ዝርዝር",
+      "loadingStaff": "የሰራተኞች ቀሪ ዝርዝር በመጫን ላይ...",
       "noStaff": "ምንም ሰራተኞች አልተገኙም።",
       "checkIn": "ግባ",
       "checkOut": "ውጣ",
@@ -2208,13 +2228,13 @@
       "checkedOutSuccess": "በተሳካ ሁኔታ ወጥቷል",
       "checkInFailed": "መግባት አልተሳካም",
       "checkOutFailed": "መውጣት አልተሳካም",
-      "pageTitle": "የመገኘት ክትትል",
-      "pageDescription": "የሰራተኞች መገኘትን ይከታተሉ እና ለሰራተኞች መግባት/መውጣትን ያስተዳድሩ።",
+      "pageTitle": "የቀሪ ዝርዝር ክትትል",
+      "pageDescription": "የሰራተኞች ቀሪ ዝርዝርን ይከታተሉ እና ለሰራተኞች መግባት/መውጣትን ያስተዳድሩ።",
       "stats": {
         "totalWorkers": "ጠቅላላ ሰራተኞች",
         "activeWorkerStaff": "ንቁ የሰራተኛ ሰራተኞች",
         "presentToday": "ዛሬ ተገኝቷል",
-        "attendanceRate": "የመገኘት መጠን",
+        "attendanceRate": "የቀሪ ዝርዝር መጠን",
         "absentToday": "ዛሬ ቀርቷል",
         "staffNotPresent": "ያልተገኙ ሰራተኞች",
         "avgHours": "አማካይ ሰዓቶች",
@@ -2222,13 +2242,13 @@
       },
       "tabs": {
         "checkInOut": "መግባት/መውጣት",
-        "records": "የመገኘት መዝገቦች",
+        "records": "የቀሪ ዝርዝር መዝገቦች",
         "reports": "ሪፖርቶች"
       },
       "checkInOutTab": {
         "title": "የሰራተኛ መግባት/መውጣት",
-        "description": "ለሁሉም ሰራተኞች የዕለት ተዕለት መገኘትን ያስተዳድሩ።",
-        "loading": "የመገኘት መረጃ በመጫን ላይ...",
+        "description": "ለሁሉም ሰራተኞች የዕለት ተዕለት ቀሪ ዝርዝርን ያስተዳድሩ።",
+        "loading": "የቀሪ ዝርዝር መረጃ በመጫን ላይ...",
         "columns": {
           "staffName": "የሰራተኛ ስም",
           "checkInTime": "የመግቢያ ሰዓት",
@@ -2255,15 +2275,15 @@
       },
       "recordsTab": {
         "filtersTitle": "ማጣሪያዎች",
-        "filtersDescription": "የመገኘት መዝገቦችን በሰራተኛ፣ በሁኔታ ወይም በቀን ያጣሩ።",
+        "filtersDescription": "የቀሪ ዝርዝር መዝገቦችን በሰራተኛ፣ በሁኔታ ወይም በቀን ያጣሩ።",
         "searchPlaceholder": "በሰራተኛ ስም ፈልግ...",
         "filterByStatus": "በሁኔታ አጣራ",
         "allStatus": "ሁሉም ሁኔታዎች",
         "pickDate": "ቀን ምረጥ",
         "clearFilters": "ማጣሪያዎችን አጽዳ",
-        "tableTitle": "የመገኘት መዝገቦች",
-        "tableDescription": "ለሁሉም ሰራተኞች የተዘረዘሩ የመገኘት መዝገቦች ከማጣሪያ እና ገጽ አሰጣጥ ጋር።",
-        "loading": "የመገኘት መዝገቦች በመጫን ላይ...",
+        "tableTitle": "የቀሪ ዝርዝር መዝገቦች",
+        "tableDescription": "ለሁሉም ሰራተኞች የተዘረዘሩ የቀሪ ዝርዝር መዝገቦች ከማጣሪያ እና ገጽ አሰጣጥ ጋር።",
+        "loading": "የቀሪ ዝርዝር መዝገቦች በመጫን ላይ...",
         "columns": {
           "staffMember": "ሰራተኛ",
           "date": "ቀን",
@@ -2274,9 +2294,9 @@
         }
       },
       "reportsTab": {
-        "title": "የመገኘት ሪፖርቶች",
-        "description": "ለሁሉም ሰራተኞች ሳምንታዊ፣ ወርሃዊ እና ዓመታዊ የመገኘት ማጠቃለያ።",
-        "loading": "የመገኘት ሪፖርቶች በመጫን ላይ...",
+        "title": "የቀሪ ዝርዝር ሪፖርቶች",
+        "description": "ለሁሉም ሰራተኞች ሳምንታዊ፣ ወርሃዊ እና ዓመታዊ የቀሪ ዝርዝር ማጠቃለያ።",
+        "loading": "የቀሪ ዝርዝር ሪፖርቶች በመጫን ላይ...",
         "columns": {
           "staffMember": "ሰራተኛ",
           "thisWeek": "በዚህ ሳምንት",
@@ -2290,11 +2310,11 @@
         "checkInError": "መግባት አልተሳካም",
         "checkOutSuccess": "በተሳካ ሁኔታ ወጥቷል",
         "checkOutError": "መውጣት አልተሳካም",
-        "resetSuccess": "የመገኘት መዝገብ እንደገና ተጀምሯል",
-        "resetError": "የመገኘት መዝገብ እንደገና ማስጀመር አልተሳካም",
-        "noRecordFound": "ለመስራት የመገኘት መዝገብ አልተገኘም",
+        "resetSuccess": "የቀሪ ዝርዝር መዝገብ እንደገና ተጀምሯል",
+        "resetError": "የቀሪ ዝርዝር መዝገብ እንደገና ማስጀመር አልተሳካም",
+        "noRecordFound": "ለመስራት የቀሪ ዝርዝር መዝገብ አልተገኘም",
         "loadStaffError": "ሰራተኞችን መጫን አልተሳካም",
-        "loadRecordsError": "የመገኘት መዝገቦችን መጫን አልተሳካም"
+        "loadRecordsError": "የቀሪ ዝርዝር መዝገቦችን መጫን አልተሳካም"
       }
     },
     "leave": {
@@ -2393,7 +2413,7 @@
         },
         "edit": {
           "title": "የፈቃድ ጥያቄ አርትዕ",
-          "description": "የፈቃድ ጥያቄ መረጃ አዘምን።",
+          "description": "የፈቃድ ጥያቄ መረጃ ለውጥ",
           "staffMember": "ሰራተኛ",
           "leaveType": "የፈቃድ አይነት",
           "startDate": "የመጀመሪያ ቀን",
@@ -2403,7 +2423,7 @@
           "selectStartDate": "የመጀመሪያ ቀን ምረጥ",
           "selectEndDate": "የመጨረሻ ቀን ምረጥ",
           "cancel": "ሰርዝ",
-          "saveChanges": "ለውጦችን አስቀምጥ",
+          "saveChanges": "ለውጦችን መዝግብ",
           "required": "*"
         },
         "createBalance": {
@@ -2420,13 +2440,13 @@
         },
         "editBalance": {
           "title": "የፈቃድ ቀሪ አርትዕ",
-          "description": "የፈቃድ ቀሪ አዘምን ለ",
+          "description": "የፈቃድ ቀሪ ለውጥለ",
           "staffMember": "ሰራተኛ",
           "year": "ዓመት",
           "totalLeaveDays": "ጠቅላላ የፈቃድ ቀናት",
           "usedLeaveDays": "የተጠቀሙባቸው የፈቃድ ቀናት",
           "cancel": "ሰርዝ",
-          "saveChanges": "ለውጦችን አስቀምጥ",
+          "saveChanges": "ለውጦችን መዝግብ",
           "required": "*"
         },
         "delete": {
@@ -2476,18 +2496,18 @@
         "createSuccess": "የፈቃድ ጥያቄ በተሳካ ሁኔታ ተፈጥሯል!",
         "createSuccessDescription": "አዲሱ የፈቃድ ጥያቄ ገብቷል",
         "createError": "የፈቃድ ጥያቄ መፍጠር አልተሳካም",
-        "updateSuccess": "የፈቃድ ጥያቄ በተሳካ ሁኔታ ተዘምኗል!",
-        "updateSuccessDescription": "የፈቃድ ጥያቄ ለ {name} ተዘምኗል",
-        "updateError": "የፈቃድ ጥያቄ ማዘመን አልተሳካም",
+        "updateSuccess": "የፈቃድ ጥያቄ በተሳካ ሁኔታ ተለውጧል!",
+        "updateSuccessDescription": "የፈቃድ ጥያቄ ለ {name} ተለውጧል",
+        "updateError": "የፈቃድ ጥያቄ መለወጥ አልተሳካም",
         "balanceDeleteSuccess": "የፈቃድ ቀሪ በተሳካ ሁኔታ ተሰርዟል!",
         "balanceDeleteSuccessDescription": "የፈቃድ ቀሪ ለ {name} ተወግዷል",
         "balanceDeleteError": "የፈቃድ ቀሪ መሰረዝ አልተሳካም",
         "balanceCreateSuccess": "የፈቃድ ቀሪ በተሳካ ሁኔታ ተፈጥሯል!",
         "balanceCreateSuccessDescription": "አዲሱ የፈቃድ ቀሪ ታክሏል",
         "balanceCreateError": "የፈቃድ ቀሪ መፍጠር አልተሳካም",
-        "balanceUpdateSuccess": "የፈቃድ ቀሪ በተሳካ ሁኔታ ተዘምኗል!",
-        "balanceUpdateSuccessDescription": "የፈቃድ ቀሪ ለ {name} ተዘምኗል",
-        "balanceUpdateError": "የፈቃድ ቀሪ ማዘመን አልተሳካም",
+        "balanceUpdateSuccess": "የፈቃድ ቀሪ በተሳካ ሁኔታ ተለውጧል!",
+        "balanceUpdateSuccessDescription": "የፈቃድ ቀሪ ለ {name} ተለውጧል",
+        "balanceUpdateError": "የፈቃድ ቀሪ መለወጥ አልተሳካም",
         "changeStatusError": "ሁኔታ መቀየር አልተሳካም",
         "unexpectedError": "ያልተጠበቀ ስህተት ተከስቷል",
         "selectStaffMember": "እባክዎ ሰራተኛ ይምረጡ",
@@ -2536,7 +2556,7 @@
       "buttons": {
         "createPayroll": "ደሞዝ ፍጠር",
         "cancel": "ሰርዝ",
-        "saveChanges": "ለውጦችን አስቀምጥ"
+        "saveChanges": "ለውጦችን መዝግብ"
       },
       "dialogs": {
         "create": {
@@ -2564,7 +2584,7 @@
         },
         "edit": {
           "title": "የደሞዝ መዝገብ አርትዕ",
-          "description": "የደሞዝ መዝገብ መረጃን ያዘምኑ።",
+          "description": "የደሞዝ መዝገብ መረጃን ይለውጡ።",
           "staffMember": "ሰራተኛ"
         },
         "delete": {
@@ -2577,9 +2597,9 @@
         "createSuccess": "የደሞዝ መዝገብ በተሳካ ሁኔታ ተፈጠረ!",
         "createSuccessDescription": "አዲሱ የደሞዝ መዝገብ ታክሏል",
         "createError": "የደሞዝ መዝገብ መፍጠር አልተሳካም",
-        "updateSuccess": "የደሞዝ መዝገብ በተሳካ ሁኔታ ተዘምኗል!",
-        "updateSuccessDescription": "ለ {name} ያለው የደሞዝ መዝገብ ተዘምኗል",
-        "updateError": "የደሞዝ መዝገብ ማዘመን አልተሳካም",
+        "updateSuccess": "የደሞዝ መዝገብ በተሳካ ሁኔታ ተለውጧል!",
+        "updateSuccessDescription": "ለ {name} ያለው የደሞዝ መዝገብ ተለውጧል",
+        "updateError": "የደሞዝ መዝገብ መለወጥ አልተሳካም",
         "deleteSuccess": "የደሞዝ መዝገብ በተሳካ ሁኔታ ተሰርዟል!",
         "deleteSuccessDescription": "ለ {name} ያለው የደሞዝ መዝገብ ተወግዷል",
         "deleteError": "የደሞዝ መዝገብ መሰረዝ አልተሳካም",
@@ -2601,7 +2621,7 @@
       "imageSizeError": "የምስል መጠን ከ 2MB ያነሰ መሆን አለበት",
       "imageReadError": "የምስል ፋይል ማንበብ አልተሳካም",
       "personalInfo": "የግል መረጃ",
-      "personalInfoDescription": "የግል ዝርዝሮችዎን እና የመገኛ መረጃዎን ያዘምኑ።",
+      "personalInfoDescription": "የግል ዝርዝሮችዎን እና የመገኛ መረጃዎን ይለውጡ።",
       "firstName": "ስም",
       "lastName": "የአባት ስም",
       "email": "ኢሜይል አድራሻ",
@@ -2611,23 +2631,23 @@
       "emailPlaceholder": "ኢሜይልዎን ያስገቡ",
       "phonePlaceholder": "ስልክ ቁጥርዎን ያስገቡ",
       "required": "*",
-      "saveChanges": "ለውጦችን አስቀምጥ",
-      "saving": "በማስቀመጥ ላይ...",
-      "updateSuccess": "መገለጫ በተሳካ ሁኔታ ተዘምኗል",
-      "updateError": "መገለጫን ማዘመን አልተሳካም"
+      "saveChanges": "ለውጦችን መዝግብ",
+      "saving": "በመመዝገብ ላይ...",
+      "updateSuccess": "መገለጫ በተሳካ ሁኔታ ተለውጧል",
+      "updateError": "መገለጫን መለወጥ አልተሳካም"
     },
     "account": {
       "title": "ደህንነት",
       "passwordTitle": "የይለፍ ቃል እና ደህንነት",
-      "passwordDescription": "የይለፍ ቃልዎን እና የደህንነት ቅንብሮችዎን ያዘምኑ",
+      "passwordDescription": "የይለፍ ቃልዎን እና የደህንነት ቅንብሮችዎን ይለውጡ",
       "currentPassword": "የአሁኑ የይለፍ ቃል",
       "newPassword": "አዲስ የይለፍ ቃል",
       "confirmPassword": "አዲስ የይለፍ ቃል አረጋግጥ",
       "currentPasswordPlaceholder": "የአሁኑን የይለፍ ቃል ያስገቡ",
       "newPasswordPlaceholder": "አዲስ የይለፍ ቃል ያስገቡ",
       "confirmPasswordPlaceholder": "አዲስ የይለፍ ቃል ያረጋግጡ",
-      "updatePassword": "የይለፍ ቃል አዘምን",
-      "updating": "በማዘመን ላይ...",
+      "updatePassword": "የይለፍ ቃል ለውጥ",
+      "updating": "በመለወጥ ላይ...",
       "passwordRequirements": "የይለፍ ቃል መስፈርቶች:",
       "minLength": "ቢያንስ 8 ቁምፊዎች",
       "uppercase": "አንድ ትልቅ ፊደል",
@@ -2640,26 +2660,27 @@
       "passwordDifferent": "አዲስ የይለፍ ቃል ከአሁኑ የይለፍ ቃል የተለየ መሆን አለበት",
       "passwordsNoMatch": "አዲሱ የይለፍ ቃሎች አይዛመዱም",
       "passwordStrength": "የይለፍ ቃል ቢያንስ አንድ ትልቅ ፊደል፣ አንድ ትንሽ ፊደል፣ አንድ ቁጥር እና አንድ ልዩ ቁምፊ ሊኖረው ይገባል",
-      "passwordUpdateSuccess": "የይለፍ ቃል በተሳካ ሁኔታ ተዘምኗል!",
-      "passwordUpdateError": "የይለፍ ቃል ማዘመን አልተሳካም",
+      "passwordUpdateSuccess": "የይለፍ ቃል በተሳካ ሁኔታ ተለውጧል!",
+      "passwordUpdateError": "የይለፍ ቃል መለወጥ አልተሳካም",
+      "passwordChangeFailed": "የይለፍ ቃል መቀየር አልተሳካም",
       "unexpectedError": "ያልተጠበቀ ስህተት ተከስቷል"
     },
     "preferences": {
       "title": "ምርጫዎች",
       "appearanceTitle": "መልክ",
-      "appearanceDescription": "መተግበሪያው እንዴት እንደሚመስል እና እንደሚሰማ ያበጁ",
+      "appearanceDescription": "መተግበሪያው እንዴት እንደሚመስል ይምረጡ",
       "theme": "ገጽታ",
       "light": "ብርሃን",
       "dark": "ጨለማ",
       "system": "ስርዓት",
       "themeHelp": "የሚመርጡትን የቀለም እቅድ ይምረጡ",
       "languageTitle": "ቋንቋ እና ክልል",
-      "languageDescription": "የሚመርጡትን ቋንቋ ያዘጋጁ",
+      "languageDescription": "የሚመርጡትን ቋንቋ ይምረጡ",
       "language": "ቋንቋ",
       "languageHelp": "የሚመርጡትን ቋንቋ ይምረጡ",
       "selectLanguage": "ቋንቋ ይምረጡ",
       "preferencesUpdateSuccess": "ምርጫዎች በተሳካ ሁኔታ ተዘምነዋል",
-      "preferencesUpdateError": "ምርጫዎችን ማዘመን አልተሳካም"
+      "preferencesUpdateError": "ምርጫዎችን መለወጥ አልተሳካም"
     },
     "system": {
       "title": "የስርዓት ቅንብሮች",

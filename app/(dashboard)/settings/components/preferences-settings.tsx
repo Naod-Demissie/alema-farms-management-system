@@ -29,12 +29,14 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { updateUserPreferences, getUserPreferences } from "@/app/(dashboard)/settings/server/settings";
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 interface PreferencesSettingsProps {}
 
 export function PreferencesSettings({}: PreferencesSettingsProps) {
   const t = useTranslations('settings.preferences');
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -44,10 +46,21 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
     language: "en", // Default to English
   });
 
-  // Track changes
+  // Load current language from cookie
   useEffect(() => {
-    // No longer need to track changes for parent component
-  }, [hasChanges]);
+    const getCurrentLanguage = () => {
+      const cookies = document.cookie.split(';');
+      const localeCookie = cookies.find(cookie => cookie.trim().startsWith('NEXT_LOCALE='));
+      if (localeCookie) {
+        const locale = localeCookie.split('=')[1];
+        if (['en', 'am'].includes(locale)) {
+          setFormData(prev => ({ ...prev, language: locale }));
+        }
+      }
+    };
+    
+    getCurrentLanguage();
+  }, []);
 
   const handleInputChange = (
     field: string,
@@ -58,6 +71,12 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
       [field]: value,
     }));
     setHasChanges(true);
+  };
+
+  const handleLanguageChange = (newLanguage: string) => {
+    // Update the locale cookie and refresh the page
+    document.cookie = `NEXT_LOCALE=${newLanguage};path=/;max-age=31536000`;
+    router.refresh();
   };
 
   const handleThemeChange = (newTheme: string) => {
@@ -151,7 +170,10 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
             <Label htmlFor="language">{t('language')}</Label>
             <Select
               value={formData.language}
-              onValueChange={(value) => handleInputChange("language", value)}
+              onValueChange={(value) => {
+                handleInputChange("language", value);
+                handleLanguageChange(value);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('selectLanguage')} />
@@ -159,7 +181,6 @@ export function PreferencesSettings({}: PreferencesSettingsProps) {
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
                 <SelectItem value="am">አማርኛ</SelectItem>
-                <SelectItem value="om">Afaan Oromoo</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">

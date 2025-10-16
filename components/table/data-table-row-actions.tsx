@@ -11,6 +11,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslations } from 'next-intl';
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
@@ -23,6 +24,8 @@ export function DataTableRowActions<TData>({
   onEdit,
   onDelete,
 }: DataTableRowActionsProps<TData>) {
+  const t = useTranslations('common');
+  
   return (
     <>
       <DropdownMenu modal={false}>
@@ -44,7 +47,7 @@ export function DataTableRowActions<TData>({
             }}
           >
             <Edit size={16} className="mr-2" />
-            Edit
+            {t('edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -55,7 +58,7 @@ export function DataTableRowActions<TData>({
             className="text-red-500 focus:text-red-500"
           >
             <Trash2 size={16} className="mr-2" />
-            Delete
+            {t('delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

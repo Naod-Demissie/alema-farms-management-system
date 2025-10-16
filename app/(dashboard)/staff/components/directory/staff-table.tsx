@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useMobileColumns } from "@/hooks/use-mobile-columns";
-import { useRouter } from "next/navigation";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -31,6 +30,7 @@ import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Users } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -43,10 +43,19 @@ interface DataTableProps {
   columns: ColumnDef<Staff>[];
   data: Staff[];
   toolbar?: React.ReactNode;
+  facetedFilters?: Array<{
+    columnId: string;
+    title: string;
+    options: Array<{
+      label: string;
+      value: string;
+      icon?: React.ComponentType<{ className?: string }>;
+    }>;
+  }>;
 }
 
-export function StaffTable({ columns, data, toolbar }: DataTableProps) {
-  const router = useRouter();
+export function StaffTable({ columns, data, toolbar, facetedFilters }: DataTableProps) {
+  const t = useTranslations('staff');
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -76,9 +85,7 @@ export function StaffTable({ columns, data, toolbar }: DataTableProps) {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  const handleRowClick = (staff: Staff) => {
-    router.push(`/staff/${staff.id}`);
-  };
+  // Removed staff detail page navigation
 
   return (
     <div className="space-y-4">
@@ -86,23 +93,23 @@ export function StaffTable({ columns, data, toolbar }: DataTableProps) {
         <DataTableToolbar
           table={table}
           filterColumnId="name"
-          filterPlaceholder="Filter staff..."
-          facetedFilters={[
+          filterPlaceholder={t('directory.filters.searchPlaceholder')}
+          facetedFilters={facetedFilters || [
             {
               columnId: "isActive",
-              title: "Status",
+              title: t('directory.filters.status'),
               options: [
-                { label: "Active", value: "active" },
-                { label: "Inactive", value: "inactive" },
+                { label: t('directory.filterOptions.active'), value: "active" },
+                { label: t('directory.filterOptions.inactive'), value: "inactive" },
               ],
             },
             {
               columnId: "role",
-              title: "Role",
+              title: t('directory.filters.role'),
               options: [
-                { label: "Admin", value: "ADMIN" },
-                { label: "Veterinarian", value: "VETERINARIAN" },
-                { label: "Worker", value: "WORKER" },
+                { label: t('directory.roles.admin'), value: "ADMIN" },
+                { label: t('directory.roles.veterinarian'), value: "VETERINARIAN" },
+                { label: t('directory.roles.worker'), value: "WORKER" },
               ],
             },
           ]}
@@ -138,8 +145,7 @@ export function StaffTable({ columns, data, toolbar }: DataTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="group/row cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleRowClick(row.original)}
+                  className="group/row hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

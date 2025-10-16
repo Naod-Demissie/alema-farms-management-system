@@ -29,7 +29,7 @@ export function WaterTableToolbar<TData>({
 
   // Flock options for filtering
   const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} birds)`,
+    label: `${flock.batchCode} (${flock.currentCount} ${t('birds')})`,
     value: flock.id,
   }));
 

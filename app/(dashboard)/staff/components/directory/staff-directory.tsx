@@ -50,9 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail as MailIcon, Phone, Calendar, Shield, Copy, Send, XCircle } from "lucide-react";
+import { Copy, Send, XCircle } from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import { useTranslations } from 'next-intl';
@@ -78,7 +76,6 @@ export function StaffDirectory() {
   const { setIsInviteDialogOpen, setIsAddStaffDialogOpen, setRefreshInvites, setRefreshStaff } = useStaff();
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [staffData, setStaffData] = useState<Staff[]>([]);
   const [inviteData, setInviteData] = useState<Invite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -219,10 +216,7 @@ export function StaffDirectory() {
     }
   };
 
-  const handleViewStaff = (staff: Staff) => {
-    setSelectedStaff(staff);
-    setIsViewDialogOpen(true);
-  };
+  // Removed staff view functionality
 
   const handleDeleteStaff = (staff: Staff) => {
     setConfirmDialog({
@@ -376,7 +370,6 @@ export function StaffDirectory() {
   // Create columns with handlers
   const staffColumns = createStaffDirectoryColumns({
     onEdit: handleEditStaff,
-    onView: handleViewStaff,
     onDelete: handleDeleteStaff,
     t,
   });
@@ -500,8 +493,9 @@ export function StaffDirectory() {
         </CardHeader>
         <CardContent>
           <StaffTable 
-                  columns={staffColumns} 
+            columns={staffColumns} 
             data={staffData}
+            facetedFilters={staffFacetedFilters}
           />
         </CardContent>
       </Card>
@@ -638,6 +632,7 @@ export function StaffDirectory() {
                 <InviteTable 
                   columns={inviteColumns} 
                   data={inviteData}
+                  facetedFilters={inviteFacetedFilters}
                 />
               </CardContent>
             </Card>
@@ -645,90 +640,22 @@ export function StaffDirectory() {
         </TabsContent>
       </Tabs>
 
-      {/* View Staff Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('directory.viewDialog.title')}</DialogTitle>
-            <DialogDescription>
-              {t('directory.viewDialog.description')}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedStaff && (
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={selectedStaff.image || ""} alt={selectedStaff.firstName} />
-                  <AvatarFallback className="text-lg">
-                    {selectedStaff.firstName.charAt(0)}{selectedStaff.lastName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-xl font-semibold">
-                    {selectedStaff.firstName} {selectedStaff.lastName}
-                  </h3>
-                  <Badge className={roleColors[selectedStaff.role as keyof typeof roleColors]}>
-                    {t(`directory.roles.${selectedStaff.role.toLowerCase()}`)}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">{t('directory.viewDialog.contactInformation')}</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center">
-                      <MailIcon className="mr-2 h-4 w-4" />
-                      {selectedStaff.email || t('directory.viewDialog.noEmail')}
-                    </div>
-                    <div className="flex items-center">
-                      <Phone className="mr-2 h-4 w-4" />
-                      {selectedStaff.phoneNumber || t('directory.viewDialog.noPhone')}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="font-medium">{t('directory.viewDialog.accountInformation')}</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {t('directory.viewDialog.joined')} {new Date(selectedStaff.createdAt).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center">
-                      <Shield className="mr-2 h-4 w-4" />
-                      {t('directory.viewDialog.status')} {selectedStaff.isActive ? t('directory.status.active') : t('directory.status.inactive')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-              {t('directory.buttons.close')}
-            </Button>
-            <Button onClick={() => {
-              setIsViewDialogOpen(false);
-              if (selectedStaff) {
-                handleEditStaff(selectedStaff);
-              }
-            }}>
-              {t('directory.buttons.editStaff')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* View Staff Dialog removed */}
 
       {/* Reusable Edit Staff Dialog */}
       <EditStaffDialog
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         onSubmit={handleEditSubmit}
-        staff={selectedStaff}
-        title="Edit Staff Member"
-        description="Update staff member information and settings."
-        submitButtonText="Save Changes"
+        staff={selectedStaff ? {
+          ...selectedStaff,
+          phoneNumber: selectedStaff.phoneNumber ?? undefined,
+          email: selectedStaff.email ?? undefined,
+          image: selectedStaff.image ?? undefined,
+        } as Staff : null}
+        title={t('directory.dialogs.edit.title')}
+        description={t('directory.dialogs.edit.description')}
+        submitButtonText={t('directory.dialogs.edit.submit')}
         isLoading={isEditLoading}
       />
 
@@ -751,9 +678,9 @@ export function StaffDirectory() {
         }
         desc={
           confirmDialog.type === 'resend' 
-            ? t('directory.confirmDialogs.resendDescription', { email: confirmDialog.invite?.email })
+            ? t('directory.confirmDialogs.resendDescription', { email: confirmDialog.invite?.email || '' })
             : confirmDialog.type === 'cancel'
-            ? t('directory.confirmDialogs.cancelDescription', { email: confirmDialog.invite?.email })
+            ? t('directory.confirmDialogs.cancelDescription', { email: confirmDialog.invite?.email || '' })
             : confirmDialog.type === 'delete'
             ? t('directory.confirmDialogs.deleteDescription', { name: `${confirmDialog.staff?.firstName} ${confirmDialog.staff?.lastName}` })
             : 'Are you sure you want to proceed?'

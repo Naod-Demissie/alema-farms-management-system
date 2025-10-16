@@ -41,6 +41,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -62,6 +63,7 @@ export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete }: V
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const t = useTranslations('common');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
@@ -84,14 +86,14 @@ export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete }: V
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onEdit?.(vaccination)}>
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    {t('edit')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onDelete?.(vaccination)}
                     className="text-red-600"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    {t('delete')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

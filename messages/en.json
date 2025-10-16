@@ -51,7 +51,9 @@
     "clearFilters": "Clear filters",
     "resetFilters": "Reset Filters",
     "selected": "selected",
-    "currency": "ETB"
+    "currency": "ETB",
+    "rowsSelected": "row(s) selected",
+    "pageOf": "Page {current} of {total}"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -182,6 +184,7 @@
       "title": "Quick Actions",
       "description": "Common tasks across the system",
       "recordFeedUsage": "Record Feed Usage",
+      "addFeedInventory": "Add Feed Inventory",
       "recordEggProduction": "Record Egg Production",
       "recordBroilerProduction": "Record Broiler Production",
       "recordManureProduction": "Record Manure Production",
@@ -284,7 +287,10 @@
       "recordFeedUsageDescription": "Quickly record feed usage for any flock from the home page.",
       "recordUsage": "Record Usage",
       "feedUsageRecorded": "Feed usage recorded successfully!",
-      "feedUsageFailed": "Failed to record feed usage"
+      "feedUsageFailed": "Failed to record feed usage",
+      "addFeedInventoryTitle": "Add Feed Inventory",
+      "addFeedInventoryDescription": "Add new feed inventory to your system with supplier information and pricing.",
+      "addFeedInventory": "Add Inventory"
     },
     "inventory": {
       "eggsCount": "eggs available in inventory",
@@ -1001,7 +1007,7 @@
         "kgUsedMonth": "kg used this month",
         "kgInStock": "kg in stock",
         "allTimeFeedConsumption": "All time feed consumption",
-        "flocksWithUsageRecords": "Flocks with usage records",
+        "flocksWithUsageRecords": "Flocks with feed usage records",
         "feedConsumedToday": "Feed consumed today",
         "usageRecordsTracked": "Usage records tracked"
       },
@@ -1015,8 +1021,9 @@
         "addDescription": "Record a new feed usage for a flock.",
         "editTitle": "Edit Feed Usage",
         "editDescription": "Update feed usage record details.",
-        "deleteTitle": "Delete Usage Record",
-        "deleteDescription": "Are you sure you want to delete this usage record? This action cannot be undone."
+        "deleteTitle": "Delete Feed Usage Record",
+        "deleteDescription": "Are you sure you want to delete this feed usage record? This action cannot be undone and the record will be permanently removed.",
+        "deleteButton": "Delete Record"
       },
       "form": {
         "flockLabel": "Flock",
@@ -1988,7 +1995,7 @@
     "editStaff": "Edit Staff",
     "deleteStaff": "Delete Staff",
     "staffDetails": "Staff Details",
-    "name": "Name",
+    "name": "Staffs",
     "role": "Role",
     "hireDate": "Hire Date",
     "salary": "Salary",
@@ -2003,7 +2010,8 @@
       "filters": {
         "role": "Role",
         "status": "Status",
-        "reset": "Reset"
+        "reset": "Reset",
+        "searchPlaceholder": "Search staff..."
       },
       "filterOptions": {
         "active": "Active",
@@ -2645,6 +2653,7 @@
       "passwordStrength": "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
       "passwordUpdateSuccess": "Password updated successfully!",
       "passwordUpdateError": "Failed to update password",
+      "passwordChangeFailed": "Failed to change password",
       "unexpectedError": "An unexpected error occurred"
     },
     "preferences": {

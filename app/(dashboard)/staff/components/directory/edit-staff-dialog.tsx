@@ -185,7 +185,7 @@ export function EditStaffDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+        <DialogHeader className="text-center">
           <DialogTitle>{title || t('directory.dialogs.edit.title')}</DialogTitle>
           <DialogDescription>
             {description || t('directory.dialogs.edit.description')}
@@ -202,9 +202,9 @@ export function EditStaffDialog({
                     <User className="h-12 w-12" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="space-y-2">
+                <div className="space-y-2 text-center">
                 <Label htmlFor="image-upload" className="cursor-pointer">
-                  <div className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
+                  <div className="flex items-center justify-center space-x-2 text-sm text-blue-600 hover:text-blue-500">
                     <Upload className="h-4 w-4" />
                     <span>{t('directory.dialogs.edit.uploadPicture')}</span>
                   </div>
@@ -217,18 +217,20 @@ export function EditStaffDialog({
                   className="hidden"
                 />
                 {imagePreview && (
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleRemoveImage}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    {t('directory.dialogs.edit.removePicture')}
-                  </Button>
+                  <div className="flex justify-center">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleRemoveImage}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      {t('directory.dialogs.edit.removePicture')}
+                    </Button>
+                  </div>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground text-center">
                   {t('directory.dialogs.edit.imageHelp')}
                 </p>
                 </div>

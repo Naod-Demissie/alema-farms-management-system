@@ -43,6 +43,7 @@ import {
   Trash2,
   Eye
 } from "lucide-react";
+import { useTranslations } from 'next-intl';
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -68,6 +69,7 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
   const [sorting, setSorting] = useState<SortingState>([]);
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
+  const t = useTranslations('common');
 
   const table = useReactTable({
     data,
@@ -100,18 +102,18 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onView?.(flock)}>
                       <Eye className="h-4 w-4 mr-2" />
-                      View
+                      {t('view')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onEdit?.(flock)}>
                       <Edit className="h-4 w-4 mr-2" />
-                      Edit
+                      {t('edit')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onDelete?.(flock.id)}
                       className="text-red-600"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      {t('delete')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

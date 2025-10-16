@@ -123,6 +123,13 @@ export function AccountSettings({}: AccountSettingsProps) {
         });
         setHasChanges(false);
       } else {
+        // Check if it's a 400 error and show specific message
+        if (result.message && result.message.includes('400') || result.message?.includes('Bad Request')) {
+          toast.error(t('passwordChangeFailed'));
+        } else {
+          toast.error(result.message || t('passwordUpdateError'));
+        }
+        
         // Fallback to client-side password change
         try {
           const clientResult = await authClient.changePassword({
@@ -132,7 +139,12 @@ export function AccountSettings({}: AccountSettingsProps) {
           });
 
           if (clientResult.error) {
-            toast.error(clientResult.error.message || t('passwordUpdateError'));
+            // Check if it's a 400 error from client-side
+            if (clientResult.error.message && (clientResult.error.message.includes('400') || clientResult.error.message.includes('Bad Request'))) {
+              toast.error(t('passwordChangeFailed'));
+            } else {
+              toast.error(clientResult.error.message || t('passwordUpdateError'));
+            }
           } else {
             toast.success(t('passwordUpdateSuccess'));
             setFormData({
@@ -143,7 +155,12 @@ export function AccountSettings({}: AccountSettingsProps) {
             setHasChanges(false);
           }
         } catch (clientError) {
-          toast.error(result.message || t('passwordUpdateError'));
+          // Check if it's a 400 error from client-side catch
+          if (result.message && (result.message.includes('400') || result.message.includes('Bad Request'))) {
+            toast.error(t('passwordChangeFailed'));
+          } else {
+            toast.error(result.message || t('passwordUpdateError'));
+          }
         }
       }
     } catch (error) {

@@ -163,11 +163,11 @@ export function FeedUsageDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-lg font-semibold">
+        <DialogHeader className="pb-2 text-center">
+          <DialogTitle className="text-lg font-semibold text-center">
             {title || (initialData ? t('dialog.editTitle') : t('dialog.addTitle'))}
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogDescription className="text-sm text-muted-foreground text-center">
             {description || (initialData ? t('dialog.editDescription') : t('dialog.addDescription'))}
           </DialogDescription>
         </DialogHeader>

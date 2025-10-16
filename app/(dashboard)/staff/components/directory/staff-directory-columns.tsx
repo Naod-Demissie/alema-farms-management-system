@@ -12,14 +12,12 @@ import { Mail, Phone } from "lucide-react";
 
 interface StaffDirectoryColumnsProps {
   onEdit: (staff: Staff) => void;
-  onView: (staff: Staff) => void;
   onDelete: (staff: Staff) => void;
   t: any; // Translation function
 }
 
 export const createStaffDirectoryColumns = ({
   onEdit,
-  onView,
   onDelete,
   t,
 }: StaffDirectoryColumnsProps): ColumnDef<Staff>[] => [

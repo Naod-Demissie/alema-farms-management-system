@@ -31,13 +31,15 @@ import {
   Droplets,
   CheckCircle,
   XCircle,
-  UserCheck
+  UserCheck,
+  Package
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuickActionDialog } from "@/app/(dashboard)/home/components/quick-action-dialog";
 import { ReusableDialog } from "@/components/ui/reusable-dialog";
 import { FlockForm, flockSchema } from "@/components/forms/dialog-forms";
 import { FeedUsageDialog } from "@/app/(dashboard)/feed/components/usage/feed-usage-dialog";
+import { FeedInventoryDialog } from "@/app/(dashboard)/feed/components/inventory/feed-inventory-dialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useState as useStateReact } from "react";
@@ -84,6 +86,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
   const [isFlockDialogOpen, setIsFlockDialogOpen] = useState(false);
   const [isFeedUsageDialogOpen, setIsFeedUsageDialogOpen] = useState(false);
+  const [isFeedInventoryDialogOpen, setIsFeedInventoryDialogOpen] = useState(false);
   const [dialogLoading, setDialogLoading] = useState(false);
   const [cardLoadingStates, setCardLoadingStates] = useState({
     production: false,
@@ -291,6 +294,8 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
       setIsFlockDialogOpen(true);
     } else if (action.id === "record-feed-usage") {
       setIsFeedUsageDialogOpen(true);
+    } else if (action.id === "add-feed-inventory") {
+      setIsFeedInventoryDialogOpen(true);
     } else {
       setSelectedQuickAction(action.id);
       setIsQuickActionOpen(true);
@@ -609,6 +614,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
               {[
                 { id: "record-feed-usage", title: t('quickActions.recordFeedUsage'), icon: Calculator, color: "bg-yellow-600" },
+                { id: "add-feed-inventory", title: t('quickActions.addFeedInventory'), icon: Package, color: "bg-amber-600" },
                 { id: "record-production", title: t('quickActions.recordEggProduction'), icon: Egg, color: "bg-green-500" },
                 { id: "record-broiler-production", title: t('quickActions.recordBroilerProduction'), icon: Bird, color: "bg-orange-500" },
                 { id: "record-manure-production", title: t('quickActions.recordManureProduction'), icon: Droplets, color: "bg-green-700" },
@@ -830,6 +836,15 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
         title={t('dialogs.recordFeedUsageTitle')}
         description={t('dialogs.recordFeedUsageDescription')}
         submitButtonText={t('dialogs.recordUsage')}
+      />
+
+      {/* Feed Inventory Dialog */}
+      <FeedInventoryDialog
+        isOpen={isFeedInventoryDialogOpen}
+        onClose={() => setIsFeedInventoryDialogOpen(false)}
+        title={t('dialogs.addFeedInventoryTitle')}
+        description={t('dialogs.addFeedInventoryDescription')}
+        submitButtonText={t('dialogs.addFeedInventory')}
       />
     </div>
   );

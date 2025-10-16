@@ -4,9 +4,11 @@ import { AddStaffDialog as ReusableAddStaffDialog } from "./add-staff-dialog";
 import { useStaff } from "../../context/staff-context";
 import { createNonSystemStaff } from "@/app/(dashboard)/staff/server/staff-invites";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export function AddStaffDialog() {
   const { isAddStaffDialogOpen, setIsAddStaffDialogOpen, refreshStaff } = useStaff();
+  const t = useTranslations('staff');
 
   const handleSubmit = async (data: any) => {
     const result = await createNonSystemStaff({
@@ -19,12 +21,12 @@ export function AddStaffDialog() {
     });
     
     if (result.success) {
-      toast.success("Staff member added successfully!");
+      toast.success(t('directory.dialogs.add.successMessage'));
       // Refresh staff list to show the new member
       refreshStaff();
     } else {
-      toast.error(result.message || "Failed to add staff member");
-      throw new Error(result.message || "Failed to add staff member");
+      toast.error(result.message || t('directory.dialogs.add.errorMessage'));
+      throw new Error(result.message || t('directory.dialogs.add.errorMessage'));
     }
   };
 
@@ -33,9 +35,9 @@ export function AddStaffDialog() {
       isOpen={isAddStaffDialogOpen}
       onClose={() => setIsAddStaffDialogOpen(false)}
       onSubmit={handleSubmit}
-      title="Add Staff Member"
-      description="Add a new worker to the system."
-      submitButtonText="Add Staff Member"
+      title={t('directory.dialogs.add.title')}
+      description={t('directory.dialogs.add.description')}
+      submitButtonText={t('directory.dialogs.add.submit')}
     />
   );
 }

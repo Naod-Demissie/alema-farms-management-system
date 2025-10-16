@@ -30,7 +30,7 @@ export function FeedUsageTableToolbar<TData>({
 
   // Flock options for filtering
   const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} birds)`,
+    label: `${flock.batchCode} (${flock.currentCount} ${t('form.birds')})`,
     value: flock.id,
   }));
 

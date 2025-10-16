@@ -30,6 +30,7 @@ import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -42,9 +43,19 @@ interface InviteTableProps {
   columns: ColumnDef<Invite>[];
   data: Invite[];
   toolbar?: React.ReactNode;
+  facetedFilters?: Array<{
+    columnId: string;
+    title: string;
+    options: Array<{
+      label: string;
+      value: string;
+      icon?: React.ComponentType<{ className?: string }>;
+    }>;
+  }>;
 }
 
-export function InviteTable({ columns, data, toolbar }: InviteTableProps) {
+export function InviteTable({ columns, data, toolbar, facetedFilters }: InviteTableProps) {
+  const t = useTranslations('staff');
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -80,25 +91,25 @@ export function InviteTable({ columns, data, toolbar }: InviteTableProps) {
         <DataTableToolbar
           table={table}
           filterColumnId="email"
-          filterPlaceholder="Filter invites..."
-          facetedFilters={[
+          filterPlaceholder={t('directory.invites.filters.searchPlaceholder')}
+          facetedFilters={facetedFilters || [
             {
               columnId: "role",
-              title: "Role",
+              title: t('directory.filters.role'),
               options: [
-                { label: "Admin", value: "ADMIN" },
-                { label: "Veterinarian", value: "VETERINARIAN" },
-                { label: "Worker", value: "WORKER" },
+                { label: t('directory.roles.admin'), value: "ADMIN" },
+                { label: t('directory.roles.veterinarian'), value: "VETERINARIAN" },
+                { label: t('directory.roles.worker'), value: "WORKER" },
               ],
             },
             {
               columnId: "status",
-              title: "Status",
+              title: t('directory.filters.status'),
               options: [
-                { label: "Pending", value: "PENDING" },
-                { label: "Accepted", value: "ACCEPTED" },
-                { label: "Expired", value: "EXPIRED" },
-                { label: "Cancelled", value: "CANCELLED" },
+                { label: t('invites.status.pending'), value: "PENDING" },
+                { label: t('invites.status.accepted'), value: "ACCEPTED" },
+                { label: t('invites.status.expired'), value: "EXPIRED" },
+                { label: t('invites.status.cancelled'), value: "CANCELLED" },
               ],
             },
           ]}

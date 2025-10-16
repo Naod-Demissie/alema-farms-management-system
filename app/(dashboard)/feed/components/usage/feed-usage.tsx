@@ -210,7 +210,7 @@ export function FeedUsage() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('cards.totalUsage')}</CardTitle>
@@ -347,17 +347,17 @@ export function FeedUsage() {
           amountUsed: editingItem.amountUsed,
           notes: editingItem.notes || "",
         } : undefined}
-        title={editingItem ? "Edit Feed Usage" : "Record Feed Usage"}
-        description={editingItem ? "Update the feed usage record below." : "Record a new feed usage for a flock."}
-        submitButtonText={editingItem ? "Update Usage" : "Record Usage"}
+        title={editingItem ? t('dialog.editTitle') : t('dialog.addTitle')}
+        description={editingItem ? t('dialog.editDescription') : t('dialog.addDescription')}
+        submitButtonText={editingItem ? t('form.updateButton') : t('form.submitButton')}
       />
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader className="pb-4">
-            <DialogTitle className="text-xl font-semibold">Feed Usage Record Details</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+          <DialogHeader className="pb-4 text-center">
+            <DialogTitle className="text-xl font-semibold text-center">Feed Usage Record Details</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground text-center">
               Detailed information about the feed usage record
             </DialogDescription>
           </DialogHeader>
@@ -467,10 +467,10 @@ export function FeedUsage() {
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
-        title="Delete Feed Usage Record"
-        desc={`Are you sure you want to delete this feed usage record? This action cannot be undone and the record will be permanently removed.`}
-        confirmText="Delete Record"
-        cancelBtnText="Cancel"
+        title={t('dialog.deleteTitle')}
+        desc={t('dialog.deleteDescription')}
+        confirmText={t('dialog.deleteButton')}
+        cancelBtnText={t('form.cancelButton')}
         destructive={true}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.item?.id}
