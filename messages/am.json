@@ -274,7 +274,21 @@
       "feedAvailable": "ኪ.ግ መኖ በቋት ውስጥ ይገኛል",
       "medicineAvailable": "የመድሃኒት ክፍሎች በቋት ውስጥ ይገኛሉ",
       "broilersAvailable": "ብሮይለሮች በቋት ውስጥ ይገኛሉ",
-      "manureAvailable": "ኪ.ግ ፍግ በቋት ውስጥ ይገኛል"
+      "manureAvailable": "ኪ.ግ ፍግ በቋት ውስጥ ይገኛል",
+      "inventory": {
+        "eggs": "እንቁላሎች",
+        "feedStock": "የመኖ አቅርቦት",
+        "manure": "ፍግ",
+        "medicine": "መድኃኒት",
+        "broilers": "ብሮይለሮች",
+        "available": "ይገኛል",
+        "normal": "መደበኛ",
+        "cracked": "የተሰነጠቁ",
+        "spoiled": "የተበላሹ",
+        "kg": "ኪ.ግ",
+        "units": "ክፍሎች",
+        "birds": "ወፎች"
+      }
     },
     "dialogs": {
       "addNewFlock": "አዲስ ዶሮዎች መዝግብ",
@@ -1076,7 +1090,8 @@
         "cancelButton": "ተወው",
         "closeButton": "ዝጋ",
         "useRecommendation": "ምክር ተጠቀም",
-        "birds": "ዶሮዎች"
+        "birds": "ዶሮዎች",
+        "loadingFlocks": "ዶሮዎች በመጫን ላይ..."
       },
       "recommendation": {
         "title": "የመኖ ፕሮግራም ምክር",

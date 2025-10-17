@@ -29,8 +29,15 @@ export function calculateFlockAge(flock: Flock): number {
   const arrivalDate = new Date(flock.arrivalDate);
   const ageAtArrival = flock.ageInDays || 0;
   const today = new Date();
-  const daysSinceArrival = Math.floor((today.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Set time to start of day for accurate day calculation
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfArrival = new Date(arrivalDate.getFullYear(), arrivalDate.getMonth(), arrivalDate.getDate());
+  
+  const daysSinceArrival = Math.floor((startOfToday.getTime() - startOfArrival.getTime()) / (1000 * 60 * 60 * 24));
   const totalAgeInDays = ageAtArrival + daysSinceArrival;
+  
+  // Use Math.floor to get the current week (0-based)
   return Math.floor(totalAgeInDays / 7);
 }
 
@@ -242,15 +249,17 @@ export async function getDailyFeedRequirements(): Promise<Array<{
           feedType,
           totalAmountKg: 0,
           flocksCount: 0,
-          gramPerHen: recommendation.gramPerHen,
-          ageInWeeks: recommendation.ageInWeeks,
-          ageInDays: recommendation.ageInDays,
+          gramPerHen: 0, // Will be calculated as average
+          ageInWeeks: 0, // Will be calculated as average
+          ageInDays: '', // Will be set from first flock
           flocks: []
         };
       }
       
-      // Daily amount is weekly amount divided by 7
-      const dailyAmount = recommendation.totalAmountKg / 7;
+      // gramPerHen in feed program represents DAILY consumption per hen
+      // recommendation.totalAmountKg is already calculated as (gramPerHen * currentCount) / 1000
+      // So this is the daily amount in kg for this flock
+      const dailyAmount = recommendation.totalAmountKg;
       acc[feedType].totalAmountKg += dailyAmount;
       acc[feedType].flocksCount += 1;
       acc[feedType].flocks.push({
@@ -265,7 +274,21 @@ export async function getDailyFeedRequirements(): Promise<Array<{
       return acc;
     }, {} as Record<string, any>);
 
-    return Object.values(groupedByFeedType);
+    // Calculate averages and set representative values
+    const result = Object.values(groupedByFeedType).map((group: any) => {
+      if (group.flocks.length > 0) {
+        // Calculate average gramPerHen and ageInWeeks
+        const totalGramPerHen = group.flocks.reduce((sum: number, flock: any) => sum + flock.gramPerHen, 0);
+        const totalAgeInWeeks = group.flocks.reduce((sum: number, flock: any) => sum + flock.ageInWeeks, 0);
+        
+        group.gramPerHen = Math.round(totalGramPerHen / group.flocks.length);
+        group.ageInWeeks = Math.round(totalAgeInWeeks / group.flocks.length);
+        group.ageInDays = group.flocks[0].ageInWeeks ? `${group.flocks[0].ageInWeeks * 7}-${(group.flocks[0].ageInWeeks + 1) * 7 - 1}` : '';
+      }
+      return group;
+    });
+
+    return result;
   } catch (error) {
     console.error('Error getting daily feed requirements:', error);
     return [];
@@ -302,18 +325,21 @@ export async function getWeeklyFeedRequirements(): Promise<Array<{
           feedType,
           totalAmountKg: 0,
           flocksCount: 0,
-          gramPerHen: recommendation.gramPerHen,
-          ageInWeeks: recommendation.ageInWeeks,
-          ageInDays: recommendation.ageInDays,
+          gramPerHen: 0, // Will be calculated as average
+          ageInWeeks: 0, // Will be calculated as average
+          ageInDays: '', // Will be set from first flock
           flocks: []
         };
       }
       
-      acc[feedType].totalAmountKg += recommendation.totalAmountKg;
+      // For weekly requirements, multiply daily amount by 7
+      // recommendation.totalAmountKg is daily amount, so multiply by 7 for weekly
+      const weeklyAmount = recommendation.totalAmountKg * 7;
+      acc[feedType].totalAmountKg += weeklyAmount;
       acc[feedType].flocksCount += 1;
       acc[feedType].flocks.push({
         batchCode: flock.batchCode,
-        amountKg: recommendation.totalAmountKg,
+        amountKg: weeklyAmount,
         flockId: flock.id,
         currentCount: flock.currentCount,
         ageInWeeks: recommendation.ageInWeeks,
@@ -323,7 +349,21 @@ export async function getWeeklyFeedRequirements(): Promise<Array<{
       return acc;
     }, {} as Record<string, any>);
 
-    return Object.values(groupedByFeedType);
+    // Calculate averages and set representative values
+    const result = Object.values(groupedByFeedType).map((group: any) => {
+      if (group.flocks.length > 0) {
+        // Calculate average gramPerHen and ageInWeeks
+        const totalGramPerHen = group.flocks.reduce((sum: number, flock: any) => sum + flock.gramPerHen, 0);
+        const totalAgeInWeeks = group.flocks.reduce((sum: number, flock: any) => sum + flock.ageInWeeks, 0);
+        
+        group.gramPerHen = Math.round(totalGramPerHen / group.flocks.length);
+        group.ageInWeeks = Math.round(totalAgeInWeeks / group.flocks.length);
+        group.ageInDays = group.flocks[0].ageInWeeks ? `${group.flocks[0].ageInWeeks * 7}-${(group.flocks[0].ageInWeeks + 1) * 7 - 1}` : '';
+      }
+      return group;
+    });
+
+    return result;
   } catch (error) {
     console.error('Error getting weekly feed requirements:', error);
     return [];
@@ -361,9 +401,6 @@ export async function getFeedCompliance(flockId: string, days: number = 7): Prom
             lte: endDate,
           }
         },
-        include: {
-          feed: true
-        },
         orderBy: { date: 'asc' }
       }),
       prisma.feedProgram.findMany({
@@ -395,7 +432,12 @@ export async function getFeedCompliance(flockId: string, days: number = 7): Prom
       // Calculate age for this date
       const arrivalDate = new Date(flock.arrivalDate);
       const ageAtArrival = flock.ageInDays || 0;
-      const daysSinceArrival = Math.floor((date.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Set time to start of day for accurate day calculation
+      const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const startOfArrival = new Date(arrivalDate.getFullYear(), arrivalDate.getMonth(), arrivalDate.getDate());
+      
+      const daysSinceArrival = Math.floor((startOfDate.getTime() - startOfArrival.getTime()) / (1000 * 60 * 60 * 24));
       const totalAgeInDays = ageAtArrival + daysSinceArrival;
       const ageInWeeks = Math.floor(totalAgeInDays / 7);
 

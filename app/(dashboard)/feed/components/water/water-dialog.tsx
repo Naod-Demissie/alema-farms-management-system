@@ -20,6 +20,7 @@ interface WaterDialogProps {
   onClose: () => void;
   onSubmit: (data: WaterFormData) => Promise<void>;
   flocks: any[];
+  flocksLoading?: boolean;
   initialData?: any;
 }
 
@@ -35,6 +36,7 @@ export function WaterDialog({
   onClose,
   onSubmit,
   flocks,
+  flocksLoading = false,
   initialData,
 }: WaterDialogProps) {
   const t = useTranslations('feed.water');
@@ -125,10 +127,17 @@ export function WaterDialog({
                     <SelectValue placeholder={t('form.flockPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {flocks.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground">
-                        {t('form.noFlocks')}
-                      </div>
+                    {flocksLoading ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          {t('form.loadingFlocks')}
+                        </div>
+                      </SelectItem>
+                    ) : flocks.length === 0 ? (
+                      <SelectItem value="no-flocks" disabled>
+                        <div className="text-muted-foreground">{t('form.noFlocks')}</div>
+                      </SelectItem>
                     ) : (
                       flocks.map((flock) => (
                         <SelectItem key={flock.id} value={flock.id}>

@@ -274,7 +274,21 @@
       "feedAvailable": "kg of feed available in inventory",
       "medicineAvailable": "units of medicine available in inventory",
       "broilersAvailable": "broilers available in inventory",
-      "manureAvailable": "kg of manure available in inventory"
+      "manureAvailable": "kg of manure available in inventory",
+      "inventory": {
+        "eggs": "Eggs",
+        "feedStock": "Feed Stock",
+        "manure": "Manure",
+        "medicine": "Medicine",
+        "broilers": "Broilers",
+        "available": "Available",
+        "normal": "Normal",
+        "cracked": "Cracked",
+        "spoiled": "Spoiled",
+        "kg": "kg",
+        "units": "units",
+        "birds": "birds"
+      }
     },
     "dialogs": {
       "addNewFlock": "Add New Flock",
@@ -1111,7 +1125,8 @@
         "cancelButton": "Cancel",
         "closeButton": "Close",
         "useRecommendation": "Use Recommendation",
-        "birds": "birds"
+        "birds": "birds",
+        "loadingFlocks": "Loading flocks..."
       },
       "recommendation": {
         "title": "Feed Program Recommendation",
@@ -1120,7 +1135,10 @@
         "total": "Total",
         "weeks": "weeks",
         "days": "days",
-        "transitionWarning": "Feed change next week to"
+        "transitionWarning": "Feed change next week to",
+        "availableStock": "Available Stock",
+        "insufficientStock": "Insufficient stock",
+        "shortage": "shortage"
       },
       "validation": {
         "flockRequired": "Flock is required",

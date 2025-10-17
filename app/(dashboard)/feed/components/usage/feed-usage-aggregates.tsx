@@ -44,8 +44,8 @@ export function FeedUsageAggregates<TData>({
       }
       
       // Unique feed types
-      if (record.feed?.feedType) {
-        uniqueFeedTypes.add(record.feed.feedType);
+      if (record.feedType) {
+        uniqueFeedTypes.add(record.feedType);
       }
       
       // Today's usage

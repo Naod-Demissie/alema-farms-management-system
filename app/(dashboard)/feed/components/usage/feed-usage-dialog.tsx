@@ -27,7 +27,8 @@ import { cn } from "@/lib/utils";
 import { feedTypeColors } from "../../utils/feed-program";
 import { 
   createFeedUsageAction, 
-  updateFeedUsageAction 
+  updateFeedUsageAction,
+  getAvailableFeedStockAction
 } from "@/app/(dashboard)/feed/server/feed-usage";
 import { getFeedInventoryAction } from "@/app/(dashboard)/feed/server/feed-inventory";
 import { getFlocksAction } from "@/app/(dashboard)/flocks/server/flocks";
@@ -66,8 +67,10 @@ export function FeedUsageDialog({
   const [flocks, setFlocks] = useState<any[]>([]);
   const [feedInventory, setFeedInventory] = useState<any[]>([]);
   const [feedRecommendations, setFeedRecommendations] = useState<any[]>([]);
+  const [availableStock, setAvailableStock] = useState<Record<string, number>>({});
   const [recommendation, setRecommendation] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     initialData?.date ? new Date(initialData.date) : new Date()
   );
@@ -89,28 +92,39 @@ export function FeedUsageDialog({
     }
   }, [isOpen]);
 
-  // Reset form when initialData changes
+  // Reset form when dialog opens/closes or initialData changes
   useEffect(() => {
-    if (initialData) {
-      form.reset(initialData);
-      setSelectedDate(new Date(initialData.date));
+    if (isOpen) {
+      if (initialData) {
+        form.reset(initialData);
+        setSelectedDate(new Date(initialData.date));
+      } else {
+        // Reset to fresh state for new record
+        form.reset({
+          flockId: "",
+          date: new Date(),
+          amountUsed: 0,
+          notes: "",
+        });
+        setSelectedDate(new Date());
+      }
+      // Clear recommendation when opening fresh dialog
+      setRecommendation(null);
     } else {
-      form.reset({
-        flockId: "",
-        date: new Date(),
-        amountUsed: 0,
-        notes: "",
-      });
-      setSelectedDate(new Date());
+      // Clean up state when dialog closes
+      form.reset();
+      setRecommendation(null);
     }
-  }, [initialData, form]);
+  }, [isOpen, initialData, form]);
 
   const fetchData = async () => {
+    setLoadingData(true);
     try {
-      const [flocksResult, feedInventoryResult, feedRecommendationsResult] = await Promise.all([
+      const [flocksResult, feedInventoryResult, feedRecommendationsResult, availableStockResult] = await Promise.all([
         getFlocksAction(),
         getFeedInventoryAction(),
-        getFeedRecommendationsAction()
+        getFeedRecommendationsAction(),
+        getAvailableFeedStockAction()
       ]);
 
       if (flocksResult.success) {
@@ -122,9 +136,14 @@ export function FeedUsageDialog({
       if (feedRecommendationsResult.success) {
         setFeedRecommendations(feedRecommendationsResult.data || []);
       }
+      if (availableStockResult.success) {
+        setAvailableStock(availableStockResult.data || {});
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error(t('validation.loadError'));
+    } finally {
+      setLoadingData(false);
     }
   };
 
@@ -160,8 +179,16 @@ export function FeedUsageDialog({
     }
   };
 
+  const handleClose = () => {
+    // Reset form and clear all state when closing
+    form.reset();
+    setRecommendation(null);
+    setSelectedDate(new Date());
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-2 text-center">
           <DialogTitle className="text-lg font-semibold text-center">
@@ -191,21 +218,34 @@ export function FeedUsageDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {flocks.map((flock) => {
-                            const flockRec = feedRecommendations.find(rec => rec.flock.id === flock.id);
-                            return (
-                              <SelectItem key={flock.id} value={flock.id}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span className="truncate">{flock.batchCode} ({flock.breed} - {flock.currentCount} {t('form.birds')})</span>
-                                  {flockRec && (
-                                    <Badge className={`ml-2 ${feedTypeColors[flockRec.recommendation.feedType as keyof typeof feedTypeColors]}`}>
-                                      {tFeedTypes(flockRec.recommendation.feedType, { defaultValue: flockRec.recommendation.feedType })}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
+                          {loadingData ? (
+                            <SelectItem value="loading" disabled>
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                {t('form.loadingFlocks')}
+                              </div>
+                            </SelectItem>
+                          ) : flocks.length === 0 ? (
+                            <SelectItem value="no-flocks" disabled>
+                              <div className="text-muted-foreground">{t('form.noFlocks')}</div>
+                            </SelectItem>
+                          ) : (
+                            flocks.map((flock) => {
+                              const flockRec = feedRecommendations.find(rec => rec.flock.id === flock.id);
+                              return (
+                                <SelectItem key={flock.id} value={flock.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="truncate">{flock.batchCode} ({flock.breed} - {flock.currentCount} {t('form.birds')})</span>
+                                    {flockRec && (
+                                      <Badge className={`ml-2 ${feedTypeColors[flockRec.recommendation.feedType as keyof typeof feedTypeColors]}`}>
+                                        {tFeedTypes(flockRec.recommendation.feedType, { defaultValue: flockRec.recommendation.feedType })}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              );
+                            })
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -235,6 +275,32 @@ export function FeedUsageDialog({
                     <span className="text-gray-700 dark:text-gray-300 font-medium">{t('recommendation.total')}:</span>
                     <div className="text-gray-900 dark:text-gray-100 font-semibold">{recommendation.totalAmountKg.toFixed(1)}kg</div>
                   </div>
+                </div>
+                
+                {/* Available Stock Information */}
+                <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-700 dark:text-blue-300 font-medium text-xs">{t('recommendation.availableStock')}:</span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs font-semibold ${
+                        (availableStock[recommendation.feedType] || 0) >= recommendation.totalAmountKg 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {availableStock[recommendation.feedType]?.toFixed(1) || '0.0'}kg
+                      </span>
+                      {(availableStock[recommendation.feedType] || 0) >= recommendation.totalAmountKg ? (
+                        <span className="text-green-600 dark:text-green-400 text-xs">✓</span>
+                      ) : (
+                        <span className="text-red-600 dark:text-red-400 text-xs">⚠</span>
+                      )}
+                    </div>
+                  </div>
+                  {(availableStock[recommendation.feedType] || 0) < recommendation.totalAmountKg && (
+                    <div className="text-red-600 dark:text-red-400 text-xs mt-1">
+                      {t('recommendation.insufficientStock')} ({((availableStock[recommendation.feedType] || 0) - recommendation.totalAmountKg).toFixed(1)}kg {t('recommendation.shortage')})
+                    </div>
+                  )}
                 </div>
                 {recommendation.isTransitionWeek && (
                   <div className="mb-2 p-2 bg-orange-100 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-orange-800 dark:text-orange-200 text-xs">
@@ -284,13 +350,11 @@ export function FeedUsageDialog({
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
-                          mode="single"
                           selected={selectedDate}
                           onSelect={handleDateSelect}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
                           }
-                          initialFocus
                         />
                       </PopoverContent>
                     </Popover>
@@ -347,7 +411,7 @@ export function FeedUsageDialog({
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="px-4 h-9 w-full sm:w-auto"
                 >
                   {t('form.cancelButton')}

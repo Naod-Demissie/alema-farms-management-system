@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useTranslations } from "next-intl";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
@@ -38,6 +38,7 @@ type LightingDialogProps = {
 export function LightingDialog({ open, onOpenChange, onSuccess, record }: LightingDialogProps) {
   const t = useTranslations("environment.lighting");
   const [loading, setLoading] = useState(false);
+  const [flocksLoading, setFlocksLoading] = useState(false);
   const [flocks, setFlocks] = useState<Array<{ id: string; batchCode: string; currentCount: number }>>([]);
   
   const form = useForm<FormData>({
@@ -54,6 +55,7 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
 
   useEffect(() => {
     const fetchFlocks = async () => {
+      setFlocksLoading(true);
       try {
         const result = await getFlocks();
         if (result.success && result.data) {
@@ -61,6 +63,8 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
         }
       } catch (error) {
         console.error("Error fetching flocks:", error);
+      } finally {
+        setFlocksLoading(false);
       }
     };
 
@@ -167,16 +171,29 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {flocks.map((flock) => (
-                          <SelectItem key={flock.id} value={flock.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span className="font-medium">{flock.batchCode}</span>
-                              <span className="text-muted-foreground ml-2">
-                                {flock.currentCount.toLocaleString()} birds
-                              </span>
+                        {flocksLoading ? (
+                          <SelectItem value="loading" disabled>
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              {t("loadingFlocks")}
                             </div>
                           </SelectItem>
-                        ))}
+                        ) : flocks.length === 0 ? (
+                          <SelectItem value="no-flocks" disabled>
+                            <div className="text-muted-foreground">{t("noFlocks")}</div>
+                          </SelectItem>
+                        ) : (
+                          flocks.map((flock) => (
+                            <SelectItem key={flock.id} value={flock.id}>
+                              <div className="flex items-center justify-between w-full">
+                                <span className="font-medium">{flock.batchCode}</span>
+                                <span className="text-muted-foreground ml-2">
+                                  {flock.currentCount.toLocaleString()} birds
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { ColumnDef } from "@tanstack/react-table";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,8 @@ export const usageColumns = (
   onEdit: (record: any) => void,
   onDelete: (record: any) => void,
   t: any,
-  tCommon: any
+  tCommon: any,
+  tFeedTypes: any
 ): ColumnDef<any>[] => [
   {
     accessorKey: "flock",
@@ -53,22 +55,47 @@ export const usageColumns = (
         </div>
       );
     },
+    filterFn: (row, id, value) => {
+      const record = row.original;
+      const flockId = record.flockId || record.flock?.id || "";
+      
+      // Handle array values from DataTableFacetedFilter
+      if (Array.isArray(value)) {
+        return value.includes(flockId);
+      }
+      
+      // Handle string values from regular search
+      const flockCode = record.flock?.batchCode || record.flockId || "";
+      return flockCode.toLowerCase().includes(value.toLowerCase());
+    },
   },
   {
-    accessorKey: "feed.feedType",
-    id: "feed",
+    accessorKey: "feedType",
+    id: "feedType",
     header: t('columns.feedType'),
     cell: ({ row }) => {
       const record = row.original;
-      const feedType = record.feed?.feedType;
+      const feedType = record.feedType;
       return (
         <div className="flex items-center space-x-2">
           <Package className="h-4 w-4 text-muted-foreground" />
           <Badge variant="outline" className={feedTypeColors[feedType as keyof typeof feedTypeColors] || "bg-gray-100 text-gray-800"}>
-            {feedType ? t(`feedTypes.${feedType}`, { defaultValue: feedType }) : tCommon('unknown')}
+            {feedType ? tFeedTypes(feedType) : tCommon('unknown')}
           </Badge>
         </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      const record = row.original;
+      const feedType = record.feedType || "";
+      
+      // Handle array values from DataTableFacetedFilter
+      if (Array.isArray(value)) {
+        return value.includes(feedType);
+      }
+      
+      // Handle string values from regular search
+      return feedType.toLowerCase().includes(value.toLowerCase());
     },
   },
   {

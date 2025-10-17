@@ -65,6 +65,7 @@ export function FeedInventoryDialog({
   const tCommon = useTranslations('feed.common');
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
   const [addToSuppliers, setAddToSuppliers] = useState(false);
   const [addToExpense, setAddToExpense] = useState(true);
 
@@ -120,6 +121,7 @@ export function FeedInventoryDialog({
   }, [isOpen, editingItem, form]);
 
   const fetchSuppliers = async () => {
+    setSuppliersLoading(true);
     try {
       const result = await getFeedSuppliersAction();
       if (result && result.success) {
@@ -127,6 +129,8 @@ export function FeedInventoryDialog({
       }
     } catch (error) {
       console.error("Error fetching suppliers:", error);
+    } finally {
+      setSuppliersLoading(false);
     }
   };
 
@@ -340,12 +344,23 @@ export function FeedInventoryDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">{t('form.noSupplier')}</SelectItem>
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier.id} value={supplier.id}>
-                            {supplier.name}
+                        {suppliersLoading ? (
+                          <SelectItem value="loading" disabled>
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              {t('form.loadingSuppliers')}
+                            </div>
                           </SelectItem>
-                        ))}
+                        ) : (
+                          <>
+                            <SelectItem value="none">{t('form.noSupplier')}</SelectItem>
+                            {suppliers.map((supplier) => (
+                              <SelectItem key={supplier.id} value={supplier.id}>
+                                {supplier.name}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

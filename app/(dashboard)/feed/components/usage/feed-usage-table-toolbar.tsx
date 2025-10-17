@@ -92,9 +92,9 @@ export function FeedUsageTableToolbar<TData>({
           )}
 
           {/* Feed Type Filter */}
-          {table.getColumn("feed") && (
+          {table.getColumn("feedType") && (
             <DataTableFacetedFilter
-              column={table.getColumn("feed")}
+              column={table.getColumn("feedType")}
               title={t('columns.feedType')}
               options={feedTypeOptions}
             />

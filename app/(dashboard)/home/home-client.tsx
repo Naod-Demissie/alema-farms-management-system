@@ -531,6 +531,11 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
 
   const alerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [...inventoryAlerts];
 
+  // Helper function to format feed type names
+  const formatFeedType = (feedType: string) => {
+    return feedType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
   if (pageLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -657,7 +662,7 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                 <TabsTrigger value="alerts">{t('alerts.tabAlerts')}</TabsTrigger>
                 <TabsTrigger value="attendance">{t('alerts.tabAttendance')}</TabsTrigger>
               </TabsList>
-              <TabsContent value="alerts" className="mt-4 space-y-2">
+              <TabsContent value="alerts" className="mt-4 space-y-3">
                 {alerts.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-12 px-4">
                     <div className="rounded-full bg-muted/50 p-6 mb-4">
@@ -669,14 +674,163 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
                     </p>
                   </div>
                 )}
-                {alerts.map((alert) => (
-                  <div key={alert.id} className={cn("flex items-center p-3 rounded-lg border", getAlertColor(alert.priority))}>
-                    <div className="flex items-center space-x-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      <span className="text-sm font-medium">{alert.message}</span>
+                
+                {/* Enhanced Egg Inventory Card */}
+                {inventoryCounts.eggBreakdown && inventoryCounts.eggBreakdown.total > 0 && (
+                  <div className="bg-gradient-to-br from-green-50/60 to-emerald-50/60 dark:from-green-950/10 dark:to-emerald-950/10 border border-green-200/60 dark:border-green-800/40 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0 mb-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-2 sm:p-2.5 bg-green-100/70 dark:bg-green-900/20 rounded-lg">
+                          <Egg className="h-4 w-4 sm:h-5 sm:w-5 text-green-600/90 dark:text-green-400/80" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-semibold text-green-800 dark:text-green-200">{t('alerts.inventory.eggs')}</h4>
+                          <p className="text-xl sm:text-2xl font-bold text-green-700/90 dark:text-green-300/90">
+                            {inventoryCounts.eggBreakdown.total.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-600/80 text-white self-start text-xs">{t('alerts.inventory.available')}</Badge>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3">
+                      <div className="bg-white/80 dark:bg-gray-900/30 rounded-md p-2 sm:p-3 border border-green-100/60 dark:border-green-900/40">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500/80"></div>
+                          <span className="text-[10px] sm:text-xs font-medium text-green-700/90 dark:text-green-300/80">{t('alerts.inventory.normal')}</span>
+                        </div>
+                        <p className="text-sm sm:text-lg font-bold text-green-800 dark:text-green-200">
+                          {inventoryCounts.eggBreakdown.normal.toLocaleString()}
+                        </p>
+                        <p className="text-[10px] sm:text-xs text-green-600/80 dark:text-green-400/70">
+                          {((inventoryCounts.eggBreakdown.normal / inventoryCounts.eggBreakdown.total) * 100).toFixed(2)}%
+                        </p>
+                      </div>
+                      <div className="bg-white/80 dark:bg-gray-900/30 rounded-md p-2 sm:p-3 border border-orange-100/60 dark:border-orange-900/40">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-orange-500/80"></div>
+                          <span className="text-[10px] sm:text-xs font-medium text-orange-700/90 dark:text-orange-300/80">{t('alerts.inventory.cracked')}</span>
+                        </div>
+                        <p className="text-sm sm:text-lg font-bold text-orange-800 dark:text-orange-200">
+                          {inventoryCounts.eggBreakdown.cracked.toLocaleString()}
+                        </p>
+                        <p className="text-[10px] sm:text-xs text-orange-600/80 dark:text-orange-400/70">
+                          {((inventoryCounts.eggBreakdown.cracked / inventoryCounts.eggBreakdown.total) * 100).toFixed(2)}%
+                        </p>
+                      </div>
+                      <div className="bg-white/80 dark:bg-gray-900/30 rounded-md p-2 sm:p-3 border border-red-100/60 dark:border-red-900/40">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500/80"></div>
+                          <span className="text-[10px] sm:text-xs font-medium text-red-700/90 dark:text-red-300/80">{t('alerts.inventory.spoiled')}</span>
+                        </div>
+                        <p className="text-sm sm:text-lg font-bold text-red-800 dark:text-red-200">
+                          {inventoryCounts.eggBreakdown.spoiled.toLocaleString()}
+                        </p>
+                        <p className="text-[10px] sm:text-xs text-red-600/80 dark:text-red-400/70">
+                          {((inventoryCounts.eggBreakdown.spoiled / inventoryCounts.eggBreakdown.total) * 100).toFixed(2)}%
+                        </p>
+                      </div>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Enhanced Feed Inventory Card */}
+                {inventoryCounts.feedBreakdown && inventoryCounts.feedBreakdown.total > 0 && (
+                  <div className="bg-gradient-to-br from-amber-50/60 to-yellow-50/60 dark:from-amber-950/10 dark:to-yellow-950/10 border border-amber-200/60 dark:border-amber-800/40 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0 mb-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-2 sm:p-2.5 bg-amber-100/70 dark:bg-amber-900/20 rounded-lg">
+                          <Package className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600/90 dark:text-amber-400/80" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-semibold text-amber-800 dark:text-amber-200">{t('alerts.inventory.feedStock')}</h4>
+                          <p className="text-xl sm:text-2xl font-bold text-amber-700/90 dark:text-amber-300/90">
+                            {inventoryCounts.feedBreakdown.total.toLocaleString()} {t('alerts.inventory.kg')}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-amber-600/80 text-white self-start text-xs">{t('alerts.inventory.available')}</Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mt-3">
+                      {Object.entries(inventoryCounts.feedBreakdown)
+                        .filter(([key]) => key !== 'total')
+                        .map(([feedType, quantity]) => (
+                          <div key={feedType} className="bg-white/80 dark:bg-gray-900/30 rounded-md p-2 sm:p-3 border border-amber-100/60 dark:border-amber-900/40">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-500/80"></div>
+                              <span className="text-[10px] sm:text-xs font-medium text-amber-700/90 dark:text-amber-300/80 truncate">
+                                {formatFeedType(feedType)}
+                              </span>
+                            </div>
+                            <p className="text-sm sm:text-lg font-bold text-amber-800 dark:text-amber-200">
+                              {quantity.toLocaleString()} {t('alerts.inventory.kg')}
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-amber-600/80 dark:text-amber-400/70">
+                              {((quantity / inventoryCounts.feedBreakdown!.total) * 100).toFixed(2)}%
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Enhanced Manure Inventory Card */}
+                {inventoryCounts.manure > 0 && (
+                  <div className="bg-gradient-to-br from-purple-50/60 to-indigo-50/60 dark:from-purple-950/10 dark:to-indigo-950/10 border border-purple-200/60 dark:border-purple-800/40 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-2 sm:p-2.5 bg-purple-100/70 dark:bg-purple-900/20 rounded-lg">
+                          <Droplets className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600/90 dark:text-purple-400/80" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-semibold text-purple-800 dark:text-purple-200">{t('alerts.inventory.manure')}</h4>
+                          <p className="text-xl sm:text-2xl font-bold text-purple-700/90 dark:text-purple-300/90">
+                            {inventoryCounts.manure.toLocaleString()} {t('alerts.inventory.kg')}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-purple-600/80 text-white self-start text-xs">{t('alerts.inventory.available')}</Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Other alerts */}
+                {inventoryCounts.medicine > 0 && (
+                  <div className="bg-gradient-to-br from-blue-50/60 to-cyan-50/60 dark:from-blue-950/10 dark:to-cyan-950/10 border border-blue-200/60 dark:border-blue-800/40 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-2 sm:p-2.5 bg-blue-100/70 dark:bg-blue-900/20 rounded-lg">
+                          <Package className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600/90 dark:text-blue-400/80" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-semibold text-blue-800 dark:text-blue-200">{t('alerts.inventory.medicine')}</h4>
+                          <p className="text-xl sm:text-2xl font-bold text-blue-700/90 dark:text-blue-300/90">
+                            {inventoryCounts.medicine.toLocaleString()} {t('alerts.inventory.units')}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-blue-600/80 text-white self-start text-xs">{t('alerts.inventory.available')}</Badge>
+                    </div>
+                  </div>
+                )}
+
+                {inventoryCounts.broilers > 0 && (
+                  <div className="bg-gradient-to-br from-orange-50/60 to-red-50/60 dark:from-orange-950/10 dark:to-red-950/10 border border-orange-200/60 dark:border-orange-800/40 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-2 sm:p-2.5 bg-orange-100/70 dark:bg-orange-900/20 rounded-lg">
+                          <Bird className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600/90 dark:text-orange-400/80" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-semibold text-orange-800 dark:text-orange-200">{t('alerts.inventory.broilers')}</h4>
+                          <p className="text-xl sm:text-2xl font-bold text-orange-700/90 dark:text-orange-300/90">
+                            {inventoryCounts.broilers.toLocaleString()} {t('alerts.inventory.birds')}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-orange-600/80 text-white self-start text-xs">{t('alerts.inventory.available')}</Badge>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
               <TabsContent value="attendance" className="mt-4">
                 {staffLoading ? (

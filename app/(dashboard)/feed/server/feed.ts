@@ -308,7 +308,7 @@ export async function getFeedAnalytics(filters?: {
       where,
       include: {
         flock: true,
-        feed: true,
+        recordedBy: true,
       },
     });
 
@@ -316,7 +316,7 @@ export async function getFeedAnalytics(filters?: {
 
     // Group by feed type
     const feedTypeBreakdown = await prisma.feedUsage.groupBy({
-      by: ['feedId'],
+      by: ['feedType'],
       where,
       _sum: {
         amountUsed: true,
@@ -327,18 +327,13 @@ export async function getFeedAnalytics(filters?: {
     });
 
     // Get feed type details
-    const feedTypeDetails = await Promise.all(
-      feedTypeBreakdown.map(async (group) => {
-        const feed = await prisma.feedInventory.findUnique({
-          where: { id: group.feedId },
-        });
-        return {
-          feedType: feed?.feedType,
-          totalUsage: group._sum.amountUsed || 0,
-          count: group._count.id,
-        };
-      })
-    );
+    const feedTypeDetails = feedTypeBreakdown.map((group) => {
+      return {
+        feedType: group.feedType,
+        totalUsage: group._sum.amountUsed || 0,
+        count: group._count.id,
+      };
+    });
 
     // Group by flock
     const flockBreakdown = await prisma.feedUsage.groupBy({

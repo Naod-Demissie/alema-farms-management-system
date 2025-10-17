@@ -194,6 +194,7 @@ export function FeedUsage() {
   };
 
   const handleAdd = () => {
+    // Ensure we start with a clean state for new records
     setEditingItem(null);
     setIsAddDialogOpen(true);
   };
@@ -322,7 +323,7 @@ export function FeedUsage() {
             </div>
           ) : (
             <UsageTable
-              columns={usageColumns(handleView, handleEdit, handleDeleteClick, t, tCommon)}
+              columns={usageColumns(handleView, handleEdit, handleDeleteClick, t, tCommon, tFeedTypes)}
               data={feedUsage}
               flocks={flocks}
               onView={handleView}
@@ -335,6 +336,7 @@ export function FeedUsage() {
 
       {/* Feed Usage Dialog */}
       <FeedUsageDialog
+        key={editingItem ? `edit-${editingItem.id}` : 'add-new'}
         isOpen={isAddDialogOpen}
         onClose={() => {
           setIsAddDialogOpen(false);
@@ -386,12 +388,12 @@ export function FeedUsage() {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-muted-foreground">Feed Type</Label>
                     <div className="flex items-center space-x-2">
-                      <Badge className={`${feedTypeColors[viewingItem.feed?.feedType as keyof typeof feedTypeColors]} text-sm`}>
-                        {feedTypeLabels[viewingItem.feed?.feedType as keyof typeof feedTypeLabels] || viewingItem.feed?.feedType || "Unknown"}
+                      <Badge className={`${feedTypeColors[viewingItem.feedType as keyof typeof feedTypeColors]} text-sm`}>
+                        {viewingItem.feedType ? tFeedTypes(viewingItem.feedType) : "Unknown"}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {viewingItem.feed?.supplier?.name || "No supplier"}
+                      No supplier information available
                     </p>
                   </div>
                 </div>

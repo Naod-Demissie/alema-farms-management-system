@@ -27,7 +27,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
@@ -295,9 +295,11 @@ interface VaccinationFormProps {
   form: UseFormReturn<z.infer<typeof vaccinationSchema>>;
   flocks: any[];
   veterinarians: any[];
+  flocksLoading?: boolean;
+  veterinariansLoading?: boolean;
 }
 
-export function VaccinationForm({ form, flocks, veterinarians }: VaccinationFormProps) {
+export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = false, veterinariansLoading = false }: VaccinationFormProps) {
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -331,11 +333,24 @@ export function VaccinationForm({ form, flocks, veterinarians }: VaccinationForm
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {flocks.map((flock: any) => (
-                    <SelectItem key={flock.id} value={flock.id}>
-                      {flock.batchCode}
+                  {flocksLoading ? (
+                    <SelectItem value="loading" disabled>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading flocks...
+                      </div>
                     </SelectItem>
-                  ))}
+                  ) : flocks.length === 0 ? (
+                    <SelectItem value="no-flocks" disabled>
+                      <div className="text-muted-foreground">No flocks available</div>
+                    </SelectItem>
+                  ) : (
+                    flocks.map((flock: any) => (
+                      <SelectItem key={flock.id} value={flock.id}>
+                        {flock.batchCode}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -403,11 +418,24 @@ export function VaccinationForm({ form, flocks, veterinarians }: VaccinationForm
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {veterinarians.map((vet: any) => (
-                    <SelectItem key={vet.id} value={vet.name}>
-                      {vet.name}
+                  {veterinariansLoading ? (
+                    <SelectItem value="loading" disabled>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading veterinarians...
+                      </div>
                     </SelectItem>
-                  ))}
+                  ) : veterinarians.length === 0 ? (
+                    <SelectItem value="no-vets" disabled>
+                      <div className="text-muted-foreground">No veterinarians available</div>
+                    </SelectItem>
+                  ) : (
+                    veterinarians.map((vet: any) => (
+                      <SelectItem key={vet.id} value={vet.name}>
+                        {vet.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -482,9 +510,11 @@ interface TreatmentFormProps {
   form: UseFormReturn<z.infer<typeof treatmentSchema>>;
   flocks: any[];
   veterinarians: any[];
+  flocksLoading?: boolean;
+  veterinariansLoading?: boolean;
 }
 
-export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProps) {
+export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = false, veterinariansLoading = false }: TreatmentFormProps) {
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -501,11 +531,24 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {flocks.map((flock) => (
-                    <SelectItem key={flock.id} value={flock.id}>
-                      {flock.batchCode}
+                  {flocksLoading ? (
+                    <SelectItem value="loading" disabled>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading flocks...
+                      </div>
                     </SelectItem>
-                  ))}
+                  ) : flocks.length === 0 ? (
+                    <SelectItem value="no-flocks" disabled>
+                      <div className="text-muted-foreground">No flocks available</div>
+                    </SelectItem>
+                  ) : (
+                    flocks.map((flock) => (
+                      <SelectItem key={flock.id} value={flock.id}>
+                        {flock.batchCode}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -624,11 +667,24 @@ export function TreatmentForm({ form, flocks, veterinarians }: TreatmentFormProp
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {veterinarians.map((vet) => (
-                    <SelectItem key={vet.id} value={vet.id}>
-                      {vet.name}
+                  {veterinariansLoading ? (
+                    <SelectItem value="loading" disabled>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading veterinarians...
+                      </div>
                     </SelectItem>
-                  ))}
+                  ) : veterinarians.length === 0 ? (
+                    <SelectItem value="no-vets" disabled>
+                      <div className="text-muted-foreground">No veterinarians available</div>
+                    </SelectItem>
+                  ) : (
+                    veterinarians.map((vet) => (
+                      <SelectItem key={vet.id} value={vet.id}>
+                        {vet.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />

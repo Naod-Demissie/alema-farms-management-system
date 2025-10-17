@@ -2,18 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { FeedType } from "@/lib/generated/prisma/enums";
+import { FeedType, InventoryType } from "@/lib/generated/prisma/enums";
+import { addToInventory } from "./inventory-service";
 
 export async function getFeedInventoryAction() {
   try {
     const inventory = await prisma.feedInventory.findMany({
       include: {
         supplier: true,
-        feedUsage: {
-          include: {
-            flock: true,
-          },
-        },
       },
       orderBy: {
         createdAt: "desc",
@@ -44,6 +40,7 @@ export async function createFeedInventoryAction(data: {
     // costPerUnit is per the selected unit (KG or Quintal)
     const totalCost = data.costPerUnit ? data.quantity * data.costPerUnit : null;
     
+    // Create feed inventory record (for tracking individual purchases)
     const feed = await prisma.feedInventory.create({
       data: {
         feedType: data.feedType,
@@ -59,6 +56,14 @@ export async function createFeedInventoryAction(data: {
         supplier: true,
       },
     });
+
+    // NEW: Add to unified inventory table
+    await addToInventory(
+      InventoryType.FEED,
+      quantityInKg,
+      { [data.feedType]: quantityInKg } // Store by feed type
+    );
+
     revalidatePath("/feed");
     return { success: true, data: feed };
   } catch (error) {
@@ -149,27 +154,18 @@ export async function getInventoryWithUsageAction() {
 
     // Execute all queries in parallel to avoid N+1 problem
     const [inventory, usageAggregates] = await Promise.all([
-      // Get inventory with recent usage records
+      // Get inventory
       prisma.feedInventory.findMany({
         include: {
           supplier: true,
-          feedUsage: {
-            include: {
-              flock: true,
-            },
-            orderBy: {
-              date: 'desc'
-            },
-            take: 10 // Last 10 usage records
-          },
         },
         orderBy: {
           createdAt: "desc",
         },
       }),
-      // Get usage aggregates for all feeds in a single query
+      // Get usage aggregates by feedType in a single query
       prisma.feedUsage.groupBy({
-        by: ['feedId'],
+        by: ['feedType'],
         where: {
           date: {
             gte: thirtyDaysAgo,
@@ -181,14 +177,14 @@ export async function getInventoryWithUsageAction() {
       })
     ]);
 
-    // Create a map for O(1) lookup of usage data
+    // Create a map for O(1) lookup of usage data by feedType
     const usageMap = new Map(
-      usageAggregates.map(usage => [usage.feedId, usage._sum.amountUsed || 0])
+      usageAggregates.map(usage => [usage.feedType, usage._sum.amountUsed || 0])
     );
 
     // Process inventory data without additional database queries
     const inventoryWithMetrics = inventory.map(item => {
-      const totalUsage30Days = usageMap.get(item.id) || 0;
+      const totalUsage30Days = usageMap.get(item.feedType) || 0;
       const averageDailyUsage = totalUsage30Days / 30;
 
       // Calculate days remaining at current usage rate
@@ -239,33 +235,30 @@ export async function getInventoryProjectionAction(feedType?: string, days: numb
         date: {
           gte: thirtyDaysAgo,
         },
-        feed: {
-          ...whereClause,
-          isActive: true,
-        }
+        ...whereClause,
       },
       orderBy: {
         date: 'asc',
       },
       select: {
-        feedId: true,
+        feedType: true,
         amountUsed: true,
         date: true,
       }
     });
 
-    // Group usage data by feedId for O(1) lookup
-    const usageByFeedId = new Map<string, typeof allUsageData>();
+    // Group usage data by feedType for O(1) lookup
+    const usageByFeedType = new Map<string, typeof allUsageData>();
     allUsageData.forEach(usage => {
-      if (!usageByFeedId.has(usage.feedId)) {
-        usageByFeedId.set(usage.feedId, []);
+      if (!usageByFeedType.has(usage.feedType)) {
+        usageByFeedType.set(usage.feedType, []);
       }
-      usageByFeedId.get(usage.feedId)!.push(usage);
+      usageByFeedType.get(usage.feedType)!.push(usage);
     });
 
     // Process projections without additional database queries
     const projections = inventory.map(item => {
-      const recentUsage = usageByFeedId.get(item.id) || [];
+      const recentUsage = usageByFeedType.get(item.feedType) || [];
       
       // Calculate average daily usage
       const totalUsage = recentUsage.reduce((sum, usage) => sum + usage.amountUsed, 0);
@@ -336,11 +329,6 @@ export async function getFeedConsumptionAnalyticsAction(filters?: {
       where: whereClause,
       include: {
         flock: true,
-        feed: {
-          include: {
-            supplier: true,
-          },
-        },
       },
       orderBy: {
         date: 'asc',
@@ -349,7 +337,7 @@ export async function getFeedConsumptionAnalyticsAction(filters?: {
 
     // Group by feed type
     const feedTypeAnalytics = usageRecords.reduce((acc, record) => {
-      const feedType = record.feed.feedType;
+      const feedType = record.feedType;
       if (!acc[feedType]) {
         acc[feedType] = {
           feedType,

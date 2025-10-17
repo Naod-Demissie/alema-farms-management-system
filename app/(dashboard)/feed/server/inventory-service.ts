@@ -54,10 +54,11 @@ export async function addToInventory(
       } else if (type === 'MANURE') {
         updateData.manureWeight = (inventory.manureWeight || 0) + amount;
       } else if (type === 'FEED' && details) {
+        // NEW: Aggregate feed types properly
         const currentFeedDetails = inventory.feedDetails as any || {};
         const newFeedDetails = { ...currentFeedDetails };
-        Object.keys(details).forEach(key => {
-          newFeedDetails[key] = (newFeedDetails[key] || 0) + details[key];
+        Object.keys(details).forEach(feedType => {
+          newFeedDetails[feedType] = (newFeedDetails[feedType] || 0) + details[feedType];
         });
         updateData.feedDetails = newFeedDetails;
       }
@@ -102,7 +103,20 @@ export async function deductFromInventory(
       };
     }
 
-    if (inventory.quantity < amount) {
+    // For FEED type, check specific feed type availability
+    if (type === 'FEED' && details) {
+      const feedDetails = inventory.feedDetails as any || {};
+      const feedType = Object.keys(details)[0]; // Get the first (and should be only) feed type
+      const availableQuantity = feedDetails[feedType] || 0;
+      const requiredQuantity = details[feedType];
+      
+      if (availableQuantity < requiredQuantity) {
+        return {
+          success: false,
+          error: `Insufficient ${feedType} inventory. Available: ${availableQuantity}, Required: ${requiredQuantity}`,
+        };
+      }
+    } else if (inventory.quantity < amount) {
       return {
         success: false,
         error: `Insufficient ${type.toLowerCase()} inventory. Available: ${inventory.quantity}, Required: ${amount}`,
@@ -120,10 +134,11 @@ export async function deductFromInventory(
     } else if (type === 'MANURE') {
       updateData.manureWeight = Math.max(0, (inventory.manureWeight || 0) - amount);
     } else if (type === 'FEED' && details) {
+      // NEW: Handle feed type deduction properly
       const currentFeedDetails = inventory.feedDetails as any || {};
       const newFeedDetails = { ...currentFeedDetails };
-      Object.keys(details).forEach(key => {
-        newFeedDetails[key] = Math.max(0, (newFeedDetails[key] || 0) - details[key]);
+      Object.keys(details).forEach(feedType => {
+        newFeedDetails[feedType] = Math.max(0, (newFeedDetails[feedType] || 0) - details[feedType]);
       });
       updateData.feedDetails = newFeedDetails;
     }

@@ -483,7 +483,6 @@ model FeedInventory {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   supplier    FeedSupplier? @relation(fields: [supplierId], references: [id])
-  feedUsage   FeedUsage[]
 
   @@index([feedType])
   @@index([supplierId])
@@ -515,7 +514,7 @@ model FeedSupplier {
 model FeedUsage {
   id           String        @id @default(uuid())
   flockId      String
-  feedId       String
+  feedType     FeedType      // NEW: Store feed type directly instead of feedId
   date         DateTime
   amountUsed   Float
   unit         FeedUnit      @default(KG)
@@ -523,17 +522,16 @@ model FeedUsage {
   recordedById String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  feed         FeedInventory @relation(fields: [feedId], references: [id])
   flock        Flocks        @relation(fields: [flockId], references: [id], onDelete: Cascade)
   recordedBy   Staff?        @relation("FeedUsageRecordedBy", fields: [recordedById], references: [id])
 
   @@index([flockId])
-  @@index([feedId])
+  @@index([feedType])
   @@index([date])
   @@index([recordedById])
   @@index([createdAt])
   @@index([flockId, date])
-  @@index([feedId, date])
+  @@index([feedType, date])
   @@map("feed_usage")
 }
 

@@ -3,13 +3,39 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/auth-middleware";
+import { InventoryType } from "@/lib/generated/prisma/enums";
+import { deductFromInventory, addToInventory } from "./inventory-service";
+import { calculateFlockAge } from "../utils/feed-program-server";
+
+export async function getAvailableFeedStockAction() {
+  try {
+    const inventory = await prisma.inventory.findFirst({
+      where: {
+        type: InventoryType.FEED,
+        isActive: true,
+      },
+      select: {
+        feedDetails: true,
+      }
+    });
+
+    if (!inventory || !inventory.feedDetails) {
+      return { success: true, data: {} };
+    }
+
+    const feedDetails = inventory.feedDetails as Record<string, number>;
+    return { success: true, data: feedDetails };
+  } catch (error) {
+    console.error("Error fetching available feed stock:", error);
+    return { success: false, error: "Failed to fetch available feed stock" };
+  }
+}
 
 export async function getFeedUsageAction() {
   try {
     const usage = await prisma.feedUsage.findMany({
       include: {
         flock: true,
-        feed: true,
         recordedBy: true,
       },
       orderBy: {
@@ -47,49 +73,68 @@ export async function createFeedUsageAction(data: {
       return { success: false, error: "Flock not found" };
     }
 
+    // Calculate flock age in weeks
+    const ageInWeeks = calculateFlockAge({
+      ...flock,
+      ageInDays: flock.ageInDays || 0,
+    });
+
     // Get feed recommendation for this flock
-    const feedRecommendation = await prisma.feedProgram.findFirst({
+    let feedRecommendation = await prisma.feedProgram.findFirst({
       where: {
-        ageInWeeks: flock.ageInWeeks,
+        ageInWeeks: ageInWeeks,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
+    // If no exact match found, use the last available program for older flocks
     if (!feedRecommendation) {
-      return { success: false, error: "No feed program found for this flock's age" };
+      feedRecommendation = await prisma.feedProgram.findFirst({
+        where: {
+          isActive: true
+        },
+        orderBy: {
+          ageInWeeks: 'desc'
+        }
+      });
+      
+      if (!feedRecommendation) {
+        return { success: false, error: "No feed program found" };
+      }
     }
 
-    // Find active feed inventory for the recommended feed type
-    const feed = await prisma.feedInventory.findFirst({
-      where: { 
-        feedType: feedRecommendation.feedType,
+    // NEW: Check inventory table instead of individual feed-inventory records
+    const inventory = await prisma.inventory.findFirst({
+      where: {
+        type: InventoryType.FEED,
         isActive: true,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
     });
 
-    if (!feed) {
-      return { success: false, error: `No active inventory found for ${feedRecommendation.feedType} feed` };
+    if (!inventory) {
+      return { success: false, error: "No feed inventory found" };
     }
 
-    if (feed.quantity < data.amountUsed) {
+    // Check if specific feed type is available
+    const feedDetails = inventory.feedDetails as any || {};
+    const availableQuantity = feedDetails[feedRecommendation.feedType] || 0;
+
+    if (availableQuantity < data.amountUsed) {
       return { 
         success: false, 
-        error: `Insufficient inventory. Available: ${feed.quantity} kg, Required: ${data.amountUsed} kg` 
+        error: `Insufficient ${feedRecommendation.feedType} inventory. Available: ${availableQuantity} kg, Required: ${data.amountUsed} kg` 
       };
     }
 
     // Create usage record and update inventory in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create the usage record with current user as recordedById
+      // Create the usage record
       const usage = await tx.feedUsage.create({
         data: {
           flockId: data.flockId,
-          feedId: feed.id,
+          feedType: feedRecommendation.feedType, // NEW: Store feed type directly
           date: data.date,
           amountUsed: data.amountUsed,
           unit: "KG",
@@ -98,20 +143,20 @@ export async function createFeedUsageAction(data: {
         },
         include: {
           flock: true,
-          feed: true,
           recordedBy: true,
         },
       });
 
-      // Update inventory quantity
-      await tx.feedInventory.update({
-        where: { id: feed.id },
-        data: {
-          quantity: {
-            decrement: data.amountUsed,
-          },
-        },
-      });
+      // NEW: Update inventory table instead of individual feed-inventory
+      const deductResult = await deductFromInventory(
+        InventoryType.FEED,
+        data.amountUsed,
+        { [feedRecommendation.feedType]: data.amountUsed }
+      );
+
+      if (!deductResult.success) {
+        throw new Error(deductResult.error || "Failed to deduct from inventory");
+      }
 
       return usage;
     });
@@ -135,7 +180,6 @@ export async function updateFeedUsageAction(id: string, data: {
     // Get the original usage record
     const originalUsage = await prisma.feedUsage.findUnique({
       where: { id },
-      include: { feed: true },
     });
 
     if (!originalUsage) {
@@ -148,14 +192,27 @@ export async function updateFeedUsageAction(id: string, data: {
       
       // Check if there's enough inventory for the increase
       if (difference > 0) {
-        const feed = await prisma.feedInventory.findUnique({
-          where: { id: originalUsage.feedId },
+        const inventory = await prisma.inventory.findFirst({
+          where: {
+            type: InventoryType.FEED,
+            isActive: true,
+          },
         });
 
-        if (!feed || feed.quantity < difference) {
+        if (!inventory) {
           return { 
             success: false, 
-            error: `Insufficient inventory. Available: ${feed?.quantity || 0} kg, Required increase: ${difference} kg` 
+            error: "No feed inventory found" 
+          };
+        }
+
+        const feedDetails = inventory.feedDetails as any || {};
+        const availableQuantity = feedDetails[originalUsage.feedType] || 0;
+
+        if (availableQuantity < difference) {
+          return { 
+            success: false, 
+            error: `Insufficient ${originalUsage.feedType} inventory. Available: ${availableQuantity} kg, Required increase: ${difference} kg` 
           };
         }
       }
@@ -167,20 +224,20 @@ export async function updateFeedUsageAction(id: string, data: {
           data,
           include: {
             flock: true,
-            feed: true,
             recordedBy: true,
           },
         });
 
-        // Adjust inventory quantity
-        await tx.feedInventory.update({
-          where: { id: originalUsage.feedId },
-          data: {
-            quantity: {
-              increment: -difference, // Negative difference means we're adding back to inventory
-            },
-          },
-        });
+        // Adjust inventory quantity using the inventory service
+        const adjustResult = await deductFromInventory(
+          InventoryType.FEED,
+          -difference, // Negative difference means we're adding back to inventory
+          { [originalUsage.feedType]: -difference }
+        );
+
+        if (!adjustResult.success) {
+          throw new Error(adjustResult.error || "Failed to adjust inventory");
+        }
 
         return usage;
       });
@@ -194,7 +251,6 @@ export async function updateFeedUsageAction(id: string, data: {
         data,
         include: {
           flock: true,
-          feed: true,
           recordedBy: true,
         },
       });
@@ -212,7 +268,7 @@ export async function deleteFeedUsageAction(id: string) {
     // Get the usage record to restore inventory
     const usage = await prisma.feedUsage.findUnique({
       where: { id },
-      include: { feed: true },
+      include: { },
     });
 
     if (!usage) {
@@ -226,15 +282,16 @@ export async function deleteFeedUsageAction(id: string) {
         where: { id },
       });
 
-      // Restore the inventory quantity
-      await tx.feedInventory.update({
-        where: { id: usage.feedId },
-        data: {
-          quantity: {
-            increment: usage.amountUsed,
-          },
-        },
-      });
+      // Restore the inventory quantity using the inventory service
+      const restoreResult = await addToInventory(
+        InventoryType.FEED,
+        usage.amountUsed,
+        { [usage.feedType]: usage.amountUsed }
+      );
+
+      if (!restoreResult.success) {
+        throw new Error(restoreResult.error || "Failed to restore inventory");
+      }
     });
 
     revalidatePath("/feed");

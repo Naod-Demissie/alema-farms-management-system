@@ -277,6 +277,7 @@ export function WaterConsumption() {
         }}
         onSubmit={handleSubmit}
         flocks={flocks}
+        flocksLoading={loading && flocks.length === 0}
         initialData={editingRecord}
       />
 
