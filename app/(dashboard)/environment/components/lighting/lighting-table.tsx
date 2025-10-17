@@ -44,16 +44,7 @@ import { deleteLightingRecord } from "../../server/lighting";
 import { toast } from "sonner";
 import { EnvironmentTableToolbar } from "../table/environment-table-toolbar";
 import { LightingAggregates } from "../table/lighting-aggregates";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 type LightingRecord = {
   id: string;
@@ -84,21 +75,36 @@ export function LightingTable({ records, flocks, onSuccess }: LightingTableProps
   const [editRecord, setEditRecord] = useState<LightingRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    record: null as LightingRecord | null,
+  });
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const handleDeleteClick = (recordId: string) => {
+    const record = records.find(r => r.id === recordId);
+    if (record) {
+      setConfirmDialog({
+        open: true,
+        record: record,
+      });
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.record) return;
     
     setDeleting(true);
     try {
-      const result = await deleteLightingRecord(deleteId);
+      const result = await deleteLightingRecord(confirmDialog.record.id);
       
       if (result.success) {
         toast.success(t("deleteSuccess"));
         onSuccess();
+        setConfirmDialog({ open: false, record: null });
       } else {
         toast.error(result.error || t("unexpectedError"));
       }
@@ -106,7 +112,6 @@ export function LightingTable({ records, flocks, onSuccess }: LightingTableProps
       toast.error(t("unexpectedError"));
     } finally {
       setDeleting(false);
-      setDeleteId(null);
     }
   };
 
@@ -265,7 +270,7 @@ export function LightingTable({ records, flocks, onSuccess }: LightingTableProps
                 {t("edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setDeleteId(row.original.id)}
+                onClick={() => handleDeleteClick(row.original.id)}
                 className="text-destructive"
               >
                 <Trash className="mr-2 h-4 w-4" />
@@ -382,8 +387,6 @@ export function LightingTable({ records, flocks, onSuccess }: LightingTableProps
           table={table}
           pageSize={10}
         />
-        
-        <DataTableViewOptions table={table} />
       </div>
 
       {/* Edit Dialog */}
@@ -398,20 +401,17 @@ export function LightingTable({ records, flocks, onSuccess }: LightingTableProps
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("deleteDescription")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-              {deleting ? t("deleting") : t("delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={t("deleteTitle")}
+        desc={t("deleteDescription")}
+        confirmText={deleting ? t("deleting") : t("delete")}
+        cancelBtnText={t("cancel")}
+        destructive={true}
+        handleConfirm={handleConfirmDelete}
+        isLoading={deleting}
+      />
     </>
   );
 }

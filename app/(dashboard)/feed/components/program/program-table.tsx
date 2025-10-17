@@ -58,9 +58,10 @@ interface ProgramTableProps {
   onView?: (record: any) => void;
   onEdit?: (record: any) => void;
   onDelete?: (record: any) => void;
+  loading?: boolean;
 }
 
-export function ProgramTable({ columns, data, toolbar, onView, onEdit, onDelete }: ProgramTableProps) {
+export function ProgramTable({ columns, data, toolbar, onView, onEdit, onDelete, loading = false }: ProgramTableProps) {
   const t = useTranslations('feed.program');
   const tCommon = useTranslations('feed.common');
   const tFeedTypes = useTranslations('feed.feedTypes');
@@ -174,7 +175,21 @@ export function ProgramTable({ columns, data, toolbar, onView, onEdit, onDelete 
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                      <p className="mt-2 text-sm text-muted-foreground">Loading feed program...</p>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

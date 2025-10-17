@@ -51,6 +51,7 @@ interface ProductionDialogProps {
   initialData?: ProductionData;
   onSuccess?: () => void;
   loading?: boolean;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 export function ProductionDialog({
@@ -61,9 +62,11 @@ export function ProductionDialog({
   flocksLoading = false,
   initialData,
   onSuccess,
-  loading = false
+  loading = false,
+  onLoadingChange
 }: ProductionDialogProps) {
   const t = useTranslations('production');
+  const tCommon = useTranslations('common');
   
   // Get the appropriate schema based on production type
   const getSchema = () => {
@@ -105,6 +108,9 @@ export function ProductionDialog({
   // Handle form submission
   const handleSubmit = async (data: any) => {
     try {
+      if (onLoadingChange) {
+        onLoadingChange(true);
+      }
       const baseData = {
         flockId: data.flockId,
         date: data.date,
@@ -180,6 +186,10 @@ export function ProductionDialog({
     } catch (error) {
       console.error("Error creating production record:", error);
       toast.error(t('toasts.error'));
+    } finally {
+      if (onLoadingChange) {
+        onLoadingChange(false);
+      }
     }
   };
 
@@ -213,6 +223,7 @@ export function ProductionDialog({
         title: dialogConfig.title,
         description: dialogConfig.description,
         submitText: dialogConfig.submitText,
+        cancelText: tCommon('cancel'),
         onSubmit: handleSubmit,
         maxWidth: productionType === 'eggs' ? "max-w-2xl" : "sm:max-w-[425px]",
         children: (form) => (

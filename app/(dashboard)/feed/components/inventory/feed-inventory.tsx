@@ -26,10 +26,11 @@ import {
   updateFeedInventoryAction, 
   deleteFeedInventoryAction 
 } from "@/app/(dashboard)/feed/server/feed-inventory";
-import { getFeedSuppliersAction, createFeedSupplierAction } from "@/app/(dashboard)/feed/server/feed-suppliers";
+import { getFeedSuppliersAction, createFeedSupplierAction, updateFeedSupplierAction } from "@/app/(dashboard)/feed/server/feed-suppliers";
 import { feedTypeLabels } from "@/app/(dashboard)/feed/utils/feed-program";
-import { createExpense, deleteExpenseBySource } from "@/app/(dashboard)/financial/server/financial";
+import { createExpense, deleteExpenseBySource, updateExpenseBySource, getExpenseBySource } from "@/app/(dashboard)/financial/server/financial";
 import { ExpenseCategory } from "@/lib/generated/prisma/enums";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 const feedInventorySchema = z.object({
   feedType: z.enum(["LAYER_STARTER", "REARING", "PULLET_FEED", "LAYER", "LAYER_PHASE_1", "CUSTOM"]),
@@ -61,6 +62,7 @@ export function FeedInventory() {
   const [loading, setLoading] = useState(false);
   const [addToSuppliers, setAddToSuppliers] = useState(false);
   const [addToExpense, setAddToExpense] = useState(true);
+  const [editSupplier, setEditSupplier] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     type: 'delete' | null;
@@ -128,7 +130,7 @@ export function FeedInventory() {
     try {
       // Validate supplier name if "Add to Suppliers" is enabled
       if (addToSuppliers && !data.supplierName && !editingItem) {
-        toast.error("Supplier name is required when 'Add Suppliers' is enabled");
+        toast.error(t('validation.supplierNameRequired'));
         return;
       }
 
@@ -149,18 +151,38 @@ export function FeedInventory() {
         
         if (supplierResult.success && supplierResult.data) {
           actualSupplierId = supplierResult.data.id;
-          toast.success("Supplier created successfully");
+          toast.success(t('toasts.supplierCreatedSuccess'));
           // Refresh suppliers list
           await fetchSuppliers();
         } else {
-          toast.error("Failed to create supplier", {
-            description: supplierResult.error || "Unknown error",
+          toast.error(t('toasts.supplierCreateFailed'), {
+            description: supplierResult.error || t('toasts.unknownError'),
           });
           // Continue with inventory creation even if supplier creation fails
         }
       }
       
       if (editingItem) {
+        // Handle supplier editing if enabled
+        if (editSupplier && editingItem.supplierId && data.supplierName) {
+          const supplierUpdateResult = await updateFeedSupplierAction(editingItem.supplierId, {
+            name: data.supplierName,
+            contactName: data.supplierContactName,
+            phone: data.supplierPhone,
+            address: data.supplierAddress,
+            notes: data.supplierNotes,
+          });
+          
+          if (!supplierUpdateResult.success) {
+            toast.error(t('toasts.supplierUpdateFailed'), {
+              description: supplierUpdateResult.error || t('toasts.unknownError'),
+            });
+            // Continue with inventory update even if supplier update fails
+          } else {
+            toast.success(t('toasts.supplierUpdatedSuccess'));
+          }
+        }
+
         // Update existing item
         result = await updateFeedInventoryAction(editingItem.id, {
           feedType: data.feedType,
@@ -172,6 +194,23 @@ export function FeedInventory() {
         });
         if (result.success) {
           toast.success(t('toasts.updated'));
+          
+          // Update the linked expense record if it exists
+          if (data.costPerUnit && data.quantity) {
+            const totalAmount = data.quantity * data.costPerUnit;
+            const expenseUpdateResult = await updateExpenseBySource(editingItem.id, 'feed_inventory', {
+              quantity: data.quantity,
+              costPerQuantity: data.costPerUnit,
+              amount: totalAmount,
+              description: `Feed inventory: ${feedTypeLabels[data.feedType]} - ${data.quantity} ${data.unit}${data.notes ? ` - ${data.notes}` : ''}`,
+            });
+            
+            if (expenseUpdateResult.success) {
+              toast.success(t('toasts.expenseUpdatedSuccess'));
+            } else if (expenseUpdateResult.message !== "No linked expense found") {
+              console.warn("Failed to update expense:", expenseUpdateResult.message);
+            }
+          }
         } else {
           toast.error(t('toasts.updateError'), {
             description: result.error || t('toasts.unexpectedError'),
@@ -208,10 +247,10 @@ export function FeedInventory() {
             });
             
             if (expenseResult.success) {
-              toast.success("Expense record created successfully");
+              toast.success(t('toasts.expenseCreatedSuccess'));
             } else {
-              toast.warning("Inventory created but expense recording failed", {
-                description: expenseResult.message || "Unknown error",
+              toast.warning(t('toasts.expenseCreateFailed'), {
+                description: expenseResult.message || t('toasts.unknownError'),
               });
             }
           }
@@ -228,6 +267,7 @@ export function FeedInventory() {
       setEditingItem(null);
       setAddToSuppliers(false);
       setAddToExpense(true);
+      setEditSupplier(false);
       form.reset();
     } catch (error) {
       console.error("Error saving inventory item:", error);
@@ -246,14 +286,26 @@ export function FeedInventory() {
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
+    // Database stores quantities in KG, so convert back to original unit for editing
+    const displayQuantity = item.unit === 'QUINTAL' 
+      ? item.quantity / 100  // Convert kg back to quintal for display/editing
+      : item.quantity;
+    
     form.reset({
       feedType: item.feedType,
       supplierId: item.supplierId || "none",
-      quantity: item.quantity,
+      quantity: displayQuantity, // Use converted quantity
       unit: item.unit,
       costPerUnit: item.costPerUnit || 0,
       notes: item.notes || "",
+      // Populate supplier fields if supplier exists
+      supplierName: item.supplier?.name || "",
+      supplierContactName: item.supplier?.contactName || "",
+      supplierPhone: item.supplier?.phone || "",
+      supplierAddress: item.supplier?.address || "",
+      supplierNotes: item.supplier?.notes || "",
     });
+    setEditSupplier(false); // Start with edit supplier toggle off
     setIsAddDialogOpen(true);
   };
 
@@ -286,10 +338,10 @@ export function FeedInventory() {
       const expenseDeleteResult = await deleteExpenseBySource(item.id, 'feed_inventory');
       
       if (expenseDeleteResult.success && expenseDeleteResult.message !== "No linked expense found") {
-        toast.success("Linked expense record also deleted");
+        toast.success(t('toasts.expenseAlsoDeleted'));
       } else if (!expenseDeleteResult.success) {
         console.warn("Failed to delete linked expense:", expenseDeleteResult.message);
-        toast.warning("Inventory will be deleted, but expense record could not be removed");
+        toast.warning(t('toasts.expenseDeleteWarning'));
       }
 
       // Now delete the inventory item
@@ -434,16 +486,16 @@ export function FeedInventory() {
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    {/* Toggles - Only show when adding new inventory */}
-                    {!editingItem && (
+                    {/* Toggles - Show different toggles for add vs edit */}
+                    {!editingItem ? (
                       <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div className="space-y-0.5">
                             <Label htmlFor="add-supplier" className="text-base font-medium">
-                              Add Suppliers
+                              {t('form.addSuppliersLabel')}
                             </Label>
                             <p className="text-sm text-muted-foreground">
-                              Create a new supplier along with this inventory
+                              {t('form.addSuppliersDescription')}
                             </p>
                           </div>
                           <Switch
@@ -456,16 +508,35 @@ export function FeedInventory() {
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div className="space-y-0.5">
                             <Label htmlFor="add-expense" className="text-base font-medium">
-                              Add to Expense Table
+                              {t('form.addToExpenseLabel')}
                             </Label>
                             <p className="text-sm text-muted-foreground">
-                              Record this purchase as a feed expense
+                              {t('form.addToExpenseDescription')}
                             </p>
                           </div>
                           <Switch
                             id="add-expense"
                             checked={addToExpense}
                             onCheckedChange={setAddToExpense}
+                            className="sm:ml-4"
+                          />
+                        </div>
+                      </div>
+                    ) : editingItem.supplierId && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="edit-supplier" className="text-base font-medium">
+                              {t('form.editSupplierLabel')}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t('form.editSupplierDescription')}
+                            </p>
+                          </div>
+                          <Switch
+                            id="edit-supplier"
+                            checked={editSupplier}
+                            onCheckedChange={setEditSupplier}
                             className="sm:ml-4"
                           />
                         </div>
@@ -489,9 +560,9 @@ export function FeedInventory() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {Object.entries(feedTypeLabels).map(([value, label]) => (
+                                {Object.keys(feedTypeLabels).map((value) => (
                                   <SelectItem key={value} value={value}>
-                                    {label}
+                                    {tFeedTypes(value, { defaultValue: feedTypeLabels[value as keyof typeof feedTypeLabels] })}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -560,17 +631,17 @@ export function FeedInventory() {
                         render={({ field }) => (
                           <FormItem className="sm:col-span-1">
                             <FormLabel className="flex items-center gap-1">
-                              Unit <span className="text-red-500">*</span>
+                              {t('form.unitLabel')} <span className="text-red-500">*</span>
                             </FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select unit" />
+                                  <SelectValue placeholder={t('form.unitPlaceholder')} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="KG">KG</SelectItem>
-                                <SelectItem value="QUINTAL">Quintal</SelectItem>
+                                <SelectItem value="KG">{t('form.unitKg')}</SelectItem>
+                                <SelectItem value="QUINTAL">{t('form.unitQuintal')}</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -583,7 +654,7 @@ export function FeedInventory() {
                         render={({ field }) => (
                           <FormItem className="sm:col-span-2">
                             <FormLabel className="flex items-center gap-1">
-                              Cost per {form.watch('unit') === 'QUINTAL' ? 'Quintal' : 'KG'} ({tCommon('birr')}) <span className="text-red-500">*</span>
+                              {t('form.costPerLabel')} {form.watch('unit') === 'QUINTAL' ? t('form.unitQuintal') : t('form.unitKg')} ({tCommon('birr')}) <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
                               <Input 
@@ -607,7 +678,7 @@ export function FeedInventory() {
                     {/* Total Amount Display */}
                     <div className="grid gap-2">
                       <div className="bg-muted/50 p-3 rounded-lg text-center">
-                        <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
+                        <div className="text-sm text-muted-foreground mb-1">{t('form.totalAmountLabel')}</div>
                         <div className="text-xl font-semibold">
                           {(form.watch('quantity') ?? 0) > 0 && (form.watch('costPerUnit') ?? 0) > 0 && form.watch('unit')
                             ? new Intl.NumberFormat("en-ET", {
@@ -623,10 +694,10 @@ export function FeedInventory() {
                         </div>
                         {(form.watch('quantity') ?? 0) > 0 && (form.watch('costPerUnit') ?? 0) > 0 && form.watch('unit') && (
                           <div className="text-xs text-muted-foreground mt-1">
-                            {form.watch('quantity')} {form.watch('unit')} × {new Intl.NumberFormat("en-ET", {
+                            {form.watch('quantity')} × {new Intl.NumberFormat("en-ET", {
                               style: "currency",
                               currency: "ETB",
-                            }).format(form.watch('costPerUnit') ?? 0)} per {form.watch('unit') === 'QUINTAL' ? 'Quintal' : 'KG'}
+                            }).format(form.watch('costPerUnit') ?? 0)} {t('form.perLabel')} {form.watch('unit') === 'QUINTAL' ? t('form.unitQuintal') : t('form.unitKg')}
                           </div>
                         )}
                       </div>
@@ -650,12 +721,14 @@ export function FeedInventory() {
                       )}
                     />
 
-                    {/* Supplier Fields - Only show when "Add Suppliers" toggle is on */}
-                    {addToSuppliers && !editingItem && (
+                    {/* Supplier Fields - Show when adding new supplier or editing existing supplier */}
+                    {((addToSuppliers && !editingItem) || (editSupplier && editingItem)) && (
                       <div className="space-y-4 p-4 bg-primary/5 rounded-lg border-2 border-primary/20">
                         <div className="flex items-center gap-2 mb-2">
                           <Package className="h-5 w-5 text-primary" />
-                          <h3 className="text-lg font-semibold text-primary">New Supplier Information</h3>
+                          <h3 className="text-lg font-semibold text-primary">
+                            {editingItem ? t('form.editSupplierInfoLabel') : t('form.newSupplierInfoLabel')}
+                          </h3>
                         </div>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -665,10 +738,10 @@ export function FeedInventory() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="flex items-center gap-1">
-                                  Supplier Name <span className="text-red-500">*</span>
+                                  {t('form.supplierNameLabel')} <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Enter supplier name" {...field} />
+                                  <Input placeholder={t('form.supplierNamePlaceholder')} {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -679,9 +752,9 @@ export function FeedInventory() {
                             name="supplierContactName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Contact Person</FormLabel>
+                                <FormLabel>{t('form.contactPersonLabel')}</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Enter contact person name" {...field} />
+                                  <Input placeholder={t('form.contactPersonPlaceholder')} {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -694,9 +767,9 @@ export function FeedInventory() {
                           name="supplierPhone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Phone</FormLabel>
+                              <FormLabel>{t('form.phoneLabel')}</FormLabel>
                               <FormControl>
-                                <Input placeholder="+251 XXX XXX XXX" {...field} />
+                                <Input placeholder={t('form.phonePlaceholder')} {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -708,10 +781,10 @@ export function FeedInventory() {
                           name="supplierAddress"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Address</FormLabel>
+                              <FormLabel>{t('form.addressLabel')}</FormLabel>
                               <FormControl>
                                 <Textarea 
-                                  placeholder="Enter supplier address..."
+                                  placeholder={t('form.addressPlaceholder')}
                                   {...field}
                                 />
                               </FormControl>
@@ -725,10 +798,10 @@ export function FeedInventory() {
                           name="supplierNotes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Supplier Notes</FormLabel>
+                              <FormLabel>{t('form.supplierNotesLabel')}</FormLabel>
                               <FormControl>
                                 <Textarea 
-                                  placeholder="Additional notes about this supplier..."
+                                  placeholder={t('form.supplierNotesPlaceholder')}
                                   {...field}
                                 />
                               </FormControl>
@@ -778,52 +851,58 @@ export function FeedInventory() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="w-[95vw] max-w-2xl sm:w-full">
           <DialogHeader>
-            <DialogTitle>{t('dialog.viewTitle')}</DialogTitle>
+            <DialogTitle>{t('viewDialog.title')}</DialogTitle>
             <DialogDescription>
-              Detailed information about the inventory item
+              {t('viewDialog.description')}
             </DialogDescription>
           </DialogHeader>
           {viewingItem && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Feed Type</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.feedTypeLabel')}</Label>
                   <div className="mt-1">
                     <Badge variant="outline">
-                      {feedTypeLabels[viewingItem.feedType as keyof typeof feedTypeLabels] || viewingItem.feedType}
+                      {tFeedTypes(viewingItem.feedType, { defaultValue: viewingItem.feedType })}
                     </Badge>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Supplier</Label>
-                  <p className="text-sm font-medium">{viewingItem.supplier?.name || "No supplier"}</p>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.supplierLabel')}</Label>
+                  <p className="text-sm font-medium">{viewingItem.supplier?.name || t('form.noSupplier')}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Quantity</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.quantityLabel')}</Label>
                   <p className="text-sm font-medium">{viewingItem.quantity} {viewingItem.unit}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Cost per Unit</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.costPerUnitLabel')}</Label>
                   <p className="text-sm font-medium">
-                    {viewingItem.costPerUnit ? `${formatNumber(viewingItem.costPerUnit)} ${tCommon('birr')}` : "N/A"}
+                    {viewingItem.costPerUnit ? `${formatNumber(viewingItem.costPerUnit)} ${tCommon('birr')}` : tCommon('na')}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.createdDateLabel')}</Label>
+                  <p className="text-sm font-medium">
+                    {EthiopianDateFormatter.formatForTable(new Date(viewingItem.createdAt))}
                   </p>
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Notes</Label>
-                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingItem.notes || "N/A"}</p>
+                <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.notesLabel')}</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingItem.notes || tCommon('na')}</p>
               </div>
             </div>
           )}
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="w-full sm:w-auto">
-              Close
+              {t('viewDialog.closeButton')}
             </Button>
             <Button onClick={() => {
               setIsViewDialogOpen(false);
               handleEdit(viewingItem);
             }} className="w-full sm:w-auto">
-              Edit Item
+              {t('viewDialog.editButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -835,20 +914,20 @@ export function FeedInventory() {
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
         title={
           confirmDialog.type === 'delete'
-            ? 'Delete Inventory Item'
-            : 'Confirm Action'
+            ? t('confirmDialog.deleteTitle')
+            : tCommon('confirmAction')
         }
         desc={
           confirmDialog.type === 'delete'
-            ? `Are you sure you want to delete this feed inventory item? This action cannot be undone.`
-            : 'Are you sure you want to proceed?'
+            ? t('confirmDialog.deleteDescription')
+            : tCommon('confirmProceed')
         }
         confirmText={
           confirmDialog.type === 'delete'
-            ? 'Delete Item'
-            : 'Continue'
+            ? t('confirmDialog.confirmButton')
+            : tCommon('continue')
         }
-        cancelBtnText="Cancel"
+        cancelBtnText={t('confirmDialog.cancelButton')}
         destructive={confirmDialog.type === 'delete'}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.item?.id}

@@ -35,6 +35,11 @@ export async function createFeedInventoryAction(data: {
   notes?: string;
 }) {
   try {
+    // IMPORTANT: Convert quantity to KG for storage in feed_inventory table
+    // This ensures feed usage validation works correctly (it assumes all quantities are in kg)
+    // 1 quintal = 100 kg
+    const quantityInKg = data.unit === 'QUINTAL' ? data.quantity * 100 : data.quantity;
+    
     // Calculate total cost: quantity * costPerUnit
     // costPerUnit is per the selected unit (KG or Quintal)
     const totalCost = data.costPerUnit ? data.quantity * data.costPerUnit : null;
@@ -43,8 +48,8 @@ export async function createFeedInventoryAction(data: {
       data: {
         feedType: data.feedType,
         supplierId: data.supplierId && data.supplierId !== "none" ? data.supplierId : null,
-        quantity: data.quantity,
-        unit: data.unit as any,
+        quantity: quantityInKg, // Always store in KG
+        unit: data.unit as any, // Keep original unit for display purposes
         costPerUnit: data.costPerUnit,
         totalCost,
         notes: data.notes,
@@ -78,8 +83,18 @@ export async function updateFeedInventoryAction(id: string, data: {
       return { success: false, error: "Feed inventory not found" };
     }
     
+    // IMPORTANT: Convert quantity to KG for storage if unit is QUINTAL
+    // Only convert if quantity is being updated
+    const unit = data.unit ?? currentRecord.unit;
+    let quantityInKg = data.quantity;
+    
+    if (data.quantity !== undefined && unit === 'QUINTAL') {
+      quantityInKg = data.quantity * 100; // Convert quintal to kg
+    }
+    
     // Calculate total cost: quantity * costPerUnit
     // costPerUnit is per the selected unit (KG or Quintal)
+    // Use the original input quantity (not converted) for cost calculation
     const quantity = data.quantity ?? currentRecord.quantity;
     const costPerUnit = data.costPerUnit ?? currentRecord.costPerUnit;
     const totalCost = costPerUnit ? quantity * costPerUnit : null;
@@ -88,8 +103,8 @@ export async function updateFeedInventoryAction(id: string, data: {
       where: { id },
       data: {
         feedType: data.feedType,
-        quantity: data.quantity,
-        unit: data.unit as any,
+        quantity: quantityInKg, // Always store in KG
+        unit: data.unit as any,  // Keep original unit for display
         costPerUnit: data.costPerUnit,
         notes: data.notes,
         isActive: data.isActive,

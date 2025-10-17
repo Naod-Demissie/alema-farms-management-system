@@ -64,7 +64,7 @@ export function WaterTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   
-  const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
+  const { mobileColumnVisibility } = useMobileColumns(columns as any, columnVisibility);
 
   const table = useReactTable({
     data,
@@ -77,7 +77,7 @@ export function WaterTable<TData, TValue>({
     },
     enableRowSelection,
     enableSorting,
-    enableFiltering,
+    enableFilters: enableFiltering,
     onRowSelectionChange: (updater) => {
       const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
       setRowSelection(newSelection);
@@ -169,11 +169,8 @@ export function WaterTable<TData, TValue>({
       {enablePagination && (
         <DataTablePagination
           table={table}
-          pageSize={pageSize}
         />
       )}
-      
-      <DataTableViewOptions table={table} />
     </div>
   );
 }

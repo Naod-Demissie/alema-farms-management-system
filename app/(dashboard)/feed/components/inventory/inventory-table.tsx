@@ -65,6 +65,8 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const t = useTranslations('common');
+  const tInventory = useTranslations('feed.inventory');
+  const tFeedTypes = useTranslations('feed.feedTypes');
   const [sorting, setSorting] = useState<SortingState>([]);
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
@@ -134,17 +136,18 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
         <DataTableToolbar
           table={table}
           filterColumnId="feedType"
-          filterPlaceholder="Filter by feed type..."
+          filterPlaceholder={tInventory('toolbar.filterPlaceholder')}
           facetedFilters={[
             {
               columnId: "feedType",
-              title: "Feed Type",
+              title: tInventory('toolbar.feedTypeFilter'),
               options: [
-                { label: "Starter", value: "starter" },
-                { label: "Grower", value: "grower" },
-                { label: "Finisher", value: "finisher" },
-                { label: "Layer", value: "layer" },
-                { label: "Custom", value: "custom" },
+                { label: tFeedTypes('LAYER_STARTER'), value: "LAYER_STARTER" },
+                { label: tFeedTypes('REARING'), value: "REARING" },
+                { label: tFeedTypes('PULLET_FEED'), value: "PULLET_FEED" },
+                { label: tFeedTypes('LAYER'), value: "LAYER" },
+                { label: tFeedTypes('LAYER_PHASE_1'), value: "LAYER_PHASE_1" },
+                { label: tFeedTypes('CUSTOM'), value: "CUSTOM" },
               ],
             },
           ]}
@@ -203,7 +206,7 @@ export function InventoryTable({ columns, data, toolbar, onView, onEdit, onDelet
                 >
                   <NoDataIcon 
                     icon={Package}
-                    title="No inventory items found"
+                    title={tInventory('toolbar.noDataTitle')}
                   />
                 </TableCell>
               </TableRow>

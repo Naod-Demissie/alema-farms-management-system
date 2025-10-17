@@ -66,6 +66,7 @@ export function SupplierTable({ columns, data, toolbar, onView, onEdit, onDelete
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const t = useTranslations('common');
+  const tSuppliers = useTranslations('feed.suppliers');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
@@ -134,7 +135,7 @@ export function SupplierTable({ columns, data, toolbar, onView, onEdit, onDelete
         <DataTableToolbar
           table={table}
           filterColumnId="name"
-          filterPlaceholder="Filter suppliers..."
+          filterPlaceholder={tSuppliers('toolbar.filterPlaceholder')}
         />
       )}
       <div className="rounded-md border">
@@ -190,7 +191,7 @@ export function SupplierTable({ columns, data, toolbar, onView, onEdit, onDelete
                 >
                   <NoDataIcon 
                     icon={Truck}
-                    title="No suppliers found"
+                    title={tSuppliers('toolbar.noDataTitle')}
                   />
                 </TableCell>
               </TableRow>

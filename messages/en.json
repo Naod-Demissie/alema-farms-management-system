@@ -853,8 +853,17 @@
       "LAYER_PHASE_1": "Layer Phase 1",
       "CUSTOM": "Custom"
     },
+    "feedTypeLabels": {
+      "LAYER_STARTER": "Layer Starter",
+      "REARING": "Rearing",
+      "PULLET_FEED": "Pullet Feed",
+      "LAYER": "Layer",
+      "LAYER_PHASE_1": "Layer Phase 1",
+      "CUSTOM": "Custom"
+    },
     "common": {
       "actions": "Actions",
+      "view": "View",
       "viewDetails": "View Details",
       "edit": "Edit",
       "editRecord": "Edit Record",
@@ -863,7 +872,10 @@
       "unknown": "Unknown",
       "na": "N/A",
       "kg": "kg",
-      "birr": "Birr"
+      "birr": "Birr",
+      "confirmAction": "Confirm Action",
+      "confirmProceed": "Are you sure you want to proceed?",
+      "continue": "Continue"
     },
     "inventory": {
       "title": "Feed Inventory",
@@ -926,7 +938,7 @@
         "feedTypePlaceholder": "Select feed type",
         "supplierLabel": "Supplier",
         "supplierPlaceholder": "Select supplier",
-        "quantityLabel": "Quantity (kg)",
+        "quantityLabel": "Quantity",
         "quantityPlaceholder": "Enter quantity",
         "costPerUnitLabel": "Cost Per Unit (Birr/kg)",
         "costPerUnitPlaceholder": "Enter cost per unit",
@@ -944,7 +956,33 @@
         "updateButton": "Update Inventory",
         "cancelButton": "Cancel",
         "deleteButton": "Delete",
-        "closeButton": "Close"
+        "closeButton": "Close",
+        "unitLabel": "Unit",
+        "unitPlaceholder": "Select unit",
+        "unitKg": "KG",
+        "unitQuintal": "Quintal",
+        "costPerLabel": "Cost per",
+        "totalAmountLabel": "Total Amount",
+        "perLabel": "per",
+        "addSuppliersLabel": "Add Suppliers",
+        "addSuppliersDescription": "Create a new supplier along with this inventory",
+        "addToExpenseLabel": "Add to Expense Table",
+        "addToExpenseDescription": "Record this purchase as a feed expense",
+        "editSupplierLabel": "Edit Supplier",
+        "editSupplierDescription": "Update the supplier information for this inventory",
+        "newSupplierInfoLabel": "New Supplier Information",
+        "editSupplierInfoLabel": "Edit Supplier Information",
+        "supplierNameLabel": "Supplier Name",
+        "supplierNamePlaceholder": "Enter supplier name",
+        "contactPersonLabel": "Contact Person",
+        "contactPersonPlaceholder": "Enter contact person name",
+        "phoneLabel": "Phone",
+        "phonePlaceholder": "+251 XXX XXX XXX",
+        "addressLabel": "Address",
+        "addressPlaceholder": "Enter supplier address...",
+        "supplierNotesLabel": "Supplier Notes",
+        "supplierNotesPlaceholder": "Additional notes about this supplier...",
+        "noSupplier": "No Supplier"
       },
       "validation": {
         "feedTypeRequired": "Please select a feed type",
@@ -952,16 +990,27 @@
         "quantityMin": "Quantity must be greater than 0",
         "costPerUnitRequired": "Cost per unit is required",
         "costPerUnitMin": "Cost per unit must be greater than 0",
-        "purchaseDateRequired": "Purchase date is required"
+        "purchaseDateRequired": "Purchase date is required",
+        "supplierNameRequired": "Supplier name is required when 'Add Suppliers' is enabled"
       },
       "toasts": {
+        "supplierCreatedSuccess": "Supplier created successfully",
+        "supplierCreateFailed": "Failed to create supplier",
+        "expenseCreatedSuccess": "Expense record created successfully",
+        "expenseCreateFailed": "Inventory created but expense recording failed",
+        "unknownError": "Unknown error",
         "created": "Feed inventory record created successfully",
         "updated": "Feed inventory record updated successfully",
         "deleted": "Feed inventory record deleted successfully",
         "createError": "Failed to create feed inventory record",
         "updateError": "Failed to update feed inventory record",
         "deleteError": "Failed to delete feed inventory record",
-        "unexpectedError": "An unexpected error occurred"
+        "unexpectedError": "An unexpected error occurred",
+        "expenseAlsoDeleted": "Linked expense record also deleted",
+        "expenseDeleteWarning": "Inventory will be deleted, but expense record could not be removed",
+        "supplierUpdatedSuccess": "Supplier updated successfully",
+        "supplierUpdateFailed": "Failed to update supplier",
+        "expenseUpdatedSuccess": "Expense record updated successfully"
       },
       "columns": {
         "feedType": "Feed Type",
@@ -977,6 +1026,29 @@
         "status": "Status",
         "actions": "Actions",
         "noSupplier": "No supplier"
+      },
+      "viewDialog": {
+        "title": "Inventory Details",
+        "description": "Detailed information about the inventory item",
+        "feedTypeLabel": "Feed Type",
+        "supplierLabel": "Supplier",
+        "quantityLabel": "Quantity",
+        "costPerUnitLabel": "Cost per Unit",
+        "createdDateLabel": "Created Date",
+        "notesLabel": "Notes",
+        "closeButton": "Close",
+        "editButton": "Edit Item"
+      },
+      "toolbar": {
+        "filterPlaceholder": "Filter by feed type...",
+        "feedTypeFilter": "Feed Type",
+        "noDataTitle": "No inventory items found"
+      },
+      "confirmDialog": {
+        "deleteTitle": "Delete Inventory Item",
+        "deleteDescription": "Are you sure you want to delete this feed inventory item? This action cannot be undone.",
+        "confirmButton": "Delete Item",
+        "cancelButton": "Cancel"
       }
     },
     "usage": {
@@ -1120,8 +1192,10 @@
         "filterByMonth": "Filter by month",
         "reset": "Reset",
         "records": "records",
-        "noRecordsFound": "No water consumption records found"
+        "noRecordsFound": "No water consumption records found",
+        "birds": "birds"
       },
+      "cancel": "Cancel",
       "dialog": {
         "addTitle": "Record Water Consumption",
         "addDescription": "Log daily water consumption for a flock.",
@@ -1418,6 +1492,43 @@
         "created": "Created",
         "notes": "Notes",
         "actions": "Actions"
+      },
+      "viewDialog": {
+        "title": "Supplier Details",
+        "description": "Detailed information about the supplier",
+        "supplierNameLabel": "Supplier Name",
+        "contactPersonLabel": "Contact Person",
+        "phoneLabel": "Phone",
+        "statusLabel": "Status",
+        "addressLabel": "Address",
+        "notesLabel": "Notes",
+        "createdAtLabel": "Created At",
+        "updatedAtLabel": "Updated At",
+        "closeButton": "Close",
+        "editButton": "Edit Supplier",
+        "activeStatus": "Active",
+        "inactiveStatus": "Inactive"
+      },
+      "editDialog": {
+        "addTitle": "Add New Supplier",
+        "editTitle": "Edit Supplier",
+        "addDescription": "Add a new feed supplier to your system.",
+        "editDescription": "Update the supplier information below.",
+        "addButton": "Add Supplier",
+        "updateButton": "Update",
+        "addSupplierButton": "Supplier",
+        "cancelButton": "Cancel"
+      },
+      "toolbar": {
+        "filterPlaceholder": "Filter suppliers...",
+        "noDataTitle": "No suppliers found"
+      },
+      "confirmDialog": {
+        "deleteTitle": "Delete Supplier",
+        "deleteDescription": "Are you sure you want to delete the supplier \"{name}\"? This action cannot be undone and the supplier will be permanently removed.",
+        "confirmButton": "Delete Supplier",
+        "cancelButton": "Cancel",
+        "confirmAction": "Confirm Action"
       }
     }
   },

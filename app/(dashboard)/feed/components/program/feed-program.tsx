@@ -200,6 +200,7 @@ export function FeedProgram() {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            loading={loading}
           />
         </CardContent>
       </Card>

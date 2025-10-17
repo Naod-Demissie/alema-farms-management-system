@@ -12,6 +12,7 @@ import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { EthiopianCalendarUtils, ETHIOPIAN_MONTHS } from "@/lib/ethiopian-calendar";
+import { DataTableViewOptions } from "@/components/table/data-table-view-options";
 
 interface WaterTableToolbarProps<TData> {
   table: Table<TData>;
@@ -154,6 +155,7 @@ export function WaterTableToolbar<TData>({
           </Button>
         )}
       </div>
+      <DataTableViewOptions table={table} />
     </div>
   );
 }

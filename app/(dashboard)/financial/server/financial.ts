@@ -150,6 +150,51 @@ export async function deleteExpense(id: string) {
   }
 }
 
+export async function getExpenseBySource(sourceId: string, sourceType: string) {
+  try {
+    const expense = await prisma.expenses.findFirst({
+      where: { 
+        sourceId: sourceId,
+        sourceType: sourceType 
+      }
+    });
+
+    if (!expense) {
+      return { success: false, message: "No linked expense found" };
+    }
+
+    return { success: true, data: expense };
+  } catch (error) {
+    console.error("Error getting expense by source:", error);
+    return { success: false, message: "Failed to get expense by source" };
+  }
+}
+
+export async function updateExpenseBySource(sourceId: string, sourceType: string, data: {
+  quantity?: number;
+  costPerQuantity?: number;
+  amount?: number;
+  description?: string;
+}) {
+  try {
+    const expense = await prisma.expenses.findFirst({
+      where: { 
+        sourceId: sourceId,
+        sourceType: sourceType 
+      }
+    });
+
+    if (!expense) {
+      return { success: false, message: "No linked expense found" };
+    }
+
+    return await updateExpense(expense.id, data);
+  } catch (error) {
+    console.error("Error updating expense by source:", error);
+    return { success: false, message: "Failed to update expense by source" };
+  }
+}
+
 export async function deleteExpenseBySource(sourceId: string, sourceType: string) {
   try {
     // Find the expense record by sourceId and sourceType

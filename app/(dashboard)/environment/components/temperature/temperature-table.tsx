@@ -44,16 +44,7 @@ import { deleteTemperatureRecord } from "../../server/temperature";
 import { toast } from "sonner";
 import { EnvironmentTableToolbar } from "../table/environment-table-toolbar";
 import { TemperatureAggregates } from "../table/temperature-aggregates";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 type TemperatureRecord = {
   id: string;
@@ -83,21 +74,36 @@ export function TemperatureTable({ records, flocks, onSuccess }: TemperatureTabl
   const [editRecord, setEditRecord] = useState<TemperatureRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    record: null as TemperatureRecord | null,
+  });
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const handleDeleteClick = (recordId: string) => {
+    const record = records.find(r => r.id === recordId);
+    if (record) {
+      setConfirmDialog({
+        open: true,
+        record: record,
+      });
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.record) return;
     
     setDeleting(true);
     try {
-      const result = await deleteTemperatureRecord(deleteId);
+      const result = await deleteTemperatureRecord(confirmDialog.record.id);
       
       if (result.success) {
         toast.success(t("deleteSuccess"));
         onSuccess();
+        setConfirmDialog({ open: false, record: null });
       } else {
         toast.error(result.error || t("unexpectedError"));
       }
@@ -105,7 +111,6 @@ export function TemperatureTable({ records, flocks, onSuccess }: TemperatureTabl
       toast.error(t("unexpectedError"));
     } finally {
       setDeleting(false);
-      setDeleteId(null);
     }
   };
 
@@ -263,7 +268,7 @@ export function TemperatureTable({ records, flocks, onSuccess }: TemperatureTabl
                 {t("edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setDeleteId(row.original.id)}
+                onClick={() => handleDeleteClick(row.original.id)}
                 className="text-destructive"
               >
                 <Trash className="mr-2 h-4 w-4" />
@@ -380,8 +385,6 @@ export function TemperatureTable({ records, flocks, onSuccess }: TemperatureTabl
           table={table}
           pageSize={10}
         />
-        
-        <DataTableViewOptions table={table} />
       </div>
 
       {/* Edit Dialog */}
@@ -396,20 +399,17 @@ export function TemperatureTable({ records, flocks, onSuccess }: TemperatureTabl
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("deleteDescription")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-              {deleting ? t("deleting") : t("delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={t("deleteTitle")}
+        desc={t("deleteDescription")}
+        confirmText={deleting ? t("deleting") : t("delete")}
+        cancelBtnText={t("cancel")}
+        destructive={true}
+        handleConfirm={handleConfirmDelete}
+        isLoading={deleting}
+      />
     </>
   );
 }

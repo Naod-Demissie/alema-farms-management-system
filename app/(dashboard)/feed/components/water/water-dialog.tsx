@@ -98,7 +98,7 @@ export function WaterDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto sm:w-full mx-4 sm:mx-0">
         <DialogHeader>
           <DialogTitle>
             {initialData ? t('dialog.editTitle') : t('dialog.addTitle')}
@@ -109,66 +109,67 @@ export function WaterDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {/* Flock Selection */}
-            <div className="grid gap-2">
-              <Label htmlFor="flock">
-                {t('form.flockLabel')} <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={formData.flockId}
-                onValueChange={(value) => handleInputChange("flockId", value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('form.flockPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {flocks.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      {t('form.noFlocks')}
-                    </div>
-                  ) : (
-                    flocks.map((flock) => (
-                      <SelectItem key={flock.id} value={flock.id}>
-                        {flock.batchCode} ({flock.currentCount} {t('form.birds')})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date Selection */}
-            <div className="grid gap-2">
-              <Label htmlFor="date">
-                {t('form.dateLabel')} <span className="text-red-500">*</span>
-              </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? (
-                      EthiopianDateFormatter.formatForForm(selectedDate)
+            {/* Flock and Date Selection - Responsive Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Flock Selection */}
+              <div className="grid gap-2">
+                <Label htmlFor="flock">
+                  {t('form.flockLabel')} <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.flockId}
+                  onValueChange={(value) => handleInputChange("flockId", value)}
+                  required
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t('form.flockPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {flocks.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        {t('form.noFlocks')}
+                      </div>
                     ) : (
-                      <span>{t('form.datePlaceholder')}</span>
+                      flocks.map((flock) => (
+                        <SelectItem key={flock.id} value={flock.id}>
+                          {flock.batchCode} ({flock.currentCount} {t('form.birds')})
+                        </SelectItem>
+                      ))
                     )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Selection */}
+              <div className="grid gap-2">
+                <Label htmlFor="date">
+                  {t('form.dateLabel')} <span className="text-red-500">*</span>
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedDate ? (
+                        EthiopianDateFormatter.formatForForm(selectedDate)
+                      ) : (
+                        <span>{t('form.datePlaceholder')}</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
                   <EthiopianCalendar
-                    mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    initialFocus
                   />
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {/* Consumption Input */}
@@ -194,16 +195,16 @@ export function WaterDialog({
             {/* Consumption Summary */}
             {selectedFlock && formData.consumption > 0 && (
               <div className="bg-muted/50 p-3 rounded-lg">
-                <div className="text-sm space-y-1">
-                  <div className="flex justify-between">
+                <div className="text-sm space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                     <span className="text-muted-foreground">{t('form.totalConsumption')}:</span>
                     <span className="font-medium">{formData.consumption} {t('form.liters')}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                     <span className="text-muted-foreground">{t('form.perBird')}:</span>
                     <span className="font-medium">{perBirdConsumption} {t('form.litersPerBird')}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                     <span className="text-muted-foreground">{t('form.flockSize')}:</span>
                     <span className="font-medium">{selectedFlock.currentCount} {t('form.birds')}</span>
                   </div>
@@ -223,11 +224,11 @@ export function WaterDialog({
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               {t('dialog.cancelButton')}
             </Button>
-            <Button type="submit" disabled={isLoading || !formData.flockId || !selectedDate}>
+            <Button type="submit" disabled={isLoading || !formData.flockId || !selectedDate} className="w-full sm:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {initialData ? t('dialog.updateButton') : t('dialog.addButton')}
             </Button>

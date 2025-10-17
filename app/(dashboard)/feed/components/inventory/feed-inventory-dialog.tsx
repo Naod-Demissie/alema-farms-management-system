@@ -20,9 +20,10 @@ import {
   updateFeedInventoryAction 
 } from "@/app/(dashboard)/feed/server/feed-inventory";
 import { getFeedSuppliersAction, createFeedSupplierAction } from "@/app/(dashboard)/feed/server/feed-suppliers";
-import { feedTypeLabels } from "@/app/(dashboard)/feed/utils/feed-program";
+// import { feedTypeLabels } from "@/app/(dashboard)/feed/utils/feed-program";
 import { createExpense } from "@/app/(dashboard)/financial/server/financial";
 import { ExpenseCategory } from "@/lib/generated/prisma/enums";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 const feedInventorySchema = z.object({
   feedType: z.enum(["LAYER_STARTER", "REARING", "PULLET_FEED", "LAYER", "LAYER_PHASE_1", "CUSTOM"]),
@@ -95,10 +96,15 @@ export function FeedInventoryDialog({
   useEffect(() => {
     if (isOpen) {
       if (editingItem) {
+        // Database stores quantities in KG, so convert back to original unit for editing
+        const displayQuantity = editingItem.unit === 'QUINTAL' 
+          ? editingItem.quantity / 100  // Convert kg back to quintal for display/editing
+          : editingItem.quantity;
+        
         form.reset({
           feedType: editingItem.feedType,
           supplierId: editingItem.supplierId || "none",
-          quantity: editingItem.quantity,
+          quantity: displayQuantity, // Use converted quantity
           unit: editingItem.unit,
           costPerUnit: editingItem.costPerUnit || 0,
           notes: editingItem.notes || "",
@@ -131,9 +137,9 @@ export function FeedInventoryDialog({
     }
 
     try {
-      // Validate supplier name if "Add to Suppliers" is enabled
+      // Validate supplier name if Add to Suppliers is enabled
       if (addToSuppliers && !data.supplierName && !editingItem) {
-        toast.error("Supplier name is required when 'Add Suppliers' is enabled");
+        toast.error(t('validation.supplierNameRequired'));
         return;
       }
 
@@ -154,12 +160,12 @@ export function FeedInventoryDialog({
         
         if (supplierResult.success && supplierResult.data) {
           actualSupplierId = supplierResult.data.id;
-          toast.success("Supplier created successfully");
+          toast.success(t('toasts.supplierCreatedSuccess'));
           // Refresh suppliers list
           await fetchSuppliers();
         } else {
-          toast.error("Failed to create supplier", {
-            description: supplierResult.error || "Unknown error",
+          toast.error(t('toasts.supplierCreateFailed'), {
+            description: supplierResult.error || t('toasts.unknownError'),
           });
           // Continue with inventory creation even if supplier creation fails
         }
@@ -196,7 +202,7 @@ export function FeedInventoryDialog({
         if (result.success) {
           toast.success(t('toasts.created'));
           
-          // If "Add to Expense Table" is enabled
+          // If Add to Expense Table is enabled
           if (addToExpense && data.costPerUnit && data.quantity && result.data) {
             // Calculate total amount: quantity * costPerUnit
             const totalAmount = data.quantity * data.costPerUnit;
@@ -206,16 +212,16 @@ export function FeedInventoryDialog({
               costPerQuantity: data.costPerUnit,
               amount: totalAmount,
               date: new Date(),
-              description: `Feed inventory: ${feedTypeLabels[data.feedType]} - ${data.quantity} ${data.unit}${data.notes ? ` - ${data.notes}` : ''}`,
+              description: `Feed inventory: ${t(`feedTypeLabels.${data.feedType}`)} - ${data.quantity} ${data.unit}${data.notes ? ` - ${data.notes}` : ''}`,
               sourceId: result.data.id,
               sourceType: 'feed_inventory',
             });
             
             if (expenseResult.success) {
-              toast.success("Expense record created successfully");
+              toast.success(t('toasts.expenseCreatedSuccess'));
             } else {
-              toast.warning("Inventory created but expense recording failed", {
-                description: expenseResult.message || "Unknown error",
+              toast.warning(t('toasts.expenseCreateFailed'), {
+                description: expenseResult.message || t('toasts.unknownError'),
               });
             }
           }
@@ -260,10 +266,10 @@ export function FeedInventoryDialog({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="space-y-0.5">
                     <Label htmlFor="add-supplier" className="text-base font-medium">
-                      Add Suppliers
+                      {t('form.addSuppliersLabel')}
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      Create a new supplier along with this inventory
+                      {t('form.addSuppliersDescription')}
                     </p>
                   </div>
                   <Switch
@@ -276,10 +282,10 @@ export function FeedInventoryDialog({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="space-y-0.5">
                     <Label htmlFor="add-expense" className="text-base font-medium">
-                      Add to Expense Table
+                      {t('form.addToExpenseLabel')}
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      Record this purchase as a feed expense
+                      {t('form.addToExpenseDescription')}
                     </p>
                   </div>
                   <Switch
@@ -309,9 +315,9 @@ export function FeedInventoryDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(feedTypeLabels).map(([value, label]) => (
+                        {Object.entries(t('feedTypeLabels')).map(([value, label]) => (
                           <SelectItem key={value} value={value}>
-                            {label}
+                            {label as string}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -334,7 +340,7 @@ export function FeedInventoryDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">{t('noSupplier')}</SelectItem>
+                        <SelectItem value="none">{t('form.noSupplier')}</SelectItem>
                         {suppliers.map((supplier) => (
                           <SelectItem key={supplier.id} value={supplier.id}>
                             {supplier.name}
@@ -380,17 +386,17 @@ export function FeedInventoryDialog({
                 render={({ field }) => (
                   <FormItem className="sm:col-span-1">
                     <FormLabel className="flex items-center gap-1">
-                      Unit <span className="text-red-500">*</span>
+                      {t('form.unitLabel')} <span className="text-red-500">*</span>
                     </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select unit" />
+                          <SelectValue placeholder={t('form.unitPlaceholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="KG">KG</SelectItem>
-                        <SelectItem value="QUINTAL">Quintal</SelectItem>
+                        <SelectItem value="KG">{t('form.unitKg')}</SelectItem>
+                        <SelectItem value="QUINTAL">{t('form.unitQuintal')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -403,7 +409,7 @@ export function FeedInventoryDialog({
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
                     <FormLabel className="flex items-center gap-1">
-                      Cost per {form.watch('unit') === 'QUINTAL' ? 'Quintal' : 'KG'} ({tCommon('birr')}) <span className="text-red-500">*</span>
+                      {t('form.costPerLabel')} {form.watch('unit') === 'QUINTAL' ? t('form.unitQuintal') : t('form.unitKg')} ({tCommon('birr')}) <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -427,7 +433,7 @@ export function FeedInventoryDialog({
             {/* Total Amount Display */}
             <div className="grid gap-2">
               <div className="bg-muted/50 p-3 rounded-lg text-center">
-                <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
+                <div className="text-sm text-muted-foreground mb-1">{t('form.totalAmountLabel')}</div>
                 <div className="text-xl font-semibold">
                   {(form.watch('quantity') ?? 0) > 0 && (form.watch('costPerUnit') ?? 0) > 0 && form.watch('unit')
                     ? new Intl.NumberFormat("en-ET", {
@@ -441,10 +447,10 @@ export function FeedInventoryDialog({
                 </div>
                 {(form.watch('quantity') ?? 0) > 0 && (form.watch('costPerUnit') ?? 0) > 0 && form.watch('unit') && (
                   <div className="text-xs text-muted-foreground mt-1">
-                    {form.watch('quantity')} {form.watch('unit')} × {new Intl.NumberFormat("en-ET", {
-                      style: "currency",
-                      currency: "ETB",
-                    }).format(form.watch('costPerUnit') ?? 0)} per {form.watch('unit') === 'QUINTAL' ? 'Quintal' : 'KG'}
+                    {form.watch('quantity')} {form.watch('unit')} × {new Intl.NumberFormat('en-ET', {
+                      style: 'currency',
+                      currency: 'ETB',
+                    }).format(form.watch('costPerUnit') ?? 0)} {t('form.perLabel')} {form.watch('unit') === 'QUINTAL' ? t('form.unitQuintal') : t('form.unitKg')}
                   </div>
                 )}
               </div>
@@ -468,12 +474,12 @@ export function FeedInventoryDialog({
               )}
             />
 
-            {/* Supplier Fields - Only show when "Add Suppliers" toggle is on */}
+            {/* Supplier Fields - Only show when Add Suppliers toggle is on */}
             {addToSuppliers && !editingItem && (
               <div className="space-y-4 p-4 bg-primary/5 rounded-lg border-2 border-primary/20">
                 <div className="flex items-center gap-2 mb-2">
                   <Package className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-semibold text-primary">New Supplier Information</h3>
+                  <h3 className="text-lg font-semibold text-primary">{t('form.newSupplierInfoLabel')}</h3>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -483,10 +489,10 @@ export function FeedInventoryDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-1">
-                          Supplier Name <span className="text-red-500">*</span>
+                          {t('form.supplierNameLabel')} <span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter supplier name" {...field} />
+                          <Input placeholder={t('form.supplierNamePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -497,9 +503,9 @@ export function FeedInventoryDialog({
                     name="supplierContactName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contact Person</FormLabel>
+                        <FormLabel>{t('form.contactPersonLabel')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter contact person name" {...field} />
+                          <Input placeholder={t('form.contactPersonPlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -512,9 +518,9 @@ export function FeedInventoryDialog({
                   name="supplierPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>{t('form.phoneLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="+251 XXX XXX XXX" {...field} />
+                        <Input placeholder={t('form.phonePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -526,10 +532,10 @@ export function FeedInventoryDialog({
                   name="supplierAddress"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Address</FormLabel>
+                      <FormLabel>{t('form.addressLabel')}</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Enter supplier address..."
+                          placeholder={t('form.addressPlaceholder')}
                           {...field}
                         />
                       </FormControl>
@@ -543,10 +549,10 @@ export function FeedInventoryDialog({
                   name="supplierNotes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Supplier Notes</FormLabel>
+                      <FormLabel>{t('form.supplierNotesLabel')}</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Additional notes about this supplier..."
+                          placeholder={t('form.supplierNotesPlaceholder')}
                           {...field}
                         />
                       </FormControl>

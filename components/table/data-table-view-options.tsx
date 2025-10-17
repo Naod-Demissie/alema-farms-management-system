@@ -40,13 +40,25 @@ export function DataTableViewOptions<TData>({
           .getAllColumns()
           .filter(
             (column) =>
-              typeof column.accessorFn !== 'undefined' && column.getCanHide()
+              typeof column.accessorFn !== 'undefined' && 
+              column.getCanHide() &&
+              // Filter out columns with empty headers or hidden helper columns
+              (typeof column.columnDef.header === 'string' ? column.columnDef.header.trim() !== '' : true)
           )
           .map((column) => {
             // Get the column label from header or fallback to column.id
-            const columnLabel = typeof column.columnDef.header === 'string' 
-              ? column.columnDef.header 
-              : column.id;
+            let columnLabel = '';
+            if (typeof column.columnDef.header === 'string') {
+              columnLabel = column.columnDef.header;
+            } else {
+              // For columns with React component headers, use a more descriptive fallback
+              columnLabel = column.id.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            }
+            
+            // Skip if we still don't have a meaningful label
+            if (!columnLabel || columnLabel.trim() === '') {
+              return null;
+            }
             
             return (
               <DropdownMenuCheckboxItem
@@ -58,7 +70,8 @@ export function DataTableViewOptions<TData>({
                 {columnLabel}
               </DropdownMenuCheckboxItem>
             )
-          })}
+          })
+          .filter(Boolean)} {/* Remove null entries */}
       </DropdownMenuContent>
     </DropdownMenu>
   )

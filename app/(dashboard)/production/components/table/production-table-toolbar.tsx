@@ -4,7 +4,6 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MonthPicker } from "@/components/ui/monthpicker";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,6 +11,7 @@ import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { EthiopianCalendarUtils, ETHIOPIAN_MONTHS } from "@/lib/ethiopian-calendar";
+import { DataTableFacetedFilter } from "@/components/table/data-table-faceted-filter";
 
 interface ProductionTableToolbarProps<TData> {
   table: Table<TData>;
@@ -23,13 +23,14 @@ export function ProductionTableToolbar<TData>({
   flocks,
 }: ProductionTableToolbarProps<TData>) {
   const t = useTranslations('production.table');
+  const tColumns = useTranslations('production.columns');
   const isFiltered = table.getState().columnFilters.length > 0;
   const [selectedMonth, setSelectedMonth] = React.useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined);
 
   // Flock options for filtering
   const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} birds)`,
+    label: `${flock.batchCode} (${flock.currentCount} ${tColumns('birds')})`,
     value: flock.id,
   }));
 
@@ -70,18 +71,16 @@ export function ProductionTableToolbar<TData>({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
-        {/* Search Input for Flock */}
-        <Input
-          placeholder={t('searchPlaceholder')}
-          value={(table.getColumn("flockId")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("flockId")?.setFilterValue(event.target.value)
-          }
-          className="h-8 w-full sm:w-[150px] lg:w-[250px]"
-        />
-        
         {/* Filters */}
         <div className="flex flex-wrap gap-2">
+          {/* Flock Filter */}
+          {table.getColumn("flockId") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("flockId")}
+              title={tColumns('flock')}
+              options={flockOptions}
+            />
+          )}
           {/* Month Filter */}
           <Popover>
             <PopoverTrigger asChild>

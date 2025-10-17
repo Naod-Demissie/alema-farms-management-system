@@ -201,12 +201,12 @@ export function FeedSuppliers() {
     return isActive ? (
       <Badge variant="default" className="bg-green-100 text-green-800">
         <CheckCircle className="w-3 h-3 mr-1" />
-        Active
+        {t('viewDialog.activeStatus')}
       </Badge>
     ) : (
       <Badge variant="secondary" className="bg-gray-100 text-gray-800">
         <XCircle className="w-3 h-3 mr-1" />
-        Inactive
+        {t('viewDialog.inactiveStatus')}
       </Badge>
     );
   };
@@ -218,7 +218,7 @@ export function FeedSuppliers() {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('cards.totalSuppliers')}</CardTitle>
@@ -297,18 +297,18 @@ export function FeedSuppliers() {
                   form.reset();
                 }}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Supplier
+                  {t('editDialog.addButton')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xl">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingSupplier ? "Edit Supplier" : "Add New Supplier"}
+                    {editingSupplier ? t('editDialog.editTitle') : t('editDialog.addTitle')}
                   </DialogTitle>
                   <DialogDescription>
                     {editingSupplier 
-                      ? "Update the supplier information below."
-                      : "Add a new feed supplier to your system."
+                      ? t('editDialog.editDescription')
+                      : t('editDialog.addDescription')
                     }
                   </DialogDescription>
                 </DialogHeader>
@@ -321,10 +321,10 @@ export function FeedSuppliers() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="flex items-center gap-1">
-                              Supplier Name <span className="text-red-500">*</span>
+                              {t('form.supplierNameLabel')} <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter supplier name" {...field} />
+                              <Input placeholder={t('form.supplierNamePlaceholder')} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -335,9 +335,9 @@ export function FeedSuppliers() {
                         name="contactName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Contact Person</FormLabel>
+                            <FormLabel>{t('form.contactPersonLabel')}</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter contact person name" {...field} />
+                              <Input placeholder={t('form.contactPersonPlaceholder')} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -350,9 +350,9 @@ export function FeedSuppliers() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone</FormLabel>
+                          <FormLabel>{t('form.phoneLabel')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="+1 (555) 123-4567" {...field} />
+                            <Input placeholder={t('form.phonePlaceholder')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -364,10 +364,10 @@ export function FeedSuppliers() {
                       name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Address</FormLabel>
+                          <FormLabel>{t('form.addressLabel')}</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Enter supplier address..."
+                              placeholder={t('form.addressPlaceholder')}
                               {...field}
                             />
                           </FormControl>
@@ -382,10 +382,10 @@ export function FeedSuppliers() {
                       name="notes"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Notes</FormLabel>
+                          <FormLabel>{t('form.notesLabel')}</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Additional notes about this supplier..."
+                              placeholder={t('form.notesPlaceholder')}
                               {...field}
                             />
                           </FormControl>
@@ -396,11 +396,11 @@ export function FeedSuppliers() {
 
                     <DialogFooter>
                       <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                        Cancel
+                        {t('editDialog.cancelButton')}
                       </Button>
                       <Button type="submit" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {editingSupplier ? "Update" : "Add"} Supplier
+                        {editingSupplier ? t('editDialog.updateButton') : t('editDialog.addButton')} {t('editDialog.addSupplierButton')}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -433,46 +433,46 @@ export function FeedSuppliers() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Supplier Details</DialogTitle>
+            <DialogTitle>{t('viewDialog.title')}</DialogTitle>
             <DialogDescription>
-              Detailed information about the supplier
+              {t('viewDialog.description')}
             </DialogDescription>
           </DialogHeader>
           {viewingSupplier && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Supplier Name</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.supplierNameLabel')}</Label>
                   <p className="text-sm font-medium">{viewingSupplier.name}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Contact Person</Label>
-                  <p className="text-sm font-medium">{viewingSupplier.contactName || "N/A"}</p>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.contactPersonLabel')}</Label>
+                  <p className="text-sm font-medium">{viewingSupplier.contactName || tCommon('na')}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
-                  <p className="text-sm font-medium">{viewingSupplier.phone || "N/A"}</p>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.phoneLabel')}</Label>
+                  <p className="text-sm font-medium">{viewingSupplier.phone || tCommon('na')}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.statusLabel')}</Label>
                   <div className="mt-1">{getStatusBadge(viewingSupplier.isActive)}</div>
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Address</Label>
-                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingSupplier.address || "N/A"}</p>
+                <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.addressLabel')}</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingSupplier.address || tCommon('na')}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Notes</Label>
-                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingSupplier.notes || "N/A"}</p>
+                <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.notesLabel')}</Label>
+                <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingSupplier.notes || tCommon('na')}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Created At</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.createdAtLabel')}</Label>
                   <p className="text-sm font-medium">{format(new Date(viewingSupplier.createdAt), "MMM dd, yyyy")}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Updated At</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{t('viewDialog.updatedAtLabel')}</Label>
                   <p className="text-sm font-medium">{format(new Date(viewingSupplier.updatedAt), "MMM dd, yyyy")}</p>
                 </div>
               </div>
@@ -480,13 +480,13 @@ export function FeedSuppliers() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-              Close
+              {t('viewDialog.closeButton')}
             </Button>
             <Button onClick={() => {
               setIsViewDialogOpen(false);
               handleEdit(viewingSupplier);
             }}>
-              Edit Supplier
+              {t('viewDialog.editButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -498,20 +498,20 @@ export function FeedSuppliers() {
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
         title={
           confirmDialog.type === 'delete'
-            ? 'Delete Supplier'
-            : 'Confirm Action'
+            ? t('confirmDialog.deleteTitle')
+            : t('confirmDialog.confirmAction')
         }
         desc={
           confirmDialog.type === 'delete'
-            ? `Are you sure you want to delete the supplier "${confirmDialog.supplier?.name}"? This action cannot be undone and the supplier will be permanently removed.`
-            : 'Are you sure you want to proceed?'
+            ? t('confirmDialog.deleteDescription', { name: confirmDialog.supplier?.name || '' })
+            : tCommon('confirmProceed')
         }
         confirmText={
           confirmDialog.type === 'delete'
-            ? 'Delete Supplier'
-            : 'Continue'
+            ? t('confirmDialog.confirmButton')
+            : tCommon('continue')
         }
-        cancelBtnText="Cancel"
+        cancelBtnText={t('confirmDialog.cancelButton')}
         destructive={confirmDialog.type === 'delete'}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.supplier?.id}

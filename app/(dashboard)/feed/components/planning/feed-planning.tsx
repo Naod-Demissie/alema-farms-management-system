@@ -10,7 +10,7 @@ import { Calendar, Package, TrendingUp, AlertTriangle, CheckCircle, Bird, Clock,
 import { toast } from "sonner";
 import { getDailyFeedRequirementsAction, getWeeklyFeedRequirementsAction } from "@/app/(dashboard)/feed/server/feed-program";
 import { getFeedInventoryAction, getInventoryWithUsageAction, getInventoryProjectionAction } from "@/app/(dashboard)/feed/server/feed-inventory";
-import { feedTypeColors } from "../../utils/feed-program";
+import { feedTypeColors, feedTypeLabels } from "../../utils/feed-program";
 
 export function FeedPlanning() {
   const t = useTranslations('feed.planning');

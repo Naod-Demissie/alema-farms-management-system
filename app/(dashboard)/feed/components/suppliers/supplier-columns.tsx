@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Badge } from "@/components/ui/badge";
 import { 
   MoreHorizontal, 
@@ -106,7 +107,7 @@ export const supplierColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {format(new Date(record.createdAt), "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(record.createdAt))}
           </div>
         </div>
       );

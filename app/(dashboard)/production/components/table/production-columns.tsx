@@ -51,6 +51,14 @@ export const eggProductionColumns = (
     },
     filterFn: (row, id, value) => {
       const production = row.original;
+      const flockId = production.flockId || production.flock?.id || "";
+      
+      // Handle array values from DataTableFacetedFilter
+      if (Array.isArray(value)) {
+        return value.includes(flockId);
+      }
+      
+      // Handle string values from regular search
       const flockCode = production.flock?.batchCode || production.flockId || "";
       return flockCode.toLowerCase().includes(value.toLowerCase());
     },
@@ -206,6 +214,14 @@ export const broilerProductionColumns = (
     },
     filterFn: (row, id, value) => {
       const production = row.original;
+      const flockId = production.flockId || production.flock?.id || "";
+      
+      // Handle array values from DataTableFacetedFilter
+      if (Array.isArray(value)) {
+        return value.includes(flockId);
+      }
+      
+      // Handle string values from regular search
       const flockCode = production.flock?.batchCode || production.flockId || "";
       return flockCode.toLowerCase().includes(value.toLowerCase());
     },
@@ -340,6 +356,14 @@ export const manureProductionColumns = (
     },
     filterFn: (row, id, value) => {
       const production = row.original;
+      const flockId = production.flockId || production.flock?.id || "";
+      
+      // Handle array values from DataTableFacetedFilter
+      if (Array.isArray(value)) {
+        return value.includes(flockId);
+      }
+      
+      // Handle string values from regular search
       const flockCode = production.flock?.batchCode || production.flockId || "";
       return flockCode.toLowerCase().includes(value.toLowerCase());
     },

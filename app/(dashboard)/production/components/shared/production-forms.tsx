@@ -93,7 +93,7 @@ export function ProductionForm({ form, flocks, flocksLoading = false, production
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="flockId"

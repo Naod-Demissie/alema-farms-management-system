@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
+import { DataTableFacetedFilter } from "@/components/table/data-table-faceted-filter";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,11 +55,12 @@ interface MortalityTableProps {
   columns: ColumnDef<any>[];
   data: any[];
   toolbar?: React.ReactNode;
+  flocks?: Array<{ id: string; batchCode: string; currentCount: number }>;
   onEdit?: (record: any) => void;
   onDelete?: (record: any) => void;
 }
 
-export function MortalityTable({ columns, data, toolbar, onEdit, onDelete }: MortalityTableProps) {
+export function MortalityTable({ columns, data, toolbar, flocks = [], onEdit, onDelete }: MortalityTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -66,6 +68,12 @@ export function MortalityTable({ columns, data, toolbar, onEdit, onDelete }: Mor
   const t = useTranslations('common');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
+
+  // Flock options for filtering
+  const flockOptions = flocks.map((flock) => ({
+    label: `${flock.batchCode} (${flock.currentCount} birds)`,
+    value: flock.id,
+  }));
 
   const table = useReactTable({
     data,
@@ -127,9 +135,12 @@ export function MortalityTable({ columns, data, toolbar, onEdit, onDelete }: Mor
       {toolbar || (
         <DataTableToolbar
           table={table}
-          filterColumnId="flockId"
-          filterPlaceholder="Filter mortality records..."
           facetedFilters={[
+            {
+              columnId: "flockId",
+              title: "Flock",
+              options: flockOptions,
+            },
             {
               columnId: "cause",
               title: "Cause",

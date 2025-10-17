@@ -655,6 +655,7 @@ export function MortalityManagement() {
             <MortalityTable
               columns={mortalityColumns(handleEdit, handleDeleteClick, getCauseBadge)}
               data={mortalityRecords}
+              flocks={flocks}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
             />

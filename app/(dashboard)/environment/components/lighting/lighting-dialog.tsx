@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { createLightingRecord, updateLightingRecord } from "../../server/lighting";
 import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 
@@ -95,9 +96,35 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
+      // Calculate total hours automatically
+      const lightOnTime = data.lightOnTime;
+      const lightOffTime = data.lightOffTime;
+      const interruptedHours = data.interruptedHours || 0;
+      
+      let calculatedTotalHours = 0;
+      if (lightOnTime && lightOffTime) {
+        const onTime = new Date(`2000-01-01T${lightOnTime}`);
+        const offTime = new Date(`2000-01-01T${lightOffTime}`);
+        
+        // Calculate total hours between on and off time
+        let totalHours = (offTime.getTime() - onTime.getTime()) / (1000 * 60 * 60);
+        if (totalHours < 0) {
+          totalHours += 24; // Add 24 hours if it's the next day
+        }
+        
+        // Subtract interrupted hours
+        calculatedTotalHours = Math.max(0, totalHours - interruptedHours);
+      }
+      
+      // Update the data with calculated total hours
+      const updatedData = {
+        ...data,
+        totalHours: calculatedTotalHours
+      };
+
       const result = record
-        ? await updateLightingRecord(record.id, data)
-        : await createLightingRecord(data);
+        ? await updateLightingRecord(record.id, updatedData)
+        : await createLightingRecord(updatedData);
 
       if (result.success) {
         toast.success(t(record ? "updateSuccess" : "createSuccess"));
@@ -116,7 +143,7 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md mx-4 sm:mx-0">
         <DialogHeader>
           <DialogTitle>{t(record ? "editTitle" : "addTitle")}</DialogTitle>
           <DialogDescription>{t(record ? "editDescription" : "addDescription")}</DialogDescription>
@@ -124,75 +151,89 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="flockId"
-              rules={{ required: t("flockRequired") }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("flock")} <span className="text-red-500">*</span></FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("selectFlock")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {flocks.map((flock) => (
-                        <SelectItem key={flock.id} value={flock.id}>
-                          {flock.batchCode} ({flock.currentCount} birds)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="date"
-              rules={{ required: t("dateRequired") }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("date")} <span className="text-red-500">*</span></FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+            {/* Flock and Date fields - responsive layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="flockId"
+                rules={{ required: t("flockRequired") }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("flock")} <span className="text-red-500">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? field.value.toLocaleDateString() : t("pickDate")}
-                        </Button>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={t("selectFlock")} />
+                        </SelectTrigger>
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <SelectContent>
+                        {flocks.map((flock) => (
+                          <SelectItem key={flock.id} value={flock.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span className="font-medium">{flock.batchCode}</span>
+                              <span className="text-muted-foreground ml-2">
+                                {flock.currentCount.toLocaleString()} birds
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="date"
+                rules={{ required: t("dateRequired") }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("date")} <span className="text-red-500">*</span></FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              EthiopianDateFormatter.formatForTable(field.value)
+                            ) : (
+                              <span>{t("pickDate")}</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Lighting schedule - responsive layout */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
               <FormField
                 control={form.control}
                 name="lightOnTime"
                 rules={{ required: t("lightOnRequired") }}
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="w-full sm:flex-1">
                     <FormLabel>{t("lightOnTime")} <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
@@ -207,41 +248,10 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
                 name="lightOffTime"
                 rules={{ required: t("lightOffRequired") }}
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="w-full sm:flex-1">
                     <FormLabel>{t("lightOffTime")} <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="totalHours"
-                rules={{
-                  required: t("totalHoursRequired"),
-                  min: { value: 0, message: t("totalHoursRange") },
-                  max: { value: 24, message: t("totalHoursRange") },
-                }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("totalHours")} <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.5"
-                        placeholder="12"
-                        {...field}
-                        onChange={(e) => {
-                          const value = e.target.value === '' ? '' : parseFloat(e.target.value);
-                          field.onChange(value);
-                        }}
-                        value={field.value ?? ''}
-                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -252,7 +262,7 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
                 control={form.control}
                 name="interruptedHours"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="w-full sm:flex-1">
                     <FormLabel>{t("interruptedHours")}</FormLabel>
                     <FormControl>
                       <Input
@@ -273,6 +283,35 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
               />
             </div>
 
+            {/* Total hours display - similar to egg production dialog */}
+            <div className="bg-muted/50 p-3 rounded-lg text-center">
+              <div className="text-sm text-muted-foreground mb-1">{t("totalHours")}</div>
+              <div className="text-xl font-semibold">
+                {(() => {
+                  const lightOnTime = form.watch("lightOnTime");
+                  const lightOffTime = form.watch("lightOffTime");
+                  const interruptedHours = form.watch("interruptedHours") || 0;
+                  
+                  if (!lightOnTime || !lightOffTime) return "0";
+                  
+                  // Calculate total hours between on and off time
+                  const onTime = new Date(`2000-01-01T${lightOnTime}`);
+                  const offTime = new Date(`2000-01-01T${lightOffTime}`);
+                  
+                  // Handle case where lights go off the next day
+                  let totalHours = (offTime.getTime() - onTime.getTime()) / (1000 * 60 * 60);
+                  if (totalHours < 0) {
+                    totalHours += 24; // Add 24 hours if it's the next day
+                  }
+                  
+                  // Subtract interrupted hours
+                  const finalHours = Math.max(0, totalHours - interruptedHours);
+                  
+                  return finalHours.toFixed(1);
+                })()}
+              </div>
+            </div>
+
             <FormField
               control={form.control}
               name="notes"
@@ -287,11 +326,11 @@ export function LightingDialog({ open, onOpenChange, onSuccess, record }: Lighti
               )}
             />
 
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                 {t("cancel")}
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading ? t("saving") : record ? t("update") : t("add")}
               </Button>
             </div>

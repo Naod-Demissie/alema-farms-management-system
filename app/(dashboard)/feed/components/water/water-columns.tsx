@@ -9,7 +9,8 @@ import {
   Trash2, 
   Calendar,
   Droplets,
-  User
+  User,
+  Eye
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ import {
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 export const waterConsumptionColumns = (
+  onView: (record: any) => void,
   onEdit: (record: any) => void,
   onDelete: (record: any) => void,
   t: any,
@@ -139,6 +141,10 @@ export const waterConsumptionColumns = (
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{tCommon('actions')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onView(record)}>
+              <Eye className="mr-2 h-4 w-4" />
+              {tCommon('view')}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(record)}>
               <Edit className="mr-2 h-4 w-4" />
               {tCommon('edit')}

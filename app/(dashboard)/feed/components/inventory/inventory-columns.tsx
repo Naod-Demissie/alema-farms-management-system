@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { Badge } from "@/components/ui/badge";
 import { 
   MoreHorizontal, 
@@ -84,9 +85,13 @@ export const inventoryColumns = (
     header: t('columns.quantity'),
     cell: ({ row }) => {
       const record = row.original;
+      // Database stores all quantities in KG, so convert back to quintal for display if needed
+      const displayQuantity = record.unit === 'QUINTAL' 
+        ? Number(record.quantity) / 100  // Convert kg back to quintal
+        : Number(record.quantity);
       return (
         <div className="text-center">
-          <div className="font-medium">{Number(record.quantity).toFixed(2)}</div>
+          <div className="font-medium">{displayQuantity.toFixed(2)}</div>
           <div className="text-xs text-muted-foreground">{record.unit}</div>
         </div>
       );
@@ -132,7 +137,7 @@ export const inventoryColumns = (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div className="text-sm">
-            {format(new Date(record.createdAt), "MMM dd, yyyy")}
+            {EthiopianDateFormatter.formatForTable(new Date(record.createdAt))}
           </div>
         </div>
       );

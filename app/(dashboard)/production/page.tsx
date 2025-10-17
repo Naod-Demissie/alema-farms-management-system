@@ -30,6 +30,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ProductionDialog } from "@/app/(dashboard)/production/components/dialogs/production-dialog";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { PageBanner } from "@/components/ui/page-banner";
 
 interface Flock {
@@ -60,6 +61,7 @@ export default function ProductionManagementPage() {
     record: null,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [dialogLoading, setDialogLoading] = useState(false);
 
   // Fetch flocks
   useEffect(() => {
@@ -185,6 +187,7 @@ export default function ProductionManagementPage() {
     setIsFormOpen(false);
     setIsEditOpen(false);
     setEditingRecord(null);
+    setDialogLoading(false);
     // Refresh data after successful form submission
     fetchData();
   };
@@ -237,7 +240,7 @@ export default function ProductionManagementPage() {
         imageSrc="/banner-bg-image.webp"
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-0">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-1 h-auto">
           <TabsTrigger 
             value="eggs" 
@@ -262,9 +265,9 @@ export default function ProductionManagementPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="space-y-4">
+        <TabsContent value={activeTab} className="space-y-4 mt-4 sm:mt-0">
           {/* Informative Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t('cards.todayProduction')}</CardTitle>
@@ -523,7 +526,8 @@ export default function ProductionManagementPage() {
           notes: editingRecord.notes || ""
         } : undefined}
         onSuccess={handleFormSuccess}
-        loading={loading}
+        loading={dialogLoading}
+        onLoadingChange={setDialogLoading}
       />
 
       {/* View Details Dialog */}
@@ -547,7 +551,7 @@ export default function ProductionManagementPage() {
                 <div>
                   <label className="text-sm font-medium">{t('fields.date')}</label>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(selectedRecord.date), "MMM dd, yyyy")}
+                    {EthiopianDateFormatter.formatForTable(new Date(selectedRecord.date))}
                   </p>
                 </div>
                 {activeTab === "eggs" ? (
