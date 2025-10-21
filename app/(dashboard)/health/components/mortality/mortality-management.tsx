@@ -62,7 +62,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { 
@@ -191,6 +191,19 @@ export function MortalityManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddNew = () => {
+    setEditingRecord(null);
+    form.reset({
+      flockId: "",
+      date: new Date(),
+      count: 0,
+      cause: "disease",
+      causeDescription: "",
+      recordedBy: "",
+    });
+    setIsAddDialogOpen(true);
   };
 
   const handleEdit = (record: any) => {
@@ -436,13 +449,24 @@ export function MortalityManagement() {
                 {t('cardDescription')}
               </CardDescription>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('addButton')}
-                </Button>
-              </DialogTrigger>
+            <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+              setIsAddDialogOpen(open);
+              if (!open) {
+                setEditingRecord(null);
+                form.reset({
+                  flockId: "",
+                  date: new Date(),
+                  count: 0,
+                  cause: "disease",
+                  causeDescription: "",
+                  recordedBy: "",
+                });
+              }
+            }}>
+              <Button onClick={handleAddNew}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('addButton')}
+              </Button>
               <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh]">
                 <DialogHeader>
                   <DialogTitle>
@@ -501,7 +525,7 @@ export function MortalityManagement() {
                                     )}
                                   >
                                     {field.value ? (
-                                      format(field.value, "MMM dd, yyyy")
+                                      EthiopianDateFormatter.formatForTable(field.value)
                                     ) : (
                                       <span>{t('form.pickDate')}</span>
                                     )}

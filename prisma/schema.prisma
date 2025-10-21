@@ -39,6 +39,7 @@ model Staff {
   waterRecords       WaterConsumption[]   @relation("WaterRecordedBy")
   temperatureRecords TemperatureReading[] @relation("TemperatureRecordedBy")
   lightingRecords    LightingSchedule[]   @relation("LightingRecordedBy")
+  weightSamplingRecords WeightSampling[]  @relation("WeightSamplingRecordedBy")
 
   @@index([role])
   @@index([isActive])
@@ -205,6 +206,7 @@ model Flocks {
   waterConsumption   WaterConsumption[]
   temperatureReadings TemperatureReading[]
   lightingSchedules  LightingSchedule[]
+  weightSampling     WeightSampling[]
 
   @@index([arrivalDate])
   @@index([currentCount])
@@ -238,24 +240,25 @@ model Vaccinations {
 }
 
 model Treatments {
-  id          String             @id @default(uuid())
-  flockId     String
-  disease     DiseaseClass
-  medication  String?
-  dosage      String?
-  response    TreatmentResponse?
-  treatedById String?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  diseaseName String?
-  duration    String?
-  endDate     DateTime?
-  frequency   String?
-  notes       String?
-  startDate   DateTime?
-  symptoms    String?
-  flock       Flocks             @relation(fields: [flockId], references: [id], onDelete: Cascade)
-  treatedBy   Staff?             @relation("TreatedByStaff", fields: [treatedById], references: [id])
+  id                 String             @id @default(uuid())
+  flockId            String
+  disease            DiseaseClass
+  medication         String?
+  dosage             String?
+  response           TreatmentResponse?
+  treatedById        String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  diseaseName        String?
+  diseasedBirdsCount Int?
+  duration           String?
+  endDate            DateTime?
+  frequency          String?
+  notes              String?
+  startDate          DateTime?
+  symptoms           String?
+  flock              Flocks             @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  treatedBy          Staff?             @relation("TreatedByStaff", fields: [treatedById], references: [id])
 
   @@index([flockId])
   @@index([treatedById])
@@ -383,6 +386,28 @@ model TemperatureReading {
   @@index([flockId, date])
   @@index([date, createdAt])
   @@map("temperature_readings")
+}
+
+model WeightSampling {
+  id              String   @id @default(uuid())
+  flockId         String
+  date            DateTime
+  sampleSize      Int      // Number of birds sampled
+  sampleWeights   Float[]  // Array of individual sample weights in kg
+  totalWeight     Float    // Total weight of sampled birds in kg
+  averageWeight   Float    // Average weight per bird in kg
+  notes           String?
+  recordedById    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  flock           Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  recordedBy      Staff?   @relation("WeightSamplingRecordedBy", fields: [recordedById], references: [id])
+
+  @@index([flockId])
+  @@index([date])
+  @@index([recordedById])
+  @@index([flockId, date])
+  @@map("weight_sampling")
 }
 
 model LightingSchedule {

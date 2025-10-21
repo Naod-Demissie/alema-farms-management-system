@@ -331,6 +331,7 @@ export function DiseaseTreatment() {
                     form={form} 
                     flocks={flocks}
                     veterinarians={veterinarians}
+                    t={t}
                   />
                 ),
               }}
@@ -348,7 +349,7 @@ export function DiseaseTreatment() {
             </div>
           ) : (
             <TreatmentTable
-              columns={treatmentColumns(handleEdit, handleDelete, getDiseaseBadge, getResponseBadge)}
+              columns={treatmentColumns(handleEdit, handleDelete, getDiseaseBadge, getResponseBadge, t)}
               data={treatments}
               onEdit={handleEdit}
               onDelete={handleDelete}

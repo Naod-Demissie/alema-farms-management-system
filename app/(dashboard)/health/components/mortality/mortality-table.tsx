@@ -28,6 +28,8 @@ import {
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { DataTableFacetedFilter } from "@/components/table/data-table-faceted-filter";
+import { MortalityTableToolbar } from "./mortality-table-toolbar";
+import { MortalityAggregates } from "./mortality-aggregates";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -132,28 +134,16 @@ export function MortalityTable({ columns, data, toolbar, flocks = [], onEdit, on
 
   return (
     <div className="space-y-4">
-      {toolbar || (
-        <DataTableToolbar
-          table={table}
-          facetedFilters={[
-            {
-              columnId: "flockId",
-              title: "Flock",
-              options: flockOptions,
-            },
-            {
-              columnId: "cause",
-              title: "Cause",
-              options: [
-                { label: "Disease", value: "disease" },
-                { label: "Injury", value: "injury" },
-                { label: "Environmental", value: "environmental" },
-                { label: "Unknown", value: "unknown" },
-              ],
-            },
-          ]}
-        />
-      )}
+      <MortalityTableToolbar
+        table={table}
+        flocks={flocks}
+      />
+      
+      {/* Aggregates Display */}
+      <MortalityAggregates
+        table={table}
+      />
+      
       <div className="rounded-md border">
         <Table>
           <TableHeader>

@@ -7,7 +7,7 @@ import { FeedUsage } from "./components/usage/feed-usage";
 import { FeedPlanningManagement } from "./components/planning/feed-planning-management";
 import { FeedInventoryManagement } from "./components/inventory/feed-inventory-management";
 import { WaterConsumption } from "./components/water/water-consumption";
-import { FeedAnalytics } from "./components/analytics/feed-analytics";
+import { FeedAnalyticsManagement } from "./components/analytics/feed-analytics-management";
 import { PageBanner } from "@/components/ui/page-banner";
 
 export default function FeedManagementPage() {
@@ -53,7 +53,7 @@ export default function FeedManagementPage() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4 mt-4 sm:mt-0">
-          <FeedAnalytics />
+          <FeedAnalyticsManagement />
         </TabsContent>
       </Tabs>
     </div>

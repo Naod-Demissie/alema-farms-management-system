@@ -131,7 +131,7 @@ export function WaterDialog({
                       <SelectItem value="loading" disabled>
                         <div className="flex items-center gap-2">
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          {t('form.loadingFlocks')}
+                          Loading flocks...
                         </div>
                       </SelectItem>
                     ) : flocks.length === 0 ? (

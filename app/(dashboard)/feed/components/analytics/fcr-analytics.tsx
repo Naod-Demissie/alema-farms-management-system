@@ -3,21 +3,14 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getFeedConversionRatio, getFeedEfficiencyStats } from "../../server/feed-analytics";
-import { getWeightSamplingWithFCR } from "../../server/weight-sampling";
-import { Activity, TrendingDown, TrendingUp, Wheat, Scale, Plus } from "lucide-react";
+import { Activity, TrendingDown, TrendingUp, Wheat, Scale } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { WeightSamplingDialog } from "../weight-sampling/weight-sampling-dialog";
-import { WeightSamplingTable } from "../weight-sampling/weight-sampling-table";
-import { WeightTrendChart } from "../weight-sampling/weight-trend-chart";
-import { getFlocksAction } from "../../../flocks/server/flocks";
 
 type StatsData = {
   monthlyFCR: number;
@@ -73,15 +66,14 @@ type FCRData = {
   }>;
 };
 
-export function FeedAnalytics() {
+export function FCRAnalytics() {
   const t = useTranslations("feed.analytics");
   const tCommon = useTranslations("common");
   const [selectedFlock, setSelectedFlock] = useState<string>("all");
   const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [fcrData, setFCRData] = useState<FCRData | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [fcrLoading, setFCRLoading] = useState(true);
-  const [flocks, setFlocks] = useState<Array<{id: string, batchCode: string}>>([]);
+  const [fcrLoading, setFcrLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -98,35 +90,21 @@ export function FeedAnalytics() {
       }
     };
 
-    const fetchFlocks = async () => {
-      try {
-        const result = await getFlocksAction();
-        if (result.success && result.data) {
-          setFlocks(result.data);
-        }
-      } catch (error) {
-        console.error("Error fetching flocks:", error);
-      }
-    };
-
     fetchStats();
-    fetchFlocks();
   }, []);
 
   useEffect(() => {
     const fetchFCR = async () => {
-      setFCRLoading(true);
+      setFcrLoading(true);
       try {
-        const result = await getFeedConversionRatio(
-          selectedFlock === "all" ? undefined : selectedFlock
-        );
+        const result = await getFeedConversionRatio(selectedFlock === "all" ? undefined : selectedFlock);
         if (result.success && result.data) {
           setFCRData(result.data);
         }
       } catch (error) {
         console.error("Error fetching FCR:", error);
       } finally {
-        setFCRLoading(false);
+        setFcrLoading(false);
       }
     };
 
@@ -134,39 +112,55 @@ export function FeedAnalytics() {
   }, [selectedFlock]);
 
   const formatFCR = (fcr: number) => {
+    if (fcr === 0) return "N/A";
     return fcr.toFixed(2);
   };
 
   const getFCRStatus = (fcr: number) => {
-    // Good FCR for layers: 2.0-2.5 (kg feed per kg of eggs)
-    // Good FCR for broilers: 1.5-2.0 (kg feed per kg of meat)
-    if (fcr <= 2.0) return { label: t("excellent"), variant: "default" as const };
-    if (fcr <= 2.5) return { label: t("good"), variant: "secondary" as const };
-    if (fcr <= 3.0) return { label: t("average"), variant: "outline" as const };
+    if (fcr === 0) return { label: t("noData"), variant: "secondary" as const };
+    if (fcr <= 1.5) return { label: t("excellent"), variant: "default" as const };
+    if (fcr <= 2.0) return { label: t("good"), variant: "secondary" as const };
+    if (fcr <= 2.5) return { label: t("fair"), variant: "outline" as const };
     return { label: t("poor"), variant: "destructive" as const };
   };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">{t("fcrAnalyticsTitle")}</h3>
+          <p className="text-sm text-muted-foreground">
+            {t("fcrAnalyticsDescription")}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={selectedFlock} onValueChange={setSelectedFlock}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder={t("selectFlock")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("allFlocks")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("monthlyFCR")}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">{t("monthlyFCR")}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {statsLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-16" />
             ) : (
               <>
-                <div className="text-2xl font-bold">
-                  {formatFCR(statsData?.monthlyFCR || 0)}
-                </div>
+                <div className="text-2xl font-bold">{formatFCR(statsData?.monthlyFCR || 0)}</div>
                 <p className="text-xs text-muted-foreground">
-                  {getFCRStatus(statsData?.monthlyFCR || 0).label}
+                  {statsData?.hasMonthlyWeightData ? t("thisMonth") : t("noWeightData")}
                 </p>
               </>
             )}
@@ -175,9 +169,7 @@ export function FeedAnalytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("totalFeedUsed")}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalFeedUsed")}</CardTitle>
             <Wheat className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -185,12 +177,8 @@ export function FeedAnalytics() {
               <Skeleton className="h-8 w-20" />
             ) : (
               <>
-                <div className="text-2xl font-bold">
-                  {(statsData?.feedUsed || 0).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("kgThisMonth")}
-                </p>
+                <div className="text-2xl font-bold">{(statsData?.feedUsed || 0).toFixed(1)} kg</div>
+                <p className="text-xs text-muted-foreground">{t("thisMonth")}</p>
               </>
             )}
           </CardContent>
@@ -198,9 +186,7 @@ export function FeedAnalytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("totalBirds")}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalWeightGain")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -208,11 +194,9 @@ export function FeedAnalytics() {
               <Skeleton className="h-8 w-20" />
             ) : (
               <>
-                <div className="text-2xl font-bold">
-                  {(statsData?.birds || 0).toLocaleString()}
-                </div>
+                <div className="text-2xl font-bold">{(statsData?.monthlyWeightGain || 0).toFixed(1)} kg</div>
                 <p className="text-xs text-muted-foreground">
-                  {t("birdsThisMonth")}
+                  {statsData?.hasMonthlyWeightData ? t("thisMonth") : t("noWeightData")}
                 </p>
               </>
             )}
@@ -221,21 +205,17 @@ export function FeedAnalytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("avgFeedPerBird")}
-            </CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">{t("activeFlocks")}</CardTitle>
+            <Scale className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {statsLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-12" />
             ) : (
               <>
-                <div className="text-2xl font-bold">
-                  {(statsData?.avgFeedPerBirdPerDay || 0).toFixed(3)}
-                </div>
+                <div className="text-2xl font-bold">{statsData?.activeFlocks || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  {t("kgPerDay")}
+                  {(statsData?.birds || 0).toLocaleString()} {t("birds")}
                 </p>
               </>
             )}
@@ -243,116 +223,41 @@ export function FeedAnalytics() {
         </Card>
       </div>
 
-      {/* Weight Gain Insights */}
-      {fcrData?.hasWeightData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("weightGainAnalysis")}</CardTitle>
-            <CardDescription>{t("weightGainDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{t("initialAverageWeight")}</p>
-                <p className="text-2xl font-bold">{fcrData.weightGainDetails.initialAverageWeight.toFixed(2)} {tCommon("kg")}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{t("finalAverageWeight")}</p>
-                <p className="text-2xl font-bold">{fcrData.weightGainDetails.finalAverageWeight.toFixed(2)} {tCommon("kg")}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{t("totalWeightGain")}</p>
-                <p className="text-2xl font-bold">{fcrData.weightGainDetails.weightGain.toFixed(2)} {tCommon("kg")}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{t("averageDailyGain")}</p>
-                <p className="text-2xl font-bold">{fcrData.weightGainDetails.averageDailyGain.toFixed(3)} {tCommon("kg")}/day</p>
-              </div>
-            </div>
-            {fcrData.weightGainDetails.firstSamplingDate && fcrData.weightGainDetails.lastSamplingDate && (
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  {t("analysisPeriod")}: {new Date(fcrData.weightGainDetails.firstSamplingDate).toLocaleDateString()} {t("to")} {new Date(fcrData.weightGainDetails.lastSamplingDate).toLocaleDateString()}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t("basedOn")} {fcrData.weightGainDetails.sampleCount} {t("weightSamplingRecords")}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Weight Sampling Data Missing Warning */}
-      {!fcrData?.hasWeightData && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="text-orange-800">{t("weightSamplingRequired")}</CardTitle>
-            <CardDescription className="text-orange-700">
-              {t("weightSamplingRequiredDesc")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-orange-700">
-                <Scale className="h-5 w-5" />
-                <span className="text-sm">
-                  {t("recordWeightSamplingDesc")}
-                </span>
-              </div>
-              <WeightSamplingDialog onSuccess={() => {
-                // Refresh FCR data when new weight sampling is added
-                const fetchFCR = async () => {
-                  setFCRLoading(true);
-                  try {
-                    const result = await getFeedConversionRatio(selectedFlock === "all" ? undefined : selectedFlock);
-                    if (result.success && result.data) {
-                      setFCRData(result.data);
-                    }
-                  } catch (error) {
-                    console.error("Error fetching FCR:", error);
-                  } finally {
-                    setFCRLoading(false);
-                  }
-                };
-                fetchFCR();
-              }} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Weight Sampling Insights */}
+      {/* FCR Chart */}
       {fcrData?.weightSamplingInsights && fcrData.weightSamplingInsights.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>{t("weightSamplingHistory")}</CardTitle>
-            <CardDescription>{t("weightSamplingHistoryDesc")}</CardDescription>
+            <CardTitle>{t("fcrTrend")}</CardTitle>
+            <CardDescription>{t("fcrTrendDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {fcrData.weightSamplingInsights.slice(0, 5).map((sampling, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="text-sm font-medium">
-                      {new Date(sampling.date).toLocaleDateString()}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {sampling.sampleSize} {t("birdsSampled")}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold">{sampling.averageWeight.toFixed(2)} {tCommon("kg")}</div>
-                    <div className="text-xs text-muted-foreground">{t("avgWeight")}</div>
-                  </div>
-                </div>
-              ))}
-              {fcrData.weightSamplingInsights.length > 5 && (
-                <p className="text-sm text-muted-foreground text-center">
-                  ... {t("and")} {fcrData.weightSamplingInsights.length - 5} {t("moreRecords")}
-                </p>
-              )}
-            </div>
+            <ChartContainer
+              config={{
+                fcr: {
+                  label: "FCR",
+                },
+              }}
+              className="h-[300px] w-full"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={fcrData.weightSamplingInsights}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                  />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="averageWeight" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    name={t("avgWeight")}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}
@@ -411,8 +316,8 @@ export function FeedAnalytics() {
       {/* Summary Statistics */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("summary")}</CardTitle>
-          <CardDescription>{t("summaryDescription")}</CardDescription>
+            <CardTitle>{t("summary")}</CardTitle>
+            <CardDescription>{t("summaryDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           {fcrLoading ? (

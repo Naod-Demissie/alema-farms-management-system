@@ -65,7 +65,7 @@ interface UsageTableProps {
 
 export function UsageTable({ columns, data, toolbar, flocks = [], onView, onEdit, onDelete }: UsageTableProps) {
   const t = useTranslations('feed.usage');
-  const tCommon = useTranslations('feed.common');
+  const tCommon = useTranslations('common');
   const tFeedTypes = useTranslations('feed.feedTypes');
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});

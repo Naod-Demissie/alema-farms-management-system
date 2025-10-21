@@ -42,6 +42,9 @@ import {
   Cell,
   Label,
 } from "recharts";
+import { CombinedWeightFCRTable } from "@/app/(dashboard)/feed/components/weight-sampling/combined-weight-fcr-table";
+import { WeightFCRTrendCharts } from "@/app/(dashboard)/feed/components/weight-sampling/weight-fcr-trend-charts";
+import { WeightSamplingDialog } from "@/app/(dashboard)/feed/components/weight-sampling/weight-sampling-dialog";
 
 interface ReportFilters {
   dateRange: {
@@ -302,6 +305,12 @@ export function FeedReports({ filters }: FeedReportsProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Weight Sampling & FCR Combined */}
+      <CombinedWeightFCRTable onRefresh={() => {}} />
+
+      {/* Weight and FCR Trends */}
+      <WeightFCRTrendCharts />
 
       {/* Charts Row 1: Feed Usage by Flock */}
       <div className="grid grid-cols-1 gap-6">

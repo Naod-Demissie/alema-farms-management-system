@@ -62,6 +62,7 @@ export const treatmentSchema = z.object({
     message: "Disease type is required",
   }),
   diseaseName: z.string().min(1, "Disease name is required"),
+  diseasedBirdsCount: z.number().min(1, "Number of diseased birds must be at least 1"),
   medication: z.string().min(1, "Medication is required"),
   dosage: z.string().min(1, "Dosage is required"),
   frequency: z.string().min(1, "Frequency is required"),
@@ -512,9 +513,10 @@ interface TreatmentFormProps {
   veterinarians: any[];
   flocksLoading?: boolean;
   veterinariansLoading?: boolean;
+  t?: any;
 }
 
-export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = false, veterinariansLoading = false }: TreatmentFormProps) {
+export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = false, veterinariansLoading = false, t }: TreatmentFormProps) {
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -523,7 +525,7 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
           name="flockId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Flock ID <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{t ? t('columns.flockId') : 'Flock ID'} <span className="text-red-500">*</span></FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -560,7 +562,7 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
           name="disease"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Disease Type <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{t ? t('diseaseType') : 'Disease Type'} <span className="text-red-500">*</span></FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -586,9 +588,29 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
         name="diseaseName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Disease Name <span className="text-red-500">*</span></FormLabel>
+            <FormLabel>{t ? t('diseaseName') : 'Disease Name'} <span className="text-red-500">*</span></FormLabel>
             <FormControl>
               <Input placeholder="e.g., Infectious Bronchitis" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="diseasedBirdsCount"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t ? t('diseasedBirdsCount') : 'Number of Diseased Birds'} <span className="text-red-500">*</span></FormLabel>
+            <FormControl>
+              <Input 
+                type="number" 
+                placeholder="e.g., 25" 
+                min="1"
+                value={field.value || ''}
+                onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

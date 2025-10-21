@@ -37,40 +37,81 @@ export async function getFeedConversionRatio(flockId?: string, dateRange?: { sta
       },
     });
 
-    // Get egg production data
-    const eggProductionData = await prisma.eggProduction.aggregate({
-      where: whereClause,
-      _sum: {
-        totalCount: true,
+    // Get weight sampling data for the period
+    const weightSamplings = await prisma.weightSampling.findMany({
+      where: {
+        ...(flockId && { flockId }),
+        date: { gte: startDate, lte: endDate }
       },
+      orderBy: { date: 'asc' }
     });
 
-    // Get broiler production data
-    const broilerProductionData = await prisma.broilerProduction.aggregate({
-      where: whereClause,
-      _sum: {
-        quantity: true,
-      },
+    // Get flock data for current count
+    const flocks = await prisma.flocks.findMany({
+      where: flockId ? { id: flockId } : { currentCount: { gt: 0 } },
+      select: { id: true, batchCode: true, currentCount: true }
     });
 
     const totalFeedUsed = feedUsageData._sum.amountUsed || 0;
-    const totalEggs = eggProductionData._sum.totalCount || 0;
-    const totalBroilers = broilerProductionData._sum.quantity || 0;
-
-    // Calculate egg mass (assuming 1 egg = 60g = 0.06kg)
-    const eggMassKg = totalEggs * 0.06;
     
-    // Calculate broiler mass (assuming average broiler weight is 2kg)
-    const broilerMassKg = totalBroilers * 2;
+    // Initialize variables for main FCR calculation
+    let totalWeightGain = 0;
+    let hasWeightData = false;
+    let weightGainDetails = {
+      initialWeight: 0,
+      finalWeight: 0,
+      weightGain: 0,
+      sampleCount: weightSamplings.length,
+      firstSamplingDate: null as Date | null,
+      lastSamplingDate: null as Date | null,
+      averageDailyGain: 0,
+      initialAverageWeight: 0,
+      finalAverageWeight: 0
+    };
 
-    // Total production mass
-    const totalProductionMass = eggMassKg + broilerMassKg;
+    // Only calculate main FCR if a specific flock is selected
+    // This ensures FCR is calculated per flock, not across all flocks
+    if (flockId && weightSamplings.length >= 2) {
+      const firstSampling = weightSamplings[0];
+      const lastSampling = weightSamplings[weightSamplings.length - 1];
+      
+      // Find flock for current count
+      const flock = flocks.find(f => f.id === flockId);
+      const currentFlockSize = flock?.currentCount || 0;
+      
+      if (currentFlockSize > 0) {
+        // Calculate total flock weight at start and end
+        const initialTotalWeight = firstSampling.averageWeight * currentFlockSize;
+        const finalTotalWeight = lastSampling.averageWeight * currentFlockSize;
+        
+        totalWeightGain = finalTotalWeight - initialTotalWeight;
+        hasWeightData = true;
 
-    // Calculate FCR (Feed Conversion Ratio)
-    // FCR = Feed consumed (kg) / Production output (kg)
-    const fcr = totalProductionMass > 0 ? totalFeedUsed / totalProductionMass : 0;
+        // Store detailed weight gain information
+        weightGainDetails = {
+          initialWeight: initialTotalWeight,
+          finalWeight: finalTotalWeight,
+          weightGain: totalWeightGain,
+          sampleCount: weightSamplings.length,
+          firstSamplingDate: firstSampling.date,
+          lastSamplingDate: lastSampling.date,
+          averageDailyGain: 0,
+          initialAverageWeight: firstSampling.averageWeight,
+          finalAverageWeight: lastSampling.averageWeight
+        };
 
-    // Get per-flock breakdown if no specific flock selected
+        // Calculate average daily weight gain
+        const daysBetween = Math.max(1, Math.ceil((lastSampling.date.getTime() - firstSampling.date.getTime()) / (1000 * 60 * 60 * 24)));
+        weightGainDetails.averageDailyGain = totalWeightGain / daysBetween;
+      }
+    }
+
+    // Calculate FCR (Feed Conversion Ratio) - only for specific flock
+    // FCR = Feed consumed (kg) / Weight gain (kg)
+    const fcr = totalWeightGain > 0 ? totalFeedUsed / totalWeightGain : 0;
+
+    // Get per-flock breakdown - always calculate per-flock FCR
+    // This ensures each flock's FCR is calculated independently
     let perFlockData = [];
     if (!flockId) {
       const flocks = await prisma.flocks.findMany({
@@ -94,101 +135,72 @@ export async function getFeedConversionRatio(flockId?: string, dateRange?: { sta
             _sum: { amountUsed: true },
           });
 
-          const flockEggs = await prisma.eggProduction.aggregate({
+          const flockWeightSamplings = await prisma.weightSampling.findMany({
             where: {
               flockId: flock.id,
               date: { gte: startDate, lte: endDate },
             },
-            _sum: { totalCount: true },
+            orderBy: { date: 'asc' }
           });
 
-          const flockBroilers = await prisma.broilerProduction.aggregate({
-            where: {
-              flockId: flock.id,
-              date: { gte: startDate, lte: endDate },
-            },
-            _sum: { quantity: true },
-          });
+          let flockWeightGain = 0;
+          let hasFlockWeightData = false;
+
+          if (flockWeightSamplings.length >= 2) {
+            const firstSampling = flockWeightSamplings[0];
+            const lastSampling = flockWeightSamplings[flockWeightSamplings.length - 1];
+            
+            const initialTotalWeight = firstSampling.averageWeight * flock.currentCount;
+            const finalTotalWeight = lastSampling.averageWeight * flock.currentCount;
+            flockWeightGain = finalTotalWeight - initialTotalWeight;
+            hasFlockWeightData = true;
+          }
 
           const flockFeedUsed = flockFeed._sum.amountUsed || 0;
-          const flockEggCount = flockEggs._sum.totalCount || 0;
-          const flockBroilerCount = flockBroilers._sum.quantity || 0;
-          const flockEggMass = flockEggCount * 0.06;
-          const flockBroilerMass = flockBroilerCount * 2;
-          const flockTotalMass = flockEggMass + flockBroilerMass;
-          const flockFCR = flockTotalMass > 0 ? flockFeedUsed / flockTotalMass : 0;
+          const flockFCR = flockWeightGain > 0 ? flockFeedUsed / flockWeightGain : 0;
 
           return {
             flockId: flock.id,
             batchCode: flock.batchCode,
             feedUsed: flockFeedUsed,
-            eggCount: flockEggCount,
-            broilerCount: flockBroilerCount,
-            productionMass: flockTotalMass,
+            weightGain: flockWeightGain,
             fcr: flockFCR,
+            hasWeightData: hasFlockWeightData,
+            sampleCount: flockWeightSamplings.length,
+            initialWeight: hasFlockWeightData ? flockWeightSamplings[0].averageWeight * flock.currentCount : 0,
+            finalWeight: hasFlockWeightData ? flockWeightSamplings[flockWeightSamplings.length - 1].averageWeight * flock.currentCount : 0,
+            averageDailyGain: hasFlockWeightData && flockWeightSamplings.length >= 2 ? 
+              flockWeightGain / Math.max(1, Math.ceil((flockWeightSamplings[flockWeightSamplings.length - 1].date.getTime() - flockWeightSamplings[0].date.getTime()) / (1000 * 60 * 60 * 24))) : 0,
           };
         })
       );
     }
 
-    // Get daily FCR trend
-    const dailyData = flockId
-      ? await prisma.$queryRaw<Array<{
-          date: Date;
-          feed_used: number;
-          eggs_produced: number;
-        }>>`
-          SELECT 
-            DATE(fu.date) as date,
-            COALESCE(SUM(fu."amountUsed"), 0) as feed_used,
-            COALESCE(SUM(ep."totalCount"), 0) as eggs_produced
-          FROM feed_usage fu
-          LEFT JOIN egg_production ep ON DATE(fu.date) = DATE(ep.date) AND ep."flockId" = ${flockId}
-          WHERE fu.date >= ${startDate} AND fu.date <= ${endDate} AND fu."flockId" = ${flockId}
-          GROUP BY DATE(fu.date)
-          ORDER BY DATE(fu.date) DESC
-          LIMIT 30
-        `
-      : await prisma.$queryRaw<Array<{
-          date: Date;
-          feed_used: number;
-          eggs_produced: number;
-        }>>`
-          SELECT 
-            DATE(fu.date) as date,
-            COALESCE(SUM(fu."amountUsed"), 0) as feed_used,
-            COALESCE(SUM(ep."totalCount"), 0) as eggs_produced
-          FROM feed_usage fu
-          LEFT JOIN egg_production ep ON DATE(fu.date) = DATE(ep.date)
-          WHERE fu.date >= ${startDate} AND fu.date <= ${endDate}
-          GROUP BY DATE(fu.date)
-          ORDER BY DATE(fu.date) DESC
-          LIMIT 30
-        `;
-
-    const trendData = dailyData.map((d) => {
-      const eggMass = Number(d.eggs_produced) * 0.06;
-      const dailyFCR = eggMass > 0 ? Number(d.feed_used) / eggMass : 0;
-      return {
-        date: new Date(d.date).toISOString().split('T')[0],
-        feedUsed: Number(d.feed_used),
-        production: Number(d.eggs_produced),
-        fcr: dailyFCR,
-      };
-    }).reverse();
+    // Get weight sampling data for insights
+    const weightSamplingInsights = weightSamplings.map(sampling => ({
+      date: sampling.date,
+      averageWeight: sampling.averageWeight,
+      sampleSize: sampling.sampleSize,
+      totalWeight: sampling.totalWeight
+    }));
 
     return {
       success: true,
       data: {
         totalFeedUsed,
-        totalEggs,
-        totalBroilers,
-        eggMassKg,
-        broilerMassKg,
-        totalProductionMass,
+        weightGain: totalWeightGain,
         fcr,
+        hasWeightData,
+        sampleCount: weightSamplings.length,
         perFlockData,
-        trendData,
+        weightGainDetails,
+        weightSamplingInsights,
+        weightSamplings: weightSamplings.map(s => ({
+          date: s.date,
+          averageWeight: s.averageWeight,
+          sampleSize: s.sampleSize,
+          totalWeight: s.totalWeight
+        }))
       },
     };
   } catch (error) {
@@ -211,14 +223,17 @@ export async function getFeedEfficiencyStats() {
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // Get this month's data
-    const [monthFeed, monthEggs, totalFlocks] = await Promise.all([
+    const [monthFeed, monthWeightSamplings, totalFlocks] = await Promise.all([
       prisma.feedUsage.aggregate({
         where: { date: { gte: monthStart } },
         _sum: { amountUsed: true },
       }),
-      prisma.eggProduction.aggregate({
+      prisma.weightSampling.findMany({
         where: { date: { gte: monthStart } },
-        _sum: { totalCount: true },
+        orderBy: { date: 'asc' },
+        include: {
+          flock: { select: { currentCount: true } }
+        }
       }),
       prisma.flocks.count({
         where: { currentCount: { gt: 0 } },
@@ -226,9 +241,38 @@ export async function getFeedEfficiencyStats() {
     ]);
 
     const feedUsed = monthFeed._sum.amountUsed || 0;
-    const eggsProduced = monthEggs._sum.totalCount || 0;
-    const eggMass = eggsProduced * 0.06;
-    const monthlyFCR = eggMass > 0 ? feedUsed / eggMass : 0;
+    
+    // Calculate monthly weight gain from sampling data
+    let monthlyWeightGain = 0;
+    let hasMonthlyWeightData = false;
+    
+    if (monthWeightSamplings.length >= 2) {
+      // Group by flock and calculate weight gain for each
+      const flockGroups = monthWeightSamplings.reduce((acc, sampling) => {
+        if (!acc[sampling.flockId]) {
+          acc[sampling.flockId] = [];
+        }
+        acc[sampling.flockId].push(sampling);
+        return acc;
+      }, {} as Record<string, typeof monthWeightSamplings>);
+
+      for (const flockSamplings of Object.values(flockGroups)) {
+        if (flockSamplings.length >= 2) {
+          const firstSampling = flockSamplings[0];
+          const lastSampling = flockSamplings[flockSamplings.length - 1];
+          const flockSize = firstSampling.flock.currentCount;
+          
+          if (flockSize > 0) {
+            const initialWeight = firstSampling.averageWeight * flockSize;
+            const finalWeight = lastSampling.averageWeight * flockSize;
+            monthlyWeightGain += (finalWeight - initialWeight);
+            hasMonthlyWeightData = true;
+          }
+        }
+      }
+    }
+
+    const monthlyFCR = monthlyWeightGain > 0 ? feedUsed / monthlyWeightGain : 0;
 
     // Get average daily feed per bird
     const totalBirds = await prisma.flocks.aggregate({
@@ -245,10 +289,12 @@ export async function getFeedEfficiencyStats() {
       data: {
         monthlyFCR,
         feedUsed,
-        eggsProduced,
+        monthlyWeightGain,
+        hasMonthlyWeightData,
         activeFlocks: totalFlocks,
         avgFeedPerBirdPerDay,
         birds,
+        weightSamplingCount: monthWeightSamplings.length,
       },
     };
   } catch (error) {

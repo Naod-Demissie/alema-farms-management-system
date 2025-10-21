@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
+import { EthiopianCalendarUtils } from "@/lib/ethiopian-calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -44,6 +45,19 @@ export const mortalityColumns = (
         </Badge>
       );
     },
+    filterFn: (row, id, value) => {
+      const record = row.original;
+      const flockId = record.flockId || record.flock?.id || "";
+      
+      // Handle array values from DataTableFacetedFilter (multi-select)
+      if (Array.isArray(value)) {
+        return value.includes(flockId);
+      }
+      
+      // Handle string values from regular search
+      const flockCode = record.flock?.batchCode || record.flockId || "";
+      return flockCode.toLowerCase().includes(value.toLowerCase());
+    },
   },
   {
     accessorKey: "date",
@@ -58,6 +72,38 @@ export const mortalityColumns = (
           </div>
         </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      
+      const record = row.original;
+      const recordDate = new Date(record.date);
+      
+      // Handle new filter value structure
+      if (typeof value === 'object' && value.date) {
+        const { date: filterDate, isMonthFilter } = value;
+        
+        // Convert both dates to Ethiopian calendar
+        const recordEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(recordDate);
+        const filterEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(filterDate);
+        
+        if (isMonthFilter) {
+          // Month filtering - match Ethiopian month and year
+          return (
+            recordEthiopian.month === filterEthiopian.month &&
+            recordEthiopian.year === filterEthiopian.year
+          );
+        } else {
+          // Specific date filtering - match Ethiopian date
+          return (
+            recordEthiopian.day === filterEthiopian.day &&
+            recordEthiopian.month === filterEthiopian.month &&
+            recordEthiopian.year === filterEthiopian.year
+          );
+        }
+      }
+      
+      return true;
     },
   },
   {
@@ -90,6 +136,18 @@ export const mortalityColumns = (
     cell: ({ row }) => {
       const record = row.original;
       return getCauseBadge(record.cause);
+    },
+    filterFn: (row, id, value) => {
+      const record = row.original;
+      const cause = record.cause || "";
+      
+      // Handle array values from DataTableFacetedFilter (multi-select)
+      if (Array.isArray(value)) {
+        return value.includes(cause);
+      }
+      
+      // Handle string values from regular search
+      return cause.toLowerCase().includes(value.toLowerCase());
     },
   },
   {

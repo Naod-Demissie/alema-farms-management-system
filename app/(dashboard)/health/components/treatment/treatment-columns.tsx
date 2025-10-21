@@ -57,6 +57,21 @@ export const treatmentColumns = (
     },
   },
   {
+    accessorKey: "diseasedBirdsCount",
+    header: t ? t('columns.diseasedBirdsCount') : "Diseased Birds",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <div className="flex items-center space-x-2">
+          <div className="font-medium text-red-600">
+            {treatment.diseasedBirdsCount || 0}
+          </div>
+          <span className="text-sm text-muted-foreground">birds</span>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "disease",
     header: t ? t('columns.diseaseType') : "Disease Type",
     cell: ({ row }) => {

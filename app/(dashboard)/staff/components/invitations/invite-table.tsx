@@ -91,7 +91,7 @@ export function InviteTable({ columns, data, toolbar, facetedFilters }: InviteTa
         <DataTableToolbar
           table={table}
           filterColumnId="email"
-          filterPlaceholder={t('directory.invites.filters.searchPlaceholder')}
+          filterPlaceholder={t('directory.filters.searchPlaceholder')}
           facetedFilters={facetedFilters || [
             {
               columnId: "role",

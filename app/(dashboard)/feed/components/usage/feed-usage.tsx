@@ -32,7 +32,7 @@ type FeedUsageFormData = {
 
 export function FeedUsage() {
   const t = useTranslations('feed.usage');
-  const tCommon = useTranslations('feed.common');
+  const tCommon = useTranslations('common');
   const tFeedTypes = useTranslations('feed.feedTypes');
   const { data: session } = useSession();
   const currentUser = session?.user;
