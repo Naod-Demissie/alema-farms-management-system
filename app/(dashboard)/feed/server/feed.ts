@@ -1,3 +1,5 @@
+"use server";
+
 import { prisma } from "@/lib/prisma";
 import { FeedType } from "@/lib/generated/prisma/enums";
 
@@ -289,7 +291,7 @@ export async function deleteFeedSupplier(id: string) {
 }
 
 // Analytics and Reporting
-export async function getFeedAnalytics(filters?: {
+export async function getFeedAnalyticsAction(filters?: {
   startDate?: Date;
   endDate?: Date;
   flockId?: string;
