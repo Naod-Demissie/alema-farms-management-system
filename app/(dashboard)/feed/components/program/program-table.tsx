@@ -63,7 +63,7 @@ interface ProgramTableProps {
 
 export function ProgramTable({ columns, data, toolbar, onView, onEdit, onDelete, loading = false }: ProgramTableProps) {
   const t = useTranslations('feed.program');
-  const tCommon = useTranslations('feed.common');
+  const tCommon = useTranslations('common');
   const tFeedTypes = useTranslations('feed.feedTypes');
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});

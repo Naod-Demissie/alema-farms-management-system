@@ -21,6 +21,10 @@ export interface Flock {
   mortality?: Array<{
     count: number;
   }>;
+  treatments?: Array<{
+    stillSickCount: number | null;
+    endDate: Date | null;
+  }>;
   _count?: {
     vaccinations: number;
     treatments: number;
@@ -238,6 +242,17 @@ export async function getFlocks(
         notes: true,
         createdAt: true,
         updatedAt: true,
+        mortality: {
+          select: {
+            count: true
+          }
+        },
+        treatments: {
+          select: {
+            stillSickCount: true,
+            endDate: true
+          }
+        },
         _count: {
           select: {
             vaccinations: true,

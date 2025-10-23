@@ -130,6 +130,45 @@ export const getFlockColumns = (t: any): ColumnDef<Flock>[] => [
           <span className={mortalityStatus.color}>
             {mortalityRate.toFixed(1)}%
           </span>
+          <span className="text-muted-foreground text-xs">
+            ({totalMortality} {totalMortality === 1 ? t('fields.death') : t('fields.deaths')})
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "morbidityRate",
+    header: t('tableColumns.morbidityRate'),
+    cell: ({ row }) => {
+      const flock = row.original;
+      const currentCount = flock.currentCount;
+      
+      // Calculate morbidity rate based on currently sick birds
+      const totalStillSickBirds = flock.treatments
+        ?.filter((treatment) => !treatment.endDate || new Date(treatment.endDate) > new Date())
+        .reduce((sum, treatment) => sum + (treatment.stillSickCount || 0), 0) || 0;
+      
+      const morbidityRate = currentCount > 0 ? (totalStillSickBirds / currentCount) * 100 : 0;
+      
+      const getMorbidityStatus = (rate: number) => {
+        if (rate > 10) return { status: 'high', color: 'text-red-600', icon: AlertTriangle };
+        if (rate > 3) return { status: 'medium', color: 'text-yellow-600', icon: TrendingDown };
+        return { status: 'low', color: 'text-green-600', icon: TrendingUp };
+      };
+      
+      const morbidityStatus = getMorbidityStatus(morbidityRate);
+      const StatusIcon = morbidityStatus.icon;
+      
+      return (
+        <div className="flex items-center space-x-1">
+          <StatusIcon className={`h-4 w-4 ${morbidityStatus.color}`} />
+          <span className={morbidityStatus.color}>
+            {morbidityRate.toFixed(1)}%
+          </span>
+          <span className="text-muted-foreground text-xs">
+            ({totalStillSickBirds} sick)
+          </span>
         </div>
       );
     },

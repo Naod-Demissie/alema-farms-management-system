@@ -349,6 +349,9 @@
     "addFlock": "ዶሮዎች መዝግብ",
     "editFlock": "ዶሮዎች ለውጥ",
     "deleteFlock": "ዶሮዎች ሰርዝ",
+    "view": "ተመልከት",
+    "edit": "ለውጥ",
+    "delete": "ሰርዝ",
     "flockDetails": "የዶሮዎች ዝርዝሮች",
     "flockName": "የዶሮዎች ስም",
     "flockType": "የዶሮዎች አይነት",
@@ -403,6 +406,9 @@
       "notes": "ማስታወሻዎች",
       "populationChange": "የህዝብ ብዛት ለውጥ",
       "mortalityRate": "የሞት መጠን",
+      "morbidityRate": "የበሽታ መጠን",
+      "death": "ሞት",
+      "deaths": "ሞቶች",
       "days": "ቀናት",
       "weeks": "ሳ",
       "daysShort": "ቀ"
@@ -433,6 +439,7 @@
       "currentCount": "የአሁን ብዛት",
       "populationChange": "የህዝብ ብዛት ለውጥ",
       "mortalityRate": "የሞት መጠን",
+      "morbidityRate": "የበሽታ መጠን",
       "status": "ሁኔታ",
       "notes": "ማስታወሻዎች",
       "actions": "ድርጊቶች"
@@ -788,7 +795,10 @@
       "mortalityByCauseDescription": "የሞት መንስኤዎች ስርጭት",
       "diseaseDistribution": "የበሽታ ስርጭት",
       "diseaseDistributionDescription": "በበሽታ አይነት የህክምና ጉዳዮች",
-      "noData": "ምንም መረጃ የለም"
+      "noData": "ምንም መረጃ የለም",
+      "loadingAnalytics": "የትንታኔ መረጃ በመጫን ላይ...",
+      "loadingMortality": "የሞት መረጃ በመጫን ላይ...",
+      "loadingDisease": "የበሽታ መረጃ በመጫን ላይ..."
     }
   },
   "environment": {

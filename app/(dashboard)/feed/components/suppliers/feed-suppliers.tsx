@@ -38,7 +38,7 @@ type SupplierFormData = z.infer<typeof supplierSchema>;
 
 export function FeedSuppliers() {
   const t = useTranslations('feed.suppliers');
-  const tCommon = useTranslations('feed.common');
+  const tCommon = useTranslations('common');
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);

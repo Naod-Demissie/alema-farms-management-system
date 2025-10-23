@@ -10,6 +10,13 @@ export interface Flock {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  mortality?: Array<{
+    count: number;
+  }>;
+  treatments?: Array<{
+    stillSickCount: number | null;
+    endDate: Date | null;
+  }>;
   _count?: {
     vaccinations: number;
     treatments: number;

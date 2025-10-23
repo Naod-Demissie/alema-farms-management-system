@@ -62,7 +62,7 @@ export async function getHealthAnalytics(dateRange?: { start: Date; end: Date })
 
         const totalDeathsAllTime = totalMortalityData._sum.count || 0;
 
-        // Get treatment data (morbidity)
+        // Get treatment data (morbidity) - Improved version
         const treatmentData = await prisma.treatments.findMany({
           where: {
             flockId: flock.id,
@@ -77,6 +77,8 @@ export async function getHealthAnalytics(dateRange?: { start: Date; end: Date })
             response: true,
             startDate: true,
             endDate: true,
+            diseasedBirdsCount: true,
+            stillSickCount: true,
           },
         });
 
@@ -86,9 +88,12 @@ export async function getHealthAnalytics(dateRange?: { start: Date; end: Date })
         // Calculate mortality rate (based on initial count)
         const mortalityRate = flock.initialCount > 0 ? (totalDeathsAllTime / flock.initialCount) * 100 : 0;
 
-        // Calculate morbidity rate (sick birds / current count)
-        // Assuming each treatment represents sick birds, use treatment count as proxy
-        const morbidityRate = flock.currentCount > 0 ? (activeTreatments / flock.currentCount) * 100 : 0;
+        // Calculate morbidity rate using stillSickCount for more accuracy
+        const totalStillSickBirds = treatmentData
+          .filter((t) => !t.endDate || new Date(t.endDate) > new Date())
+          .reduce((sum, t) => sum + (t.stillSickCount || 0), 0);
+
+        const morbidityRate = flock.currentCount > 0 ? (totalStillSickBirds / flock.currentCount) * 100 : 0;
 
         // Calculate healthy flock percentage
         const healthyPercentage = 100 - mortalityRate - morbidityRate;
@@ -117,8 +122,15 @@ export async function getHealthAnalytics(dateRange?: { start: Date; end: Date })
     const totalActiveTreatments = flockAnalytics.reduce((sum, f) => sum + f.activeTreatments, 0);
     const totalTreatments = flockAnalytics.reduce((sum, f) => sum + f.totalTreatments, 0);
 
-    const overallMortalityRate = totalBirds > 0 ? (totalDeaths / (totalBirds + totalDeaths)) * 100 : 0;
-    const overallMorbidityRate = totalBirds > 0 ? (totalActiveTreatments / totalBirds) * 100 : 0;
+    // Calculate overall rates using weighted averages from individual flock rates
+    const totalInitialBirds = flocks.reduce((sum, f) => sum + f.initialCount, 0);
+    const overallMortalityRate = totalInitialBirds > 0 ? (totalDeaths / totalInitialBirds) * 100 : 0;
+    
+    // Calculate overall morbidity rate using the improved calculation
+    const overallMorbidityRate = flockAnalytics.length > 0 
+      ? flockAnalytics.reduce((sum, f) => sum + f.morbidityRate, 0) / flockAnalytics.length 
+      : 0;
+    
     const overallHealthyRate = 100 - overallMortalityRate - overallMorbidityRate;
 
     // Get mortality by cause
@@ -135,6 +147,18 @@ export async function getHealthAnalytics(dateRange?: { start: Date; end: Date })
       },
     });
 
+    // Define all possible death causes
+    const allDeathCauses = ['disease', 'injury', 'environmental', 'unknown'];
+    
+    // Create a complete mortality by cause with all types, including zero values
+    const completeMortalityByCause = allDeathCauses.map(causeType => {
+      const existingData = mortalityByCause.find(m => m.cause === causeType);
+      return {
+        cause: causeType,
+        count: existingData ? existingData._sum.count || 0 : 0,
+      };
+    });
+
     // Get disease distribution
     const diseaseDistribution = await prisma.treatments.groupBy({
       by: ['disease'],
@@ -147,6 +171,18 @@ export async function getHealthAnalytics(dateRange?: { start: Date; end: Date })
       _count: {
         disease: true,
       },
+    });
+
+    // Define all possible disease types
+    const allDiseaseTypes = ['respiratory', 'digestive', 'parasitic', 'nutritional', 'other'];
+    
+    // Create a complete disease distribution with all types, including zero values
+    const completeDiseaseDistribution = allDiseaseTypes.map(diseaseType => {
+      const existingData = diseaseDistribution.find(d => d.disease === diseaseType);
+      return {
+        disease: diseaseType,
+        count: existingData ? existingData._count.disease : 0,
+      };
     });
 
     return {
@@ -163,14 +199,8 @@ export async function getHealthAnalytics(dateRange?: { start: Date; end: Date })
           healthyRate: Math.max(0, overallHealthyRate),
           activeFlocks: flocks.length,
         },
-        mortalityByCause: mortalityByCause.map((m) => ({
-          cause: m.cause || 'unknown',
-          count: m._sum.count || 0,
-        })),
-        diseaseDistribution: diseaseDistribution.map((d) => ({
-          disease: d.disease,
-          count: d._count.disease,
-        })),
+        mortalityByCause: completeMortalityByCause,
+        diseaseDistribution: completeDiseaseDistribution,
       },
     };
   } catch (error) {

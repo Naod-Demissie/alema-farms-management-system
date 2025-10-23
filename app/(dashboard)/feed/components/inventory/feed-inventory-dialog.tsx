@@ -62,7 +62,7 @@ export function FeedInventoryDialog({
   editingItem
 }: FeedInventoryDialogProps) {
   const t = useTranslations('feed.inventory');
-  const tCommon = useTranslations('feed.common');
+  const tCommon = useTranslations('common');
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [suppliersLoading, setSuppliersLoading] = useState(false);

@@ -33,15 +33,6 @@ export default function HealthManagementPage() {
   const [activeTab, setActiveTab] = useState("vaccinations");
   const t = useTranslations('health');
 
-  // Mock data for overview stats
-  const healthStats = {
-    totalVaccinations: 1247,
-    activeTreatments: 23,
-    healthAlerts: 5,
-    mortalityRate: 2.3,
-    avgWeight: 2.1,
-    healthyFlock: 89.2,
-  };
 
   return (
     <div className="space-y-6">

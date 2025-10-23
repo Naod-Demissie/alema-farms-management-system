@@ -691,11 +691,17 @@ async function seedTreatmentsAndVaccinations(flocks: any[], staff: any[]) {
       
       const treatmentDate = getRandomDate(flock.arrivalDate, new Date());
       
+      const diseasedBirdsCount = getRandomInt(5, Math.floor(flock.currentCount * 0.1)); // 5-10% of flock
+      const recoveredCount = getRandomInt(0, Math.floor(diseasedBirdsCount * 0.8)); // 0-80% recovered
+      const deceasedCount = getRandomInt(0, Math.floor(diseasedBirdsCount * 0.2)); // 0-20% died
+      const stillSickCount = diseasedBirdsCount - recoveredCount - deceasedCount;
+      
       await prisma.treatments.create({
         data: {
           flockId: flock.id,
           disease: getRandomElement(diseases),
           diseaseName: 'Respiratory infection',
+          diseasedBirdsCount: diseasedBirdsCount,
           medication: 'Antibiotics',
           dosage: '5mg per bird',
           frequency: 'Twice daily',
@@ -705,7 +711,12 @@ async function seedTreatmentsAndVaccinations(flocks: any[], staff: any[]) {
           response: getRandomElement(responses),
           symptoms: 'Coughing, reduced appetite',
           notes: 'Treated with veterinary supervision',
-          treatedById: getRandomElement(veterinarians).id
+          treatedById: getRandomElement(veterinarians).id,
+          recoveredCount: recoveredCount,
+          deceasedCount: deceasedCount,
+          stillSickCount: stillSickCount,
+          lastStatusUpdate: new Date(),
+          statusUpdateNotes: 'Treatment status updated'
         }
       });
       totalRecords++;

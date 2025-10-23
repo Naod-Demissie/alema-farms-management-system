@@ -25,7 +25,7 @@ import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 
 export function WaterConsumption() {
   const t = useTranslations('feed.water');
-  const tCommon = useTranslations('feed.common');
+  const tCommon = useTranslations('common');
   
   const [records, setRecords] = useState<any[]>([]);
   const [flocks, setFlocks] = useState<any[]>([]);

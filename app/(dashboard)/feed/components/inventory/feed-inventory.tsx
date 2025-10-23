@@ -51,7 +51,7 @@ type FeedInventoryFormData = z.infer<typeof feedInventorySchema>;
 
 export function FeedInventory() {
   const t = useTranslations('feed.inventory');
-  const tCommon = useTranslations('feed.common');
+  const tCommon = useTranslations('common');
   const tFeedTypes = useTranslations('feed.feedTypes');
   const [inventory, setInventory] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);

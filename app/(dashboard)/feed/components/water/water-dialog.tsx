@@ -40,7 +40,6 @@ export function WaterDialog({
   initialData,
 }: WaterDialogProps) {
   const t = useTranslations('feed.water');
-  const tCommon = useTranslations('feed.common');
   
   const [formData, setFormData] = useState<WaterFormData>({
     flockId: "",

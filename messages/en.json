@@ -349,6 +349,9 @@
     "addFlock": "Add Flock",
     "editFlock": "Edit Flock",
     "deleteFlock": "Delete Flock",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
     "flockDetails": "Flock Details",
     "flockName": "Flock Name",
     "flockType": "Flock Type",
@@ -403,6 +406,9 @@
       "notes": "Notes",
       "populationChange": "Population Change",
       "mortalityRate": "Mortality Rate",
+      "morbidityRate": "Morbidity Rate",
+      "death": "death",
+      "deaths": "deaths",
       "days": "days",
       "weeks": "w",
       "daysShort": "d"
@@ -433,6 +439,7 @@
       "currentCount": "Current Count",
       "populationChange": "Population Change",
       "mortalityRate": "Mortality Rate",
+      "morbidityRate": "Morbidity Rate",
       "status": "Status",
       "notes": "Notes",
       "actions": "Actions"
@@ -780,7 +787,10 @@
       "mortalityByCauseDescription": "Distribution of death causes",
       "diseaseDistribution": "Disease Distribution",
       "diseaseDistributionDescription": "Treatment cases by disease type",
-      "noData": "No data available"
+      "noData": "No data available",
+      "loadingAnalytics": "Loading analytics data...",
+      "loadingMortality": "Loading mortality data...",
+      "loadingDisease": "Loading disease data..."
     }
   },
   "environment": {

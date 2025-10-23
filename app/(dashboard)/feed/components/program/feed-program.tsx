@@ -37,7 +37,6 @@ type FeedProgramFormData = z.infer<typeof feedProgramSchema>;
 
 export function FeedProgram() {
   const t = useTranslations('feed.program');
-  const tCommon = useTranslations('feed.common');
   const tFeedTypes = useTranslations('feed.feedTypes');
   const [program, setProgram] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
