@@ -168,7 +168,7 @@ export function InviteTable({ columns, data, toolbar, facetedFilters }: InviteTa
                 >
                   <NoDataIcon 
                     icon={Mail}
-                    title="No invitations found"
+                    title={t("noStaff")}
                   />
                 </TableCell>
               </TableRow>

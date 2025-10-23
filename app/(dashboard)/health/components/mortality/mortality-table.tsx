@@ -67,7 +67,7 @@ export function MortalityTable({ columns, data, toolbar, flocks = [], onEdit, on
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const t = useTranslations('common');
+  const t = useTranslations('health.mortality');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
@@ -96,14 +96,14 @@ export function MortalityTable({ columns, data, toolbar, flocks = [], onEdit, on
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onEdit?.(record)}>
                     <Edit className="h-4 w-4 mr-2" />
-                    {t('edit')}
+                    {t('editRecord')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onDelete?.(record)}
                     className="text-red-600"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    {t('delete')}
+                    {t('deleteRecord')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -197,7 +197,7 @@ export function MortalityTable({ columns, data, toolbar, flocks = [], onEdit, on
                 >
                   <NoDataIcon 
                     icon={Heart}
-                    title="No mortality records found"
+                    title={t("noRecords")}
                   />
                 </TableCell>
               </TableRow>

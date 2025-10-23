@@ -168,7 +168,7 @@ export function StaffTable({ columns, data, toolbar, facetedFilters }: DataTable
                 >
                   <NoDataIcon 
                     icon={Users}
-                    title="No staff members found"
+                    title={t("noStaff")}
                   />
                 </TableCell>
               </TableRow>

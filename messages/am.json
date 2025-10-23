@@ -345,7 +345,7 @@
   },
   "flocks": {
     "title": "የዶሮዎች ክትትል",
-    "description": "የእርስዎን የዶሮ በጎች ያስተዳድሩ እና አፈጻጸማቸውን ይከታተሉ",
+    "description": "የእርስዎን የዶሮ ያስተዳድሩ እና አፈጻጸማቸውን ይከታተሉ",
     "addFlock": "ዶሮዎች መዝግብ",
     "editFlock": "ዶሮዎች ለውጥ",
     "deleteFlock": "ዶሮዎች ሰርዝ",
@@ -375,7 +375,7 @@
     },
     "table": {
       "title": "የዶሮዎች ክትትል",
-      "description": "የእርስዎን የዶሮ በጎች በህዝብ ብዛት ክትትል ያስተዳድሩ እና ይከታተሉ"
+      "description": "የእርስዎን የዶሮ በህዝብ ብዛት ክትትል ያስተዳድሩ እና ይከታተሉ"
     },
     "dialogs": {
       "addTitle": "አዲስ ዶሮዎች መዝግብ",
@@ -481,7 +481,7 @@
       "dosage": "መጠን",
       "noRecords": "ምንም የክትባት መዝገቦች አልተገኙም",
       "recordsCount": "የክትባት መዝገቦች ({count})",
-      "cardDescription": "ለእርስዎ የዶሮ በጎች የክትባት መዝገቦችን ያስተዳድሩ እና ይከታተሉ",
+      "cardDescription": "ለእርስዎ የዶሮ የክትባት መዝገቦችን ያስተዳድሩ እና ይከታተሉ",
       "addNewTitle": "አዲስ የክትባት መዝገብ መዝግብ",
       "addNewDescription": "የክትባት ክትትል ዝርዝሮችን ጨምሮ መጠን እና የክትትል መረጃዎችን ይመዝግቡ።",
       "editTitle": "የክትባት መዝገብ አስተካክል",
@@ -533,6 +533,11 @@
       "title": "የህክምና መዝገቦች",
       "pageTitle": "የበሽታ ህክምና",
       "pageDescription": "የበሽታ ምደባን፣ መድሃኒትን እና የህክምና ምላሽ ክትትልን ይከታተሉ",
+      "table": {
+        "filterByMonth": "በወር አጣራ",
+        "filterByDate": "በቀን አጣራ",
+        "clearFilters": "አጣሪዎችን አጽዳ"
+      },
       "addTreatment": "ህክምና መዝግብ",
       "editTreatment": "ህክምና አስተካክል",
       "deleteTreatment": "ህክምና ሰርዝ",
@@ -574,6 +579,21 @@
       "updateError": "ህክምናን መለወጥ አልተሳካም",
       "deleteError": "ህክምናን መሰረዝ አልተሳካም",
       "loadDataError": "መረጃን መጫን አልተሳካም",
+      "statusUpdateSuccess": "የህክምና ሁኔታ በተሳካ ሁኔታ ተለውጧል",
+      "statusUpdateError": "የህክምና ሁኔታን መለወጥ አልተሳካም",
+      "statusUpdate": {
+        "title": "የህክምና ሁኔታ አሻሽል",
+        "description": "በዚህ ህክምና ውስጥ የታለሉ ዶሮዎችን ሁኔታ አሻሽል",
+        "submitButton": "ሁኔታ አሻሽል",
+        "treatmentInfo": "የህክምና መረጃ",
+        "initialDiseasedCount": "የመጀመሪያ የታለሉ ብዛት",
+        "validationSummary": "የማረጋገጫ ማጠቃለያ",
+        "totalAccounted": "ጠቅላላ የተቆጠሩ",
+        "difference": "ልዩነት",
+        "countMismatch": "ማስታወሻ: ጠቅላላ የተቆጠሩ ዶሮዎች ከመጀመሪያው የታለሉ ብዛት ጋር አይዛመዱም። ይህ ዶሮዎች ከመጀመሪያው ብዛት ውጭ በመሆናቸው ወይም የመረጃ ማስገባት ስህተቶች ምክንያት ሊሆን ይችላል።",
+        "notes": "የሁኔታ ማሻሻያ ማስታወሻዎች",
+        "notesPlaceholder": "ስለ ሁኔታ ማሻሻያው ተጨማሪ ማስታወሻዎችን ያክሉ..."
+      },
       "diseaseTypes": {
         "respiratory": "የመተንፈሻ",
         "digestive": "የመኖ መፈጨት",
@@ -586,22 +606,51 @@
         "noChange": "ለውጥ የለም",
         "worsened": "እየተባባሰ ነው"
       },
+      "statusUpdate": {
+        "title": "የህክምና ሁኔታ አሻሽል",
+        "description": "በዚህ ህክምና ውስጥ የታለሉ ዶሮዎችን የአሁኑን ሁኔታ አሻሽል",
+        "deceasedCount": "የሞቱ",
+        "recoveredCount": "የተሻሉ",
+        "stillSickCount": "አሁንም የታለሉ",
+        "notes": "የሁኔታ ማሻሻያ ማስታወሻዎች",
+        "submitButton": "ሁኔታ አሻሽል"
+      },
       "columns": {
+        "flockId": "የዶሮዎች መታወቂያ",
         "disease": "በሽታ",
-        "flock": "ዶሮዎች",
-        "dateStarted": "የተጀመረበት ቀን",
-        "by": "በ",
+        "diseaseName": "የበሽታ ስም",
+        "diseasedBirdsCount": "የታለሉ ዶሮዎች",
+        "diseaseType": "የበሽታ አይነት",
+        "symptoms": "ምልክቶች",
         "medication": "መድሃኒት",
         "dosage": "መጠን",
-        "duration": "ጊዜ",
-        "days": "ቀናት",
-        "status": "ሁኔታ",
+        "startDate": "የመጀመሪያ ቀን",
+        "endDate": "የመጨረሻ ቀን",
+        "ongoing": "በሂደት ላይ",
+        "treatedBy": "የታከመው በ",
+        "unknown": "ያልታወቀ",
+        "response": "ምላሽ",
         "notes": "ማስታወሻዎች",
         "noNotes": "ማስታወሻ የለም",
         "actions": "ድርጊቶች",
         "viewDetails": "ዝርዝሮች ተመልከት",
-        "editRecord": "መዝገብ ለውጥ",
-        "deleteRecord": "መዝገብ ሰርዝ"
+        "editRecord": "ህክምና አስተካክል",
+        "deleteRecord": "ህክምና ሰርዝ",
+        "updateStatus": "ሁኔታ አሻሽል",
+        "deceasedCount": "የሞቱ",
+        "recoveredCount": "የተሻሉ",
+        "stillSickCount": "አሁንም የታለሉ",
+        "lastStatusUpdate": "የመጨረሻ ማሻሻያ",
+        "birds": "ዶሮዎች"
+      },
+      "aggregates": {
+        "totalTreatments": "ጠቅላላ ህክምናዎች",
+        "totalDiseased": "ጠቅላላ የታለሉ",
+        "totalRecovered": "ጠቅላላ የተሻሉ",
+        "totalStillSick": "ጠቅላላ አሁንም የታለሉ",
+        "totalDeceased": "ጠቅላላ የሞቱ",
+        "treatmentsInFilter": "ህክምናዎች በማጣሪያ",
+        "birdsInFilter": "ዶሮዎች በማጣሪያ"
       }
     },
     "mortality": {
@@ -621,7 +670,7 @@
       "noNotes": "ማስታወሻ የለም",
       "noRecords": "ምንም የሞት መዝገቦች አልተገኙም",
       "recordsCount": "የሞት መዝገቦች ({count})",
-      "cardDescription": "ለእርስዎ የዶሮ በጎች የሞት መዝገቦችን ያስተዳድሩ እና ይከታተሉ",
+      "cardDescription": "ለእርስዎ የዶሮ የሞት መዝገቦችን ያስተዳድሩ እና ይከታተሉ",
       "addNewTitle": "አዲስ የሞት መዝገብ መዝግብ",
       "addNewDescription": "የሞት ዝርዝሮችን ጨምሮ ምክንያቱን እና መግለጫውን ይመዝግቡ።",
       "editTitle": "የሞት መዝገብ አስተካክል",
@@ -1832,6 +1881,20 @@
     "tabs": {
       "expenses": "የወጪ ክትትል",
       "revenue": "የገቢ ክትትል"
+    },
+    "common": {
+      "date": "ቀን",
+      "category": "ምድብ",
+      "quantity": "ብዛት",
+      "costPerQuantity": "በብዛት ዋጋ",
+      "description": "መግለጫ",
+      "close": "ዝጋ",
+      "cancel": "ተወው",
+      "actions": "ድርጊቶች",
+      "view": "እይ",
+      "edit": "አስተካክል",
+      "delete": "ሰርዝ",
+      "birr": "ብር"
     },
     "aggregates": {
       "totalExpenses": "ጠቅላላ ወጪዎች",

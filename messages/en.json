@@ -533,6 +533,11 @@
       "title": "Treatment Records",
       "pageTitle": "Disease Treatment",
       "pageDescription": "Track disease classification, medication, and treatment response monitoring",
+      "table": {
+        "filterByMonth": "Filter by Month",
+        "filterByDate": "Filter by Date",
+        "clearFilters": "Clear Filters"
+      },
       "addTreatment": "Add Treatment",
       "editTreatment": "Edit Treatment",
       "deleteTreatment": "Delete Treatment",
@@ -575,6 +580,21 @@
       "updateError": "Failed to update treatment",
       "deleteError": "Failed to delete treatment",
       "loadDataError": "Failed to load data",
+      "statusUpdateSuccess": "Treatment status updated successfully",
+      "statusUpdateError": "Failed to update treatment status",
+      "statusUpdate": {
+        "title": "Update Treatment Status",
+        "description": "Update the status of diseased birds in this treatment",
+        "submitButton": "Update Status",
+        "treatmentInfo": "Treatment Information",
+        "initialDiseasedCount": "Initial Diseased Count",
+        "validationSummary": "Validation Summary",
+        "totalAccounted": "Total Accounted For",
+        "difference": "Difference",
+        "countMismatch": "Note: The total accounted birds does not match the initial diseased count. This may be due to birds that were not part of the original count or data entry errors.",
+        "notes": "Status Update Notes",
+        "notesPlaceholder": "Add any additional notes about the status update..."
+      },
       "diseaseTypes": {
         "respiratory": "Respiratory",
         "digestive": "Digestive",
@@ -589,6 +609,7 @@
       },
       "columns": {
         "flockId": "Flock ID",
+        "disease": "Disease",
         "diseaseName": "Disease Name",
         "diseasedBirdsCount": "Diseased Birds",
         "diseaseType": "Disease Type",
@@ -606,7 +627,22 @@
         "actions": "Actions",
         "viewDetails": "View Details",
         "editRecord": "Edit Treatment",
-        "deleteRecord": "Delete Treatment"
+        "deleteRecord": "Delete Treatment",
+        "updateStatus": "Update Status",
+        "deceasedCount": "Deceased",
+        "recoveredCount": "Recovered",
+        "stillSickCount": "Still Sick",
+        "lastStatusUpdate": "Last Update",
+        "birds": "birds"
+      },
+      "aggregates": {
+        "totalTreatments": "Total Treatments",
+        "totalDiseased": "Total Diseased",
+        "totalRecovered": "Total Recovered",
+        "totalStillSick": "Total Still Sick",
+        "totalDeceased": "Total Deceased",
+        "treatmentsInFilter": "treatments in filter",
+        "birdsInFilter": "birds in filter"
       }
     },
     "mortality": {
@@ -1840,6 +1876,20 @@
     "tabs": {
       "expenses": "Expense Tracking",
       "revenue": "Revenue Management"
+    },
+    "common": {
+      "date": "Date",
+      "category": "Category",
+      "quantity": "Quantity",
+      "costPerQuantity": "Cost per Quantity",
+      "description": "Description",
+      "close": "Close",
+      "cancel": "Cancel",
+      "actions": "Actions",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "birr": "Birr"
     },
     "aggregates": {
       "totalExpenses": "Total Expenses",

@@ -26,22 +26,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
-import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Stethoscope } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { 
-  MoreHorizontal,
-  Edit,
-  Trash2,
-} from "lucide-react";
 import { useTranslations } from 'next-intl';
+import { TreatmentTableToolbar } from "./treatment-table-toolbar";
+import { TreatmentAggregates } from "./treatment-aggregates";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -53,56 +42,21 @@ declare module "@tanstack/react-table" {
 interface TreatmentTableProps {
   columns: ColumnDef<any>[];
   data: any[];
-  toolbar?: React.ReactNode;
-  onEdit?: (record: any) => void;
-  onDelete?: (record: any) => void;
+  flocks: Array<{ id: string; batchCode: string; currentCount: number }>;
 }
 
-export function TreatmentTable({ columns, data, toolbar, onEdit, onDelete }: TreatmentTableProps) {
+export function TreatmentTable({ columns, data, flocks }: TreatmentTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const t = useTranslations('common');
+  const t = useTranslations('health.treatment');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
   const table = useReactTable({
     data,
-    columns: columns.map(col => {
-      if (col.id === 'actions') {
-        return {
-          ...col,
-          cell: ({ row }: any) => {
-            const record = row.original;
-            
-            return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit?.(record)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    {t('edit')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDelete?.(record)}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {t('delete')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            );
-          }
-        };
-      }
-      return col;
-    }),
+    columns,
     state: {
       sorting,
       columnVisibility: mobileColumnVisibility,
@@ -124,35 +78,16 @@ export function TreatmentTable({ columns, data, toolbar, onEdit, onDelete }: Tre
 
   return (
     <div className="space-y-4">
-      {toolbar || (
-        <DataTableToolbar
-          table={table}
-          filterColumnId="diseaseName"
-          filterPlaceholder="Search treatments..."
-          facetedFilters={[
-            {
-              columnId: "disease",
-              title: "Disease Type",
-              options: [
-                { label: "Respiratory", value: "respiratory" },
-                { label: "Digestive", value: "digestive" },
-                { label: "Parasitic", value: "parasitic" },
-                { label: "Nutritional", value: "nutritional" },
-                { label: "Other", value: "other" },
-              ],
-            },
-            {
-              columnId: "response",
-              title: "Response",
-              options: [
-                { label: "Improved", value: "improved" },
-                { label: "No Change", value: "no_change" },
-                { label: "Worsened", value: "worsened" },
-              ],
-            },
-          ]}
-        />
-      )}
+      <TreatmentTableToolbar
+        table={table}
+        flocks={flocks}
+      />
+      
+      {/* Aggregates Display */}
+      <TreatmentAggregates
+        table={table}
+      />
+      
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -206,7 +141,7 @@ export function TreatmentTable({ columns, data, toolbar, onEdit, onDelete }: Tre
                 >
                   <NoDataIcon 
                     icon={Stethoscope}
-                    title="No treatment records found"
+                    title={t("noRecords")}
                   />
                 </TableCell>
               </TableRow>

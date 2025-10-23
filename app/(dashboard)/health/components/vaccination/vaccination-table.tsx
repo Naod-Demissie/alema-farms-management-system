@@ -63,7 +63,7 @@ export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete }: V
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const t = useTranslations('common');
+  const t = useTranslations('health.vaccination');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
@@ -195,7 +195,7 @@ export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete }: V
                 >
                   <NoDataIcon 
                     icon={Shield}
-                    title="No vaccinations found"
+                    title={t("noRecords")}
                   />
                 </TableCell>
               </TableRow>

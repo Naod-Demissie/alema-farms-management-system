@@ -30,6 +30,7 @@ import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { Calendar } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -51,6 +52,8 @@ export function LeaveTable({ columns, data, toolbar, staffList = [], onStatusCha
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const t = useTranslations('staff.leave');
+  const tCommon = useTranslations('common');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
@@ -165,7 +168,7 @@ export function LeaveTable({ columns, data, toolbar, staffList = [], onStatusCha
                 >
                   <NoDataIcon 
                     icon={Calendar}
-                    title="No leave requests found"
+                    title={tCommon("noData")}
                   />
                 </TableCell>
               </TableRow>

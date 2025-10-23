@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
+import { EthiopianCalendarUtils } from "@/lib/ethiopian-calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -13,7 +14,11 @@ import {
   Calendar,
   Pill,
   Stethoscope,
-  FileText
+  FileText,
+  XCircle,
+  CheckCircle,
+  AlertCircle,
+  Activity
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,8 +32,8 @@ import {
 export const treatmentColumns = (
   onEdit: (treatment: any) => void,
   onDelete: (treatment: any) => void,
+  onUpdateStatus: (treatment: any) => void,
   getDiseaseBadge: (disease: string) => React.ReactNode,
-  getResponseBadge: (response: string) => React.ReactNode,
   t?: any
 ): ColumnDef<any>[] => [
   {
@@ -36,11 +41,35 @@ export const treatmentColumns = (
     header: t ? t('columns.flockId') : "Flock ID",
     cell: ({ row }) => {
       const treatment = row.original;
+      const hasSickBirds = (treatment.stillSickCount || 0) > 0;
+      const hasDeceasedBirds = (treatment.deceasedCount || 0) > 0;
+      
       return (
-        <Badge variant="outline" className="font-mono">
-          {treatment.flock?.batchCode || treatment.flockId}
-        </Badge>
+        <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="font-mono">
+            {treatment.flock?.batchCode || treatment.flockId}
+          </Badge>
+          {hasSickBirds && (
+            <AlertCircle className="h-4 w-4 text-yellow-500" title="Has sick birds" />
+          )}
+          {hasDeceasedBirds && (
+            <XCircle className="h-4 w-4 text-red-500" title="Has deceased birds" />
+          )}
+        </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      const treatment = row.original;
+      const flockId = treatment.flockId || treatment.flock?.id || "";
+      
+      // Handle array values from DataTableFacetedFilter
+      if (Array.isArray(value)) {
+        return value.includes(flockId);
+      }
+      
+      // Handle string values from regular search
+      const flockCode = treatment.flock?.batchCode || treatment.flockId || "";
+      return flockCode.toLowerCase().includes(value.toLowerCase());
     },
   },
   {
@@ -135,6 +164,38 @@ export const treatmentColumns = (
         </div>
       );
     },
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      
+      const treatment = row.original;
+      const treatmentDate = new Date(treatment.startDate);
+      
+      // Handle new filter value structure
+      if (typeof value === 'object' && value.date) {
+        const { date: filterDate, isMonthFilter } = value;
+        
+        // Convert both dates to Ethiopian calendar
+        const treatmentEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(treatmentDate);
+        const filterEthiopian = EthiopianCalendarUtils.gregorianToEthiopian(filterDate);
+        
+        if (isMonthFilter) {
+          // Month filtering - match Ethiopian month and year
+          return (
+            treatmentEthiopian.month === filterEthiopian.month &&
+            treatmentEthiopian.year === filterEthiopian.year
+          );
+        } else {
+          // Specific date filtering - match Ethiopian date
+          return (
+            treatmentEthiopian.day === filterEthiopian.day &&
+            treatmentEthiopian.month === filterEthiopian.month &&
+            treatmentEthiopian.year === filterEthiopian.year
+          );
+        }
+      }
+      
+      return true;
+    },
   },
   {
     accessorKey: "endDate",
@@ -164,11 +225,69 @@ export const treatmentColumns = (
     },
   },
   {
-    accessorKey: "response",
-    header: t ? t('columns.response') : "Response",
+    accessorKey: "deceasedCount",
+    header: t ? t('columns.deceasedCount') : "Deceased",
     cell: ({ row }) => {
       const treatment = row.original;
-      return getResponseBadge(treatment.response);
+      return (
+        <div className="flex items-center space-x-2">
+          <XCircle className="h-4 w-4 text-red-500" />
+          <div className="font-medium text-red-600">
+            {treatment.deceasedCount || 0}
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "recoveredCount",
+    header: t ? t('columns.recoveredCount') : "Recovered",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <div className="flex items-center space-x-2">
+          <CheckCircle className="h-4 w-4 text-green-500" />
+          <div className="font-medium text-green-600">
+            {treatment.recoveredCount || 0}
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "stillSickCount",
+    header: t ? t('columns.stillSickCount') : "Still Sick",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <div className="font-medium text-yellow-600">
+            {treatment.stillSickCount || 0}
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "lastStatusUpdate",
+    header: t ? t('columns.lastStatusUpdate') : "Last Update",
+    cell: ({ row }) => {
+      const treatment = row.original;
+      return (
+        <div className="text-sm">
+          {treatment.lastStatusUpdate ? (
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="font-medium">
+                {EthiopianDateFormatter.formatForTable(new Date(treatment.lastStatusUpdate))}
+              </div>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">No updates</span>
+          )}
+        </div>
+      );
     },
   },
   {
@@ -208,21 +327,37 @@ export const treatmentColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{t ? t('columns.actions') : "Actions"}</DropdownMenuLabel>
+            
+            {/* Update Status */}
+            <DropdownMenuItem onClick={() => {
+              console.log("Update Status clicked for treatment:", treatment);
+              onUpdateStatus(treatment);
+            }}>
+              <Activity className="mr-2 h-4 w-4" />
+              {t ? t('columns.updateStatus') : "Update Status"}
+            </DropdownMenuItem>
+            
+            <DropdownMenuSeparator />
+            
+            {/* View Details */}
             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(treatment.id)}>
               <Eye className="mr-2 h-4 w-4" />
               {t ? t('columns.viewDetails') : "View Details"}
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            
+            {/* Edit */}
             <DropdownMenuItem onClick={() => onEdit(treatment)}>
               <Edit className="mr-2 h-4 w-4" />
-              {t ? t('columns.editRecord') : "Edit Treatment"}
+              {t ? t('columns.editRecord') : "Edit"}
             </DropdownMenuItem>
+            
+            {/* Delete */}
             <DropdownMenuItem 
               onClick={() => onDelete(treatment)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              {t ? t('columns.deleteRecord') : "Delete Treatment"}
+              {t ? t('columns.deleteRecord') : "Delete"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
@@ -757,7 +757,7 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
-                      date < new Date("1900-01-01")
+                      date > new Date() || date < new Date("1900-01-01")
                     }
                     initialFocus
                   />
@@ -800,7 +800,7 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
                   selected={field.value}
                   onSelect={field.onChange}
                   disabled={(date) =>
-                    date < new Date("1900-01-01")
+                    date > new Date() || date < new Date("1900-01-01")
                   }
                   initialFocus
                 />

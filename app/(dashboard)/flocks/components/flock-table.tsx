@@ -69,7 +69,7 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
   const [sorting, setSorting] = useState<SortingState>([]);
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
-  const t = useTranslations('common');
+  const t = useTranslations('flocks');
 
   const table = useReactTable({
     data,
@@ -232,7 +232,7 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
                   >
                     <NoDataIcon 
                       icon={Bird}
-                      title="No flocks found"
+                      title={t("noFlocks")}
                     />
                   </TableCell>
                 </TableRow>

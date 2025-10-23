@@ -21,6 +21,7 @@ const TreatmentSchema = z.object({
   flockId: z.string().min(1, "Flock ID is required"),
   disease: z.enum(["respiratory", "digestive", "parasitic", "nutritional", "other"]),
   diseaseName: z.string().min(1, "Disease name is required"),
+  diseasedBirdsCount: z.number().min(1, "Number of diseased birds must be at least 1"),
   medication: z.string().min(1, "Medication is required"),
   dosage: z.string().min(1, "Dosage is required"),
   frequency: z.string().min(1, "Frequency is required"),
@@ -332,21 +333,20 @@ export async function createTreatment(data: any): Promise<ApiResponse<any>> {
 
     const validatedData = TreatmentSchema.parse(data);
     
+    const { treatedBy, ...treatmentData } = validatedData;
+    
     const treatment = await prisma.treatments.create({
       data: {
-        flockId: validatedData.flockId,
-        disease: validatedData.disease,
-        diseaseName: validatedData.diseaseName,
-        medication: validatedData.medication,
-        dosage: validatedData.dosage,
-        frequency: validatedData.frequency,
-        duration: validatedData.duration,
+        ...treatmentData,
         startDate: new Date(validatedData.startDate),
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
-        notes: validatedData.notes,
-        symptoms: validatedData.symptoms,
-        treatedById: validatedData.treatedBy,
+        treatedById: treatedBy,
         response: "no_change",
+        // Initialize status tracking fields
+        stillSickCount: validatedData.diseasedBirdsCount, // Initially all diseased birds are still sick
+        deceasedCount: 0,
+        recoveredCount: 0,
+        lastStatusUpdate: new Date(),
       },
     });
 
@@ -386,6 +386,30 @@ export async function updateTreatment(id: string, data: any): Promise<ApiRespons
     if (validatedData.flockId) updateData.flockId = validatedData.flockId;
     if (validatedData.disease) updateData.disease = validatedData.disease;
     if (validatedData.diseaseName) updateData.diseaseName = validatedData.diseaseName;
+    if (validatedData.diseasedBirdsCount !== undefined) {
+      updateData.diseasedBirdsCount = validatedData.diseasedBirdsCount;
+      // If diseased birds count is being updated, we need to adjust stillSickCount accordingly
+      // Get current treatment to calculate the adjustment
+      const currentTreatment = await prisma.treatments.findUnique({
+        where: { id },
+        select: { diseasedBirdsCount: true, stillSickCount: true, deceasedCount: true, recoveredCount: true }
+      });
+      
+      if (currentTreatment) {
+        const currentStillSick = currentTreatment.stillSickCount || 0;
+        const currentDeceased = currentTreatment.deceasedCount || 0;
+        const currentRecovered = currentTreatment.recoveredCount || 0;
+        const currentTotal = currentStillSick + currentDeceased + currentRecovered;
+        
+        // Calculate the difference and adjust stillSickCount proportionally
+        const newTotal = validatedData.diseasedBirdsCount;
+        const difference = newTotal - currentTotal;
+        
+        // Add the difference to stillSickCount (assuming new cases are still sick)
+        updateData.stillSickCount = Math.max(0, currentStillSick + difference);
+        updateData.lastStatusUpdate = new Date();
+      }
+    }
     if (validatedData.medication) updateData.medication = validatedData.medication;
     if (validatedData.dosage) updateData.dosage = validatedData.dosage;
     if (validatedData.frequency) updateData.frequency = validatedData.frequency;
@@ -788,6 +812,169 @@ export async function deleteMortalityRecord(id: string): Promise<ApiResponse<any
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete mortality record",
+    };
+  }
+}
+
+// Treatment Status Update Management
+// Utility function to fix existing treatments with incorrect stillSickCount
+export async function fixTreatmentStillSickCount(): Promise<ApiResponse<any>> {
+  try {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
+
+    // Find treatments where stillSickCount is 0 but should be equal to diseasedBirdsCount
+    const treatmentsToFix = await prisma.treatments.findMany({
+      where: {
+        stillSickCount: 0,
+        diseasedBirdsCount: { gt: 0 },
+        deceasedCount: 0,
+        recoveredCount: 0,
+      },
+      select: {
+        id: true,
+        diseasedBirdsCount: true,
+        stillSickCount: true,
+        deceasedCount: true,
+        recoveredCount: true,
+      }
+    });
+
+    if (treatmentsToFix.length === 0) {
+      return {
+        success: true,
+        message: "No treatments need fixing",
+        data: { fixedCount: 0 }
+      };
+    }
+
+    // Update treatments to set stillSickCount equal to diseasedBirdsCount
+    const updatePromises = treatmentsToFix.map(treatment => 
+      prisma.treatments.update({
+        where: { id: treatment.id },
+        data: {
+          stillSickCount: treatment.diseasedBirdsCount,
+          lastStatusUpdate: new Date(),
+        }
+      })
+    );
+
+    await Promise.all(updatePromises);
+
+    return {
+      success: true,
+      message: `Fixed ${treatmentsToFix.length} treatments`,
+      data: { fixedCount: treatmentsToFix.length }
+    };
+  } catch (error) {
+    console.error("Error fixing treatment stillSickCount:", error);
+    return {
+      success: false,
+      error: "Failed to fix treatment stillSickCount",
+    };
+  }
+}
+
+export async function updateTreatmentStatus(id: string, data: any): Promise<ApiResponse<any>> {
+  try {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
+
+    const validatedData = z.object({
+      deceasedCount: z.number().min(0),
+      recoveredCount: z.number().min(0),
+      stillSickCount: z.number().min(0),
+      statusUpdateNotes: z.string().optional(),
+    }).parse(data);
+
+    // Use transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Get current treatment data
+      const currentTreatment = await tx.treatments.findUnique({
+        where: { id },
+        select: { 
+          diseasedBirdsCount: true, 
+          flockId: true,
+          deceasedCount: true,
+          recoveredCount: true,
+          stillSickCount: true
+        }
+      });
+
+      if (!currentTreatment) {
+        throw new Error("Treatment not found");
+      }
+
+      // Calculate the difference in deceased count for mortality records
+      const deceasedDifference = validatedData.deceasedCount - (currentTreatment.deceasedCount || 0);
+      
+      // Update treatment record
+      const updatedTreatment = await tx.treatments.update({
+        where: { id },
+        data: {
+          deceasedCount: validatedData.deceasedCount,
+          recoveredCount: validatedData.recoveredCount,
+          stillSickCount: validatedData.stillSickCount,
+          statusUpdateNotes: validatedData.statusUpdateNotes,
+          lastStatusUpdate: new Date(),
+          // Update response based on recovery rate
+          response: validatedData.recoveredCount > 0 ? "improved" : 
+                   validatedData.stillSickCount === 0 ? "improved" : "no_change"
+        },
+      });
+
+      // If there are new deaths, create mortality records
+      if (deceasedDifference > 0) {
+        await tx.mortality.create({
+          data: {
+            flockId: currentTreatment.flockId,
+            date: new Date(),
+            count: deceasedDifference,
+            cause: "disease",
+            causeDescription: `Disease-related deaths from treatment ${id}`,
+          },
+        });
+
+        // Update flock current count
+        await tx.flocks.update({
+          where: { id: currentTreatment.flockId },
+          data: {
+            currentCount: {
+              decrement: deceasedDifference
+            }
+          }
+        });
+      }
+
+      return updatedTreatment;
+    });
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error("Error updating treatment status:", error);
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: "Validation error",
+        details: error.issues,
+      };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update treatment status",
     };
   }
 }

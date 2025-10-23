@@ -257,6 +257,14 @@ model Treatments {
   notes              String?
   startDate          DateTime?
   symptoms           String?
+  
+  // Status tracking fields
+  deceasedCount      Int?              @default(0)
+  recoveredCount     Int?              @default(0)
+  stillSickCount     Int?              @default(0)
+  lastStatusUpdate   DateTime?
+  statusUpdateNotes  String?
+  
   flock              Flocks             @relation(fields: [flockId], references: [id], onDelete: Cascade)
   treatedBy          Staff?             @relation("TreatedByStaff", fields: [treatedById], references: [id])
 

@@ -95,7 +95,7 @@ export function WeightFCRTable({
                 >
                   <NoDataIcon 
                     icon={Scale}
-                    title="No weight sampling records found"
+                    title={t("noRecordsTitle")}
                   />
                 </TableCell>
               </TableRow>

@@ -31,6 +31,7 @@ import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
 import { DollarSign } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -51,6 +52,7 @@ export function PayrollTable({ columns, data, toolbar }: PayrollTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const monthFilterRef = useRef<PayrollMonthFilterRef>(null);
+  const t = useTranslations('staff.payroll');
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
@@ -155,7 +157,7 @@ export function PayrollTable({ columns, data, toolbar }: PayrollTableProps) {
                 >
                   <NoDataIcon 
                     icon={DollarSign}
-                    title="No payroll records found"
+                    title={t("noPayroll")}
                   />
                 </TableCell>
               </TableRow>

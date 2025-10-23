@@ -47,6 +47,7 @@ import {
   Plus
 } from "lucide-react";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { useTranslations } from "next-intl";
 
 interface StaffMember {
   id: string;
@@ -82,6 +83,7 @@ const getStaffTypeColor = (isSystemUser: boolean) => {
 };
 
 export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSendInvite, isLoading = false }: InviteSentTableProps) {
+  const t = useTranslations('staff');
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -322,7 +324,7 @@ export function InviteSentTable({ staffMembers, onRefresh, onCreateStaff, onSend
                   <TableCell colSpan={7} className="text-center py-8">
                     <NoDataIcon 
                       icon={User}
-                      title="No staff members found"
+                      title={t("noStaff")}
                     />
                   </TableCell>
                 </TableRow>

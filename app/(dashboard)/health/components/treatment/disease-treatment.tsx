@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ReusableDialog } from "@/components/ui/reusable-dialog";
-import { TreatmentForm, treatmentSchema } from "@/components/forms/dialog-forms";
+import { TreatmentForm, treatmentSchema, TreatmentStatusUpdateForm, treatmentStatusUpdateSchema } from "@/components/forms/dialog-forms";
 import {
   Select,
   SelectContent,
@@ -59,13 +60,12 @@ import {
 } from "lucide-react";
 import { TreatmentTable } from "./treatment-table";
 import { treatmentColumns } from "./treatment-columns";
-import { getTreatments, createTreatment, updateTreatment, deleteTreatment } from "@/app/(dashboard)/health/server/health";
+import { getTreatments, createTreatment, updateTreatment, deleteTreatment, updateTreatmentStatus } from "@/app/(dashboard)/health/server/health";
 import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { useTranslations } from 'next-intl';
 
 
 export function DiseaseTreatment() {
@@ -83,6 +83,13 @@ export function DiseaseTreatment() {
   }>({
     open: false,
     type: null,
+    treatment: null,
+  });
+  const [statusUpdateDialog, setStatusUpdateDialog] = useState<{
+    open: boolean;
+    treatment: any | null;
+  }>({
+    open: false,
     treatment: null,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -189,6 +196,37 @@ export function DiseaseTreatment() {
       treatment,
     });
   };
+
+  const handleUpdateStatus = (treatment: any) => {
+    console.log("handleUpdateStatus called with treatment:", treatment);
+    setStatusUpdateDialog({
+      open: true,
+      treatment,
+    });
+  };
+
+  const handleStatusUpdate = async (data: z.infer<typeof treatmentStatusUpdateSchema>) => {
+    if (!statusUpdateDialog.treatment) return;
+    
+    setActionLoading("statusUpdate");
+    try {
+      const result = await updateTreatmentStatus(statusUpdateDialog.treatment.id, data);
+      
+      if (result.success) {
+        toast.success(t('statusUpdateSuccess'));
+        await loadData();
+        setStatusUpdateDialog({ open: false, treatment: null });
+      } else {
+        toast.error(result.error || t('statusUpdateError'));
+      }
+    } catch (error) {
+      console.error("Error updating treatment status:", error);
+      toast.error(t('statusUpdateError'));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
 
   const confirmDelete = async () => {
     if (!confirmDialog.treatment) return;
@@ -349,14 +387,40 @@ export function DiseaseTreatment() {
             </div>
           ) : (
             <TreatmentTable
-              columns={treatmentColumns(handleEdit, handleDelete, getDiseaseBadge, getResponseBadge, t)}
+              columns={treatmentColumns(handleEdit, handleDelete, handleUpdateStatus, getDiseaseBadge, t)}
               data={treatments}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              flocks={flocks}
             />
           )}
         </CardContent>
       </Card>
+
+      {/* Status Update Dialog */}
+      <ReusableDialog
+        open={statusUpdateDialog.open}
+        onOpenChange={(open) => setStatusUpdateDialog({ ...statusUpdateDialog, open })}
+        config={{
+          schema: treatmentStatusUpdateSchema,
+          defaultValues: {
+            deceasedCount: statusUpdateDialog.treatment?.deceasedCount || 0,
+            recoveredCount: statusUpdateDialog.treatment?.recoveredCount || 0,
+            stillSickCount: statusUpdateDialog.treatment?.stillSickCount || 0,
+            statusUpdateNotes: statusUpdateDialog.treatment?.statusUpdateNotes || "",
+          },
+          title: t('statusUpdate.title'),
+          description: t('statusUpdate.description'),
+          submitText: t('statusUpdate.submitButton'),
+          onSubmit: handleStatusUpdate,
+          children: (form) => (
+            <TreatmentStatusUpdateForm 
+              form={form} 
+              treatment={statusUpdateDialog.treatment}
+              t={t}
+            />
+          ),
+        }}
+        loading={actionLoading === "statusUpdate"}
+      />
 
       {/* Confirm Dialog */}
       <ConfirmDialog
