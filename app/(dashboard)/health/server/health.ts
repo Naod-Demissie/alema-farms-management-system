@@ -485,19 +485,73 @@ export async function deleteTreatment(id: string): Promise<ApiResponse<any>> {
       };
     }
 
-    await prisma.treatments.delete({
-      where: { id },
+    // Use transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Get treatment data before deletion
+      const treatment = await tx.treatments.findUnique({
+        where: { id },
+        select: { 
+          deceasedCount: true, 
+          flockId: true,
+          id: true 
+        }
+      });
+
+      if (!treatment) {
+        throw new Error("Treatment not found");
+      }
+
+      // If there are deceased birds, restore them to flock count
+      if (treatment.deceasedCount && treatment.deceasedCount > 0) {
+        // Get current flock data
+        const flock = await tx.flocks.findUnique({
+          where: { id: treatment.flockId },
+          select: { currentCount: true, initialCount: true }
+        });
+
+        if (flock) {
+          // Calculate new flock count (restore the birds)
+          const newFlockCount = flock.currentCount + treatment.deceasedCount;
+
+          // Check if restoring would exceed initial count
+          if (newFlockCount > flock.initialCount) {
+            throw new Error(`Cannot delete. Would result in flock count exceeding initial count.`);
+          }
+
+          // Restore birds to flock
+          await tx.flocks.update({
+            where: { id: treatment.flockId },
+            data: {
+              currentCount: newFlockCount
+            }
+          });
+        }
+      }
+
+      // Delete associated mortality records created from this treatment
+      await tx.mortality.deleteMany({
+        where: {
+          treatmentId: id
+        }
+      });
+
+      // Delete the treatment record
+      await tx.treatments.delete({
+        where: { id },
+      });
+
+      return { id };
     });
 
     return {
       success: true,
-      data: { id },
+      data: result,
     };
   } catch (error) {
     console.error("Error deleting treatment:", error);
     return {
       success: false,
-      error: "Failed to delete treatment",
+      error: error instanceof Error ? error.message : "Failed to delete treatment",
     };
   }
 }
@@ -762,7 +816,7 @@ export async function deleteMortalityRecord(id: string): Promise<ApiResponse<any
       // Get mortality record data before deletion
       const mortalityRecord = await tx.mortality.findUnique({
         where: { id },
-        select: { count: true, flockId: true }
+        select: { count: true, flockId: true, treatmentId: true }
       });
 
       if (!mortalityRecord) {
@@ -785,6 +839,18 @@ export async function deleteMortalityRecord(id: string): Promise<ApiResponse<any
       // Check if restoring would exceed initial count
       if (newFlockCount > flock.initialCount) {
         throw new Error(`Cannot delete. Would result in flock count exceeding initial count.`);
+      }
+
+      // If this mortality record is from a treatment, update the treatment's deceased count
+      if (mortalityRecord.treatmentId) {
+        await tx.treatments.update({
+          where: { id: mortalityRecord.treatmentId },
+          data: {
+            deceasedCount: {
+              decrement: mortalityRecord.count
+            }
+          }
+        });
       }
 
       // Delete mortality record
@@ -938,6 +1004,7 @@ export async function updateTreatmentStatus(id: string, data: any): Promise<ApiR
         await tx.mortality.create({
           data: {
             flockId: currentTreatment.flockId,
+            treatmentId: id,
             date: new Date(),
             count: deceasedDifference,
             cause: "disease",

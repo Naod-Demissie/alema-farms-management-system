@@ -370,15 +370,16 @@
     "statistics": {
       "totalBirds": "Total Birds",
       "averageMortality": "Average Mortality",
-      "highRiskFlocks": "High Risk Flocks",
-      "healthyFlocks": "Healthy Flocks",
+      "morbidityRate": "Morbidity Rate",
+      "healthyRate": "Healthy Rate",
       "acrossAllFlocks": "Across all flocks",
       "mortalityRateHigh": "Mortality rate > 15%",
       "mortalityRateLow": "Mortality rate ≤ 5%"
     },
     "table": {
       "title": "Flock Management",
-      "description": "Manage and track your poultry flocks with population monitoring"
+      "description": "Manage and track your poultry flocks with population monitoring",
+      "clearFilters": "Clear filters"
     },
     "dialogs": {
       "addTitle": "Add New Flock",
@@ -388,7 +389,7 @@
       "viewTitle": "Flock Details",
       "viewDescription": "View detailed information for batch",
       "deleteTitle": "Delete Flock",
-      "deleteDescription": "Delete flock \"{batchCode}\"? This action cannot be undone.",
+      "deleteDescription": "Delete flock \"{flockId}\"? This action cannot be undone.",
       "createButton": "Create Flock",
       "updateButton": "Update Flock",
       "closeButton": "Close",
@@ -397,6 +398,7 @@
       "cancelButton": "Cancel"
     },
     "fields": {
+      "flockId": "Flock ID",
       "batchCode": "Batch Code",
       "arrivalDate": "Arrival Date",
       "initialCount": "Initial Count",
@@ -432,6 +434,7 @@
       "tryAgain": "An unexpected error occurred. Please try again."
     },
     "tableColumns": {
+      "flockId": "Flock ID",
       "batchCode": "Batch Code",
       "arrivalDate": "Arrival Date",
       "currentAge": "Current Age",
@@ -442,9 +445,12 @@
       "morbidityRate": "Morbidity Rate",
       "status": "Status",
       "notes": "Notes",
+      "birds": "birds",
       "actions": "Actions"
     },
     "form": {
+      "flockIdLabel": "Flock ID",
+      "flockIdPlaceholder": "e.g., FL2501",
       "batchCodeLabel": "Batch Code",
       "batchCodePlaceholder": "e.g., FL2501",
       "generateButton": "Generate",

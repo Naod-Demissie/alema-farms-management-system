@@ -122,9 +122,7 @@ export function TreatmentTableToolbar<TData>({
                 disabled={!!selectedMonth}
               >
                 {selectedDate ? (
-                  EthiopianCalendarUtils.formatEthiopianDate(
-                    EthiopianCalendarUtils.gregorianToEthiopian(selectedDate)
-                  )
+                  EthiopianCalendarUtils.formatEthiopianDate(selectedDate)
                 ) : (
                   <span>{t('filterByDate')}</span>
                 )}

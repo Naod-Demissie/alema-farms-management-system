@@ -345,7 +345,7 @@
   },
   "flocks": {
     "title": "የዶሮዎች ክትትል",
-    "description": "የእርስዎን የዶሮ ያስተዳድሩ እና አፈጻጸማቸውን ይከታተሉ",
+    "description": "ዶሮዎችን ያስተዳድሩ እና አፈጻጸማቸውን ይከታተሉ",
     "addFlock": "ዶሮዎች መዝግብ",
     "editFlock": "ዶሮዎች ለውጥ",
     "deleteFlock": "ዶሮዎች ሰርዝ",
@@ -370,15 +370,16 @@
     "statistics": {
       "totalBirds": "ጠቅላላ ዶሮዎች",
       "averageMortality": "አማካይ ሞት",
-      "highRiskFlocks": "ከፍተኛ ስጋት ያላቸው ዶሮዎች",
-      "healthyFlocks": "ጤናማ ዶሮዎች",
+      "morbidityRate": "የበሽታ መጠን",
+      "healthyRate": "ጤናማ መጠን",
       "acrossAllFlocks": "በሁሉም ዶሮዎች ላይ",
       "mortalityRateHigh": "የሞት መጠን > 15%",
       "mortalityRateLow": "የሞት መጠን ≤ 5%"
     },
     "table": {
       "title": "የዶሮዎች ክትትል",
-      "description": "የእርስዎን የዶሮ በህዝብ ብዛት ክትትል ያስተዳድሩ እና ይከታተሉ"
+      "description": "የዶሮዎችን ብዛት ክትትል ያስተዳድሩ እና ይከታተሉ",
+      "clearFilters": "አጣሪዎችን አጽዳ"
     },
     "dialogs": {
       "addTitle": "አዲስ ዶሮዎች መዝግብ",
@@ -388,7 +389,7 @@
       "viewTitle": "የዶሮዎች ዝርዝሮች",
       "viewDescription": "ለባች ዝርዝር መረጃ ይመልከቱ",
       "deleteTitle": "ዶሮዎች ሰርዝ",
-      "deleteDescription": "ዶሮዎች \"{batchCode}\" ይሰረዝ? ይህ ድርጊት መልሰው ሊያወጡት አይችሉም።",
+      "deleteDescription": "ዶሮዎች \"{flockId}\" ይሰረዝ? ይህ ድርጊት መልሰው ሊያወጡት አይችሉም።",
       "createButton": "ዶሮዎች ፍጠር",
       "updateButton": "ዶሮዎች ለውጥ",
       "closeButton": "ዝጋ",
@@ -397,6 +398,7 @@
       "cancelButton": "ሰርዝ"
     },
     "fields": {
+      "flockId": "የዶሮዎች መለያ",
       "batchCode": "የባች ኮድ",
       "arrivalDate": "የመጡበት ቀን",
       "initialCount": "የመጀመሪያ ብዛት",
@@ -404,7 +406,7 @@
       "ageAtArrival": "በመጡበት ጊዜ እድሜ",
       "currentAge": "የአሁኑ እድሜ",
       "notes": "ማስታወሻዎች",
-      "populationChange": "የህዝብ ብዛት ለውጥ",
+      "populationChange": "የዶሮዎች ብዛት ለውጥ",
       "mortalityRate": "የሞት መጠን",
       "morbidityRate": "የበሽታ መጠን",
       "death": "ሞት",
@@ -432,19 +434,23 @@
       "tryAgain": "ያልተጠበቀ ስህተት ተከስቷል። እባክዎ እንደገና ይሞክሩ።"
     },
     "tableColumns": {
+      "flockId": "የዶሮዎች መለያ",
       "batchCode": "የባች ኮድ",
       "arrivalDate": "የመጡበት ቀን",
       "currentAge": "የአሁኑ እድሜ",
       "initialCount": "የመጀመሪያ ብዛት",
       "currentCount": "የአሁን ብዛት",
-      "populationChange": "የህዝብ ብዛት ለውጥ",
+      "populationChange": "የዶሮዎች ብዛት ለውጥ",
       "mortalityRate": "የሞት መጠን",
       "morbidityRate": "የበሽታ መጠን",
       "status": "ሁኔታ",
       "notes": "ማስታወሻዎች",
+      "birds": "ዶሮዎች",
       "actions": "ድርጊቶች"
     },
     "form": {
+      "flockIdLabel": "የዶሮዎች መለያ",
+      "flockIdPlaceholder": "ለምሳሌ FL2501",
       "batchCodeLabel": "የባች ኮድ",
       "batchCodePlaceholder": "ለምሳሌ FL2501",
       "generateButton": "ፍጠር",
@@ -539,7 +545,7 @@
     "treatment": {
       "title": "የህክምና መዝገቦች",
       "pageTitle": "የበሽታ ህክምና",
-      "pageDescription": "የበሽታ ምደባን፣ መድሃኒትን እና የህክምና ምላሽ ክትትልን ይከታተሉ",
+      "pageDescription": "በሽታን፣ መድሃኒትን እና የህክምና ክትትልን ይከታተሉ",
       "table": {
         "filterByMonth": "በወር አጣራ",
         "filterByDate": "በቀን አጣራ",
@@ -590,14 +596,14 @@
       "statusUpdateError": "የህክምና ሁኔታን መለወጥ አልተሳካም",
       "statusUpdate": {
         "title": "የህክምና ሁኔታ አሻሽል",
-        "description": "በዚህ ህክምና ውስጥ የታለሉ ዶሮዎችን ሁኔታ አሻሽል",
+        "description": "በዚህ ህክምና ውስጥ  የታመሙ ዶሮዎችን ሁኔታ አሻሽል",
         "submitButton": "ሁኔታ አሻሽል",
         "treatmentInfo": "የህክምና መረጃ",
-        "initialDiseasedCount": "የመጀመሪያ የታለሉ ብዛት",
+        "initialDiseasedCount": "የመጀመሪያ  የታመሙ ብዛት",
         "validationSummary": "የማረጋገጫ ማጠቃለያ",
         "totalAccounted": "ጠቅላላ የተቆጠሩ",
         "difference": "ልዩነት",
-        "countMismatch": "ማስታወሻ: ጠቅላላ የተቆጠሩ ዶሮዎች ከመጀመሪያው የታለሉ ብዛት ጋር አይዛመዱም። ይህ ዶሮዎች ከመጀመሪያው ብዛት ውጭ በመሆናቸው ወይም የመረጃ ማስገባት ስህተቶች ምክንያት ሊሆን ይችላል።",
+        "countMismatch": "ማስታወሻ: ጠቅላላ የተቆጠሩ ዶሮዎች ከመጀመሪያው  የታመሙ ብዛት ጋር አይዛመዱም። ይህ ዶሮዎች ከመጀመሪያው ብዛት ውጭ በመሆናቸው ወይም የመረጃ ማስገባት ስህተቶች ምክንያት ሊሆን ይችላል።",
         "notes": "የሁኔታ ማሻሻያ ማስታወሻዎች",
         "notesPlaceholder": "ስለ ሁኔታ ማሻሻያው ተጨማሪ ማስታወሻዎችን ያክሉ..."
       },
@@ -615,18 +621,18 @@
       },
       "statusUpdate": {
         "title": "የህክምና ሁኔታ አሻሽል",
-        "description": "በዚህ ህክምና ውስጥ የታለሉ ዶሮዎችን የአሁኑን ሁኔታ አሻሽል",
+        "description": "በዚህ ህክምና ውስጥ  የታመሙ ዶሮዎችን የአሁኑን ሁኔታ አሻሽል",
         "deceasedCount": "የሞቱ",
         "recoveredCount": "የተሻሉ",
-        "stillSickCount": "አሁንም የታለሉ",
+        "stillSickCount": "አሁንም  የታመሙ",
         "notes": "የሁኔታ ማሻሻያ ማስታወሻዎች",
         "submitButton": "ሁኔታ አሻሽል"
       },
       "columns": {
-        "flockId": "የዶሮዎች መታወቂያ",
+        "flockId": "የዶሮዎች መለያ",
         "disease": "በሽታ",
         "diseaseName": "የበሽታ ስም",
-        "diseasedBirdsCount": "የታለሉ ዶሮዎች",
+        "diseasedBirdsCount": " የታመሙ ዶሮዎች",
         "diseaseType": "የበሽታ አይነት",
         "symptoms": "ምልክቶች",
         "medication": "መድሃኒት",
@@ -646,15 +652,15 @@
         "updateStatus": "ሁኔታ አሻሽል",
         "deceasedCount": "የሞቱ",
         "recoveredCount": "የተሻሉ",
-        "stillSickCount": "አሁንም የታለሉ",
+        "stillSickCount": "አሁንም  የታመሙ",
         "lastStatusUpdate": "የመጨረሻ ማሻሻያ",
         "birds": "ዶሮዎች"
       },
       "aggregates": {
         "totalTreatments": "ጠቅላላ ህክምናዎች",
-        "totalDiseased": "ጠቅላላ የታለሉ",
+        "totalDiseased": "ጠቅላላ  የታመሙ",
         "totalRecovered": "ጠቅላላ የተሻሉ",
-        "totalStillSick": "ጠቅላላ አሁንም የታለሉ",
+        "totalStillSick": "ጠቅላላ አሁንም  የታመሙ",
         "totalDeceased": "ጠቅላላ የሞቱ",
         "treatmentsInFilter": "ህክምናዎች በማጣሪያ",
         "birdsInFilter": "ዶሮዎች በማጣሪያ"
@@ -714,7 +720,7 @@
         "fromLastMonth": "ካለፈው ወር"
       },
       "form": {
-        "flockId": "የዶሮዎች መታወቂያ",
+        "flockId": "የዶሮዎች መለያ",
         "selectFlock": "ዶሮዎች ምረጥ",
         "date": "ቀን",
         "pickDate": "ቀን ምረጥ",
@@ -727,7 +733,7 @@
         "causeDescriptionPlaceholder": "ስለ ሞት ምክንያቱ ዝርዝር መግለጫ..."
       },
       "columns": {
-        "flockId": "የዶሮዎች መታወቂያ",
+        "flockId": "የዶሮዎች መለያ",
         "flock": "ዶሮዎች",
         "recordedDate": "የተመዘገበበት ቀን",
         "recordedBy": "የተመዘገበው በ",
@@ -1195,7 +1201,7 @@
         "totalRecords": "ጠቅላላ መዝገቦች"
       },
       "columns": {
-        "flockId": "የዶሮዎች መታወቂያ",
+        "flockId": "የዶሮዎች መለያ",
         "feedType": "የመኖ አይነት",
         "date": "ቀን",
         "amountUsed": "የተጠቀመበት መጠን",

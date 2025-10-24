@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -29,6 +29,7 @@ import { Flock } from "./flock-types";
 import { DataTablePagination } from "@/components/table/data-table-pagination";
 import { DataTableToolbar } from "@/components/table/data-table-toolbar";
 import { NoDataIcon } from "@/components/ui/no-data-icon";
+import { FlockTableToolbar } from "./flock-table-toolbar";
 import { Bird } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -71,9 +72,9 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
   const t = useTranslations('flocks');
 
-  const table = useReactTable({
-    data,
-    columns: columns.map(col => {
+  // Memoize the modified columns to prevent unnecessary re-renders
+  const modifiedColumns = useMemo(() => {
+    return columns.map(col => {
       if (col.id === 'actions') {
         return {
           ...col,
@@ -142,7 +143,12 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
         };
       }
       return col;
-    }),
+    });
+  }, [columns, onView, onEdit, onDelete, t]);
+
+  const table = useReactTable({
+    data,
+    columns: modifiedColumns,
     state: {
       sorting,
       columnVisibility: mobileColumnVisibility,
@@ -165,10 +171,9 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
   return (
     <div className="space-y-4">
       {toolbar || (
-        <DataTableToolbar
+        <FlockTableToolbar
           table={table}
-          filterColumnId="batchCode"
-          filterPlaceholder="Filter flocks..."
+          flocks={data}
         />
       )}
       {loading ? (

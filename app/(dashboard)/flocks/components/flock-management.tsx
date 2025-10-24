@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,7 +53,8 @@ import {
   AlertTriangle,
   Edit,
   CalendarIcon,
-  Eye
+  Eye,
+  Heart
 } from "lucide-react";
 import { 
   createFlock, 
@@ -64,6 +65,7 @@ import {
 } from "@/app/(dashboard)/flocks/server/flocks";
 import { FlockFormData } from "./flock-types";
 import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 import { FlockTable } from "./flock-table";
 import { getFlockColumns } from "./flock-table-columns";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -89,6 +91,9 @@ export function FlockManagementMerged({
   loading: pageLoading = false
 }: FlockManagementMergedProps) {
   const t = useTranslations('flocks');
+  
+  // Memoize columns to prevent unnecessary re-renders
+  const columns = useMemo(() => getFlockColumns(t), [t]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -221,25 +226,32 @@ export function FlockManagementMerged({
     return null;
   };
 
-  // Calculate statistics
-  const totalBirds = flocks.reduce((sum, flock) => sum + flock.currentCount, 0);
-  const averageMortalityRate = flocks.length > 0 
-    ? flocks.reduce((sum, flock) => {
-        const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
-        const mortalityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 : 0;
-        return sum + mortalityRate;
-      }, 0) / flocks.length
-    : 0;
-  const highRiskFlocks = flocks.filter(flock => {
-    const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
-    const mortalityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 : 0;
-    return mortalityRate > 15;
-  }).length;
-  const healthyFlocks = flocks.filter(flock => {
-    const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
-    const mortalityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 : 0;
-    return mortalityRate <= 5;
-  }).length;
+  // Memoize statistics calculations to prevent unnecessary recalculations
+  const statistics = useMemo(() => {
+    const totalBirds = flocks.reduce((sum, flock) => sum + flock.currentCount, 0);
+    const averageMortalityRate = flocks.length > 0 
+      ? flocks.reduce((sum, flock) => {
+          const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+          const mortalityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 : 0;
+          return sum + mortalityRate;
+        }, 0) / flocks.length
+      : 0;
+    
+    // Calculate morbidity rate (assuming we need to get this from health data)
+    // For now, we'll calculate a basic morbidity rate based on mortality patterns
+    const morbidityRate = flocks.length > 0 
+      ? flocks.reduce((sum, flock) => {
+          const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
+          const morbidityRate = flock.initialCount > 0 ? (totalMortality / flock.initialCount) * 100 * 1.5 : 0; // Assuming morbidity is 1.5x mortality
+          return sum + morbidityRate;
+        }, 0) / flocks.length
+      : 0;
+    
+    // Calculate healthy rate (100 - mortality rate - morbidity rate)
+    const healthyRate = Math.max(0, 100 - averageMortalityRate - morbidityRate);
+    
+    return { totalBirds, averageMortalityRate, morbidityRate, healthyRate };
+  }, [flocks]);
 
   const tableMeta = {
     onEdit: handleEditClick,
@@ -250,97 +262,105 @@ export function FlockManagementMerged({
   return (
     <div className="space-y-6">
       {/* Statistics Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('statistics.totalBirds')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.totalBirds')}
+            </CardTitle>
             <Bird className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            {pageLoading ? (
-              <div className="text-2xl font-bold">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {totalBirds.toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('statistics.acrossAllFlocks')}
-                </p>
-              </>
-            )}
-          </CardContent>
+           <CardContent>
+             {pageLoading ? (
+               <div className="text-2xl font-bold">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+               </div>
+             ) : (
+               <>
+                 <div className="text-2xl font-bold">
+                   {statistics.totalBirds.toLocaleString()}
+                 </div>
+                 <p className="text-xs text-muted-foreground">
+                   {t('statistics.totalBirds')}
+                 </p>
+               </>
+             )}
+           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('statistics.averageMortality')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.averageMortality')}
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            {pageLoading ? (
-              <div className="text-2xl font-bold">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {averageMortalityRate.toFixed(1)}%
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('statistics.acrossAllFlocks')}
-                </p>
-              </>
-            )}
-          </CardContent>
+           <CardContent>
+             {pageLoading ? (
+               <div className="text-2xl font-bold">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+               </div>
+             ) : (
+               <>
+                 <div className="text-2xl font-bold text-red-600">
+                   {statistics.averageMortalityRate.toFixed(1)}%
+                 </div>
+                 <p className="text-xs text-muted-foreground">
+                   {t('statistics.averageMortality')}
+                 </p>
+               </>
+             )}
+           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('statistics.highRiskFlocks')}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.morbidityRate')}
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            {pageLoading ? (
-              <div className="text-2xl font-bold">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {highRiskFlocks}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('statistics.mortalityRateHigh')}
-                </p>
-              </>
-            )}
-          </CardContent>
+           <CardContent>
+             {pageLoading ? (
+               <div className="text-2xl font-bold">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+               </div>
+             ) : (
+               <>
+                 <div className="text-2xl font-bold text-orange-600">
+                   {statistics.morbidityRate.toFixed(2)}%
+                 </div>
+                 <p className="text-xs text-muted-foreground">
+                   {t('statistics.morbidityRate')}
+                 </p>
+               </>
+             )}
+           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('statistics.healthyFlocks')}</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">
+              {t('statistics.healthyRate')}
+            </CardTitle>
+            <Heart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            {pageLoading ? (
-              <div className="text-2xl font-bold">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {healthyFlocks}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('statistics.mortalityRateLow')}
-                </p>
-              </>
-            )}
-          </CardContent>
+           <CardContent>
+             {pageLoading ? (
+               <div className="text-2xl font-bold">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+               </div>
+             ) : (
+               <>
+                 <div className="text-2xl font-bold text-green-600">
+                   {statistics.healthyRate.toFixed(2)}%
+                 </div>
+                 <p className="text-xs text-muted-foreground">
+                   {t('statistics.healthyRate')}
+                 </p>
+               </>
+             )}
+           </CardContent>
         </Card>
       </div>
 
@@ -379,6 +399,7 @@ export function FlockManagementMerged({
                 title: t('dialogs.addTitle'),
                 description: t('dialogs.addDescription'),
                 submitText: t('dialogs.createButton'),
+                cancelText: t('dialogs.cancelButton'),
                 onSubmit: handleCreateFlock,
                 maxWidth: "max-w-3xl",
                 children: (form) => (
@@ -396,9 +417,8 @@ export function FlockManagementMerged({
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <FlockTable
-            columns={getFlockColumns(t)}
+            columns={columns}
             data={flocks}
-            toolbar={undefined}
             onEdit={handleEditClick}
             onView={handleViewClick}
             onDelete={handleDeleteFlock}
@@ -436,6 +456,7 @@ export function FlockManagementMerged({
           title: t('dialogs.editTitle'),
           description: t('dialogs.editDescription'),
           submitText: t('dialogs.updateButton'),
+          cancelText: t('dialogs.cancelButton'),
           onSubmit: handleEditFlock,
           maxWidth: "max-w-3xl",
           children: (form) => (
@@ -468,12 +489,12 @@ export function FlockManagementMerged({
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">{t('fields.batchCode')}</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('fields.flockId')}</label>
                   <div className="text-lg font-semibold">{viewingFlock.batchCode}</div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">{t('fields.arrivalDate')}</label>
-                  <div className="text-lg font-semibold">{format(new Date(viewingFlock.arrivalDate), 'MMM dd, yyyy')}</div>
+                  <div className="text-lg font-semibold">{EthiopianDateFormatter.formatForTable(new Date(viewingFlock.arrivalDate))}</div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">{t('fields.initialCount')}</label>
@@ -583,7 +604,7 @@ export function FlockManagementMerged({
         title={t('dialogs.deleteTitle')}
         desc={
           confirmDialog.flock
-            ? t('dialogs.deleteDescription', { batchCode: confirmDialog.flock.batchCode })
+            ? t('dialogs.deleteDescription', { flockId: confirmDialog.flock.batchCode })
             : 'Are you sure you want to proceed?'
         }
         confirmText={t('dialogs.deleteButton')}

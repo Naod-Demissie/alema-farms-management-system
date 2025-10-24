@@ -23,11 +23,31 @@ import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 export const getFlockColumns = (t: any): ColumnDef<Flock>[] => [
   {
-    accessorKey: "batchCode",
-    header: t('tableColumns.batchCode'),
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("batchCode")}</div>
-    ),
+    accessorKey: "id",
+    header: t('tableColumns.flockId'),
+    cell: ({ row }) => {
+      const flock = row.original;
+      return (
+        <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="font-mono">
+            {flock.batchCode}
+          </Badge>
+        </div>
+      );
+    },
+    filterFn: (row, id, value) => {
+      const flock = row.original;
+      const flockId = flock.id || "";
+      
+      // Handle array values from DataTableFacetedFilter
+      if (Array.isArray(value)) {
+        return value.includes(flockId);
+      }
+      
+      // Handle string values from regular search
+      const flockCode = flock.batchCode || flock.id || "";
+      return flockCode.toLowerCase().includes(value.toLowerCase());
+    },
   },
   {
     accessorKey: "arrivalDate",
@@ -170,30 +190,6 @@ export const getFlockColumns = (t: any): ColumnDef<Flock>[] => [
             ({totalStillSickBirds} sick)
           </span>
         </div>
-      );
-    },
-  },
-  {
-    accessorKey: "status",
-    header: t('tableColumns.status'),
-    cell: ({ row }) => {
-      const flock = row.original;
-      const initialCount = flock.initialCount;
-      const totalMortality = flock.mortality?.reduce((sum, record) => sum + record.count, 0) || 0;
-      const mortalityRate = initialCount > 0 ? (totalMortality / initialCount) * 100 : 0;
-      
-      const getMortalityStatus = (rate: number) => {
-        if (rate > 15) return { status: t('status.highRisk'), color: 'text-red-600' };
-        if (rate > 5) return { status: t('status.medium'), color: 'text-yellow-600' };
-        return { status: t('status.healthy'), color: 'text-green-600' };
-      };
-      
-      const status = getMortalityStatus(mortalityRate);
-      
-      return (
-        <Badge variant={mortalityRate > 15 ? "destructive" : mortalityRate > 5 ? "secondary" : "default"}>
-          {status.status}
-        </Badge>
       );
     },
   },

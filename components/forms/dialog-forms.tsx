@@ -33,7 +33,7 @@ import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 // Schemas
 export const flockSchema = z.object({
-  batchCode: z.string().min(1, "Batch code is required"),
+  batchCode: z.string().min(1, "Flock ID is required"),
   arrivalDate: z.date(),
   initialCount: z.number().min(1, "Initial count must be at least 1"),
   currentCount: z.number().min(0, "Current count cannot be negative"),
@@ -124,7 +124,7 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode, t }: FlockFo
   
   return (
     <>
-      {/* Row 1: Batch Code Generation */}
+      {/* Row 1: Flock ID Generation */}
       <div className="flex gap-4">
         <FormField
           control={form.control}
@@ -132,11 +132,11 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode, t }: FlockFo
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormLabel className="flex items-center gap-1">
-                {getLabel('form.batchCodeLabel', 'Batch Code')} <span className="text-red-500">*</span>
+                {getLabel('form.flockIdLabel', 'Flock ID')} <span className="text-red-500">*</span>
               </FormLabel>
               <div className="flex flex-col sm:flex-row gap-2">
                 <FormControl>
-                  <Input placeholder={getLabel('form.batchCodePlaceholder', 'e.g., FL2501')} {...field} className="h-10" />
+                  <Input placeholder={getLabel('form.flockIdPlaceholder', 'e.g., FL2501')} {...field} className="h-10" />
                 </FormControl>
                 {onGenerateBatchCode && (
                   <Button
