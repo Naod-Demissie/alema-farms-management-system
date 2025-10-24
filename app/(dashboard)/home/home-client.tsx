@@ -78,7 +78,7 @@ interface AttendanceRecord {
   hours?: number;
 }
 
-export default function HomeClient({ summary, inventoryCounts }: { summary: DashboardSummary; inventoryCounts: InventoryCounts }) {
+export default function HomeClient({ summary, inventoryCounts, upcomingVaccinations }: { summary: DashboardSummary; inventoryCounts: InventoryCounts; upcomingVaccinations: any[] }) {
   const router = useRouter();
   const t = useTranslations('dashboard');
   const tCommon = useTranslations('common');
@@ -529,7 +529,46 @@ export default function HomeClient({ summary, inventoryCounts }: { summary: Dash
     });
   }
 
-  const alerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [...inventoryAlerts];
+  // Generate vaccination reminder alerts
+  const vaccinationAlerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  upcomingVaccinations?.forEach((vaccination: any, index: number) => {
+    if (vaccination.scheduledDate) {
+      const scheduledDate = new Date(vaccination.scheduledDate);
+      scheduledDate.setHours(0, 0, 0, 0);
+      const daysUntil = Math.ceil((scheduledDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let priority: "high" | "medium" | "low" = "medium";
+      let message = "";
+      
+      if (daysUntil === 0) {
+        priority = "high";
+        message = `Vaccination due today: ${vaccination.vaccineName} for flock ${vaccination.flock?.batchCode || 'N/A'}`;
+      } else if (daysUntil === 1) {
+        priority = "high";
+        message = `Vaccination due tomorrow: ${vaccination.vaccineName} for flock ${vaccination.flock?.batchCode || 'N/A'}`;
+      } else if (daysUntil <= 3) {
+        priority = "high";
+        message = `Vaccination due in ${daysUntil} days: ${vaccination.vaccineName} for flock ${vaccination.flock?.batchCode || 'N/A'}`;
+      } else if (daysUntil <= 7) {
+        priority = "medium";
+        message = `Upcoming vaccination in ${daysUntil} days: ${vaccination.vaccineName} for flock ${vaccination.flock?.batchCode || 'N/A'}`;
+      } else {
+        priority = "low";
+        message = `Scheduled vaccination in ${daysUntil} days: ${vaccination.vaccineName} for flock ${vaccination.flock?.batchCode || 'N/A'}`;
+      }
+      
+      vaccinationAlerts.push({
+        id: 1000 + index, // High ID to avoid conflicts
+        message,
+        priority
+      });
+    }
+  });
+
+  const alerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [...vaccinationAlerts, ...inventoryAlerts];
 
   // Helper function to format feed type names
   const formatFeedType = (feedType: string) => {

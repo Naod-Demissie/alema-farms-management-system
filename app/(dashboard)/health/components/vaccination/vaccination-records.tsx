@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -59,7 +58,8 @@ import {
 } from "lucide-react";
 import { VaccinationTable } from "./vaccination-table";
 import { vaccinationColumns } from "./vaccination-columns";
-import { getVaccinations, createVaccination, updateVaccination, deleteVaccination } from "@/app/(dashboard)/health/server/health";
+import { VaccinationTableToolbar } from "./vaccination-table-toolbar";
+import { getVaccinations, createVaccination, updateVaccination, deleteVaccination, markVaccinationAsCompleted } from "@/app/(dashboard)/health/server/health";
 import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { format } from "date-fns";
@@ -76,6 +76,14 @@ export function VaccinationRecords() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingVaccination, setEditingVaccination] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [statusUpdateDialog, setStatusUpdateDialog] = useState<{
+    open: boolean;
+    vaccination: any | null;
+  }>({
+    open: false,
+    vaccination: null,
+  });
+  const [newStatus, setNewStatus] = useState<string>("completed");
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     type: 'delete' | null;
@@ -162,10 +170,21 @@ export function VaccinationRecords() {
   const handleSubmit = async (data: z.infer<typeof vaccinationSchema>) => {
     try {
       setLoading(true);
-      const result = await createVaccination({
+      
+      // Prepare the vaccination data
+      const vaccinationData = {
         ...data,
-        administeredDate: data.administeredDate.toISOString(),
-      });
+        // Only include administeredDate if it exists and is not scheduled
+        ...(data.administeredDate && !data.isScheduled && {
+          administeredDate: data.administeredDate.toISOString(),
+        }),
+        // Only include scheduledDate if it exists and is scheduled
+        ...(data.scheduledDate && data.isScheduled && {
+          scheduledDate: data.scheduledDate.toISOString(),
+        }),
+      };
+      
+      const result = await createVaccination(vaccinationData);
       
       if (result.success) {
         toast.success(t('createSuccess'), {
@@ -198,10 +217,21 @@ export function VaccinationRecords() {
     
     try {
       setLoading(true);
-      const result = await updateVaccination(editingVaccination.id, {
+      
+      // Prepare the vaccination data
+      const vaccinationData = {
         ...data,
-        administeredDate: data.administeredDate.toISOString(),
-      });
+        // Only include administeredDate if it exists and is not scheduled
+        ...(data.administeredDate && !data.isScheduled && {
+          administeredDate: data.administeredDate.toISOString(),
+        }),
+        // Only include scheduledDate if it exists and is scheduled
+        ...(data.scheduledDate && data.isScheduled && {
+          scheduledDate: data.scheduledDate.toISOString(),
+        }),
+      };
+      
+      const result = await updateVaccination(editingVaccination.id, vaccinationData);
       
       if (result.success) {
         toast.success(t('updateSuccess'), {
@@ -231,6 +261,16 @@ export function VaccinationRecords() {
       type: 'delete',
       vaccination: vaccination,
     });
+  };
+
+  const handleUpdateStatus = (vaccination: any) => {
+    setStatusUpdateDialog({
+      open: true,
+      vaccination: vaccination,
+    });
+    // Set initial status to opposite of current status
+    const currentStatus = vaccination.isScheduled || vaccination.status === "scheduled" ? "scheduled" : "completed";
+    setNewStatus(currentStatus === "scheduled" ? "completed" : "scheduled");
   };
 
   const handleConfirmAction = async () => {
@@ -265,6 +305,62 @@ export function VaccinationRecords() {
     } catch (error) {
       console.error("Error deleting vaccination:", error);
       toast.error(t('deleteError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleStatusUpdateSubmit = async () => {
+    if (!statusUpdateDialog.vaccination) return;
+    
+    setActionLoading(statusUpdateDialog.vaccination.id);
+    try {
+      // If changing to completed, use markVaccinationAsCompleted
+      if (newStatus === "completed") {
+        const today = new Date().toISOString();
+        const result = await markVaccinationAsCompleted(statusUpdateDialog.vaccination.id, today);
+        
+        if (result.success) {
+          toast.success(t('statusUpdateSuccess', 'Status updated successfully'), {
+            description: `${statusUpdateDialog.vaccination.vaccineName} ${t('markedAsCompleted', 'has been marked as completed')}`,
+          });
+          await fetchVaccinations();
+        } else {
+          toast.error(t('statusUpdateError', 'Failed to update status'), {
+            description: result.message || t('unexpectedError'),
+          });
+        }
+      } else {
+        // If changing to scheduled, update via updateVaccination
+        const result = await updateVaccination(statusUpdateDialog.vaccination.id, {
+          ...statusUpdateDialog.vaccination,
+          isScheduled: true,
+          status: "scheduled",
+          administeredDate: statusUpdateDialog.vaccination.scheduledDate || new Date().toISOString(),
+          scheduledDate: statusUpdateDialog.vaccination.scheduledDate || new Date().toISOString(),
+        });
+        
+        if (result.success) {
+          toast.success(t('statusUpdateSuccess', 'Status updated successfully'), {
+            description: `${statusUpdateDialog.vaccination.vaccineName} ${t('markedAsScheduled', 'has been marked as scheduled')}`,
+          });
+          await fetchVaccinations();
+        } else {
+          toast.error(t('statusUpdateError', 'Failed to update status'), {
+            description: result.message || t('unexpectedError'),
+          });
+        }
+      }
+      
+      setStatusUpdateDialog({
+        open: false,
+        vaccination: null,
+      });
+    } catch (error) {
+      console.error("Error updating vaccination status:", error);
+      toast.error(t('statusUpdateError', 'Failed to update status'), {
         description: error instanceof Error ? error.message : t('unexpectedError'),
       });
     } finally {
@@ -329,19 +425,39 @@ export function VaccinationRecords() {
                 defaultValues: editingVaccination ? {
                   vaccineName: editingVaccination.vaccineName,
                   flockId: editingVaccination.flockId,
-                  administeredDate: new Date(editingVaccination.administeredDate),
-                  administeredBy: editingVaccination.administeredBy,
+                  administeredDate: editingVaccination.isScheduled ? undefined : (editingVaccination.administeredDate ? new Date(editingVaccination.administeredDate) : undefined),
+                  scheduledDate: editingVaccination.isScheduled ? (editingVaccination.scheduledDate ? new Date(editingVaccination.scheduledDate) : new Date()) : undefined,
                   quantity: editingVaccination.quantity,
                   dosage: editingVaccination.dosage,
+                  dosageUnit: editingVaccination.dosageUnit,
                   notes: editingVaccination.notes || "",
+                  administrationMethod: editingVaccination.administrationMethod,
+                  isScheduled: editingVaccination.isScheduled || false,
+                  reminderEnabled: editingVaccination.reminderEnabled || false,
+                  reminderDaysBefore: editingVaccination.reminderDaysBefore,
+                  sendEmail: editingVaccination.sendEmail || false,
+                  sendInAppAlert: editingVaccination.sendInAppAlert || false,
+                  isRecurring: editingVaccination.isRecurring || false,
+                  recurringInterval: editingVaccination.recurringInterval,
+                  recurringEndDate: editingVaccination.recurringEndDate ? new Date(editingVaccination.recurringEndDate) : undefined,
                 } : {
                   vaccineName: "",
                   flockId: "",
-                  administeredDate: new Date(),
-                  administeredBy: "",
+                  administeredDate: undefined,
+                  scheduledDate: new Date(),
                   quantity: 0,
                   dosage: "",
+                  dosageUnit: "",
                   notes: "",
+                  administrationMethod: undefined,
+                  isScheduled: true,
+                  reminderEnabled: false,
+                  reminderDaysBefore: undefined,
+                  sendEmail: false,
+                  sendInAppAlert: false,
+                  isRecurring: false,
+                  recurringInterval: undefined,
+                  recurringEndDate: undefined,
                 },
                 title: editingVaccination ? t('editTitle') : t('addNewTitle'),
                 description: editingVaccination ? t('editDescription') : t('addNewDescription'),
@@ -369,16 +485,18 @@ export function VaccinationRecords() {
             </div>
           ) : (
             <VaccinationTable
-            columns={vaccinationColumns(handleEdit, handleDeleteClick, getStatusBadge, t)}
+              columns={vaccinationColumns(handleEdit, handleDeleteClick, handleUpdateStatus, getStatusBadge, t)}
               data={vaccinations}
               onEdit={handleEdit}
               onDelete={handleDeleteClick}
-          />
+              onUpdateStatus={handleUpdateStatus}
+              toolbar={(table) => <VaccinationTableToolbar table={table} flocks={flocks} />}
+            />
           )}
         </CardContent>
       </Card>
 
-      {/* Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
@@ -386,10 +504,68 @@ export function VaccinationRecords() {
         desc={t('deleteConfirmDesc')}
         confirmText={t('deleteButton')}
         cancelBtnText={t('cancelButton')}
-        destructive={confirmDialog.type === 'delete'}
+        destructive={true}
         handleConfirm={handleConfirmAction}
         isLoading={actionLoading === confirmDialog.vaccination?.id}
       />
+
+      {/* Status Update Dialog */}
+      <Dialog open={statusUpdateDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setStatusUpdateDialog({ open: false, vaccination: null });
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('updateStatusTitle', 'Update Vaccination Status')}</DialogTitle>
+            <DialogDescription>
+              {t('updateStatusDesc', 'Change the status of this vaccination record')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {statusUpdateDialog.vaccination && (
+            <div className="space-y-4">
+              <div className="rounded-lg border p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Syringe className="h-4 w-4 text-muted-foreground" />
+                  <p className="font-medium">{statusUpdateDialog.vaccination.vaccineName}</p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t('flock')}: {statusUpdateDialog.vaccination.flock?.batchCode || statusUpdateDialog.vaccination.flockId}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newStatus">{t('newStatus', 'New Status')}</Label>
+                <Select value={newStatus} onValueChange={setNewStatus}>
+                  <SelectTrigger id="newStatus">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="scheduled">{t('scheduled', 'Scheduled')}</SelectItem>
+                    <SelectItem value="completed">{t('completed', 'Completed')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setStatusUpdateDialog({ open: false, vaccination: null })}
+            >
+              {t('cancelButton', 'Cancel')}
+            </Button>
+            <Button
+              onClick={handleStatusUpdateSubmit}
+              disabled={actionLoading === statusUpdateDialog.vaccination?.id}
+            >
+              {actionLoading === statusUpdateDialog.vaccination?.id ? t('updating', 'Updating...') : t('updateButton', 'Update')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

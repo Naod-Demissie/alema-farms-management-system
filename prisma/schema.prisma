@@ -218,25 +218,66 @@ model Flocks {
 }
 
 model Vaccinations {
-  id               String   @id @default(uuid())
-  flockId          String
-  vaccineName      String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  administeredBy   String
-  administeredDate DateTime
-  dosage           String
-  notes            String?
-  quantity         Int
-  status           String   @default("completed")
-  flock            Flocks   @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  id                    String                  @id @default(uuid())
+  flockId               String
+  vaccineName           String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  administeredDate      DateTime
+  dosage                String
+  dosageUnit            String?                 // Units for dosage (ml, mg, drops, etc.)
+  notes                 String?
+  quantity              Int
+  status                String                  @default("completed")
+  
+  // New fields for reminder system
+  administrationMethod  AdministrationMethod?
+  isScheduled           Boolean                 @default(false)
+  scheduledDate         DateTime?
+  reminderEnabled       Boolean                 @default(false)
+  reminderDaysBefore    Int?
+  sendEmail             Boolean                 @default(false)
+  sendInAppAlert        Boolean                 @default(false)
+  isRecurring           Boolean                 @default(false)
+  recurringInterval     Int?                    // Days between recurring vaccinations
+  recurringEndDate      DateTime?
+  parentVaccinationId   String?
+  nextScheduledDate     DateTime?
+  
+  flock                 Flocks                  @relation(fields: [flockId], references: [id], onDelete: Cascade)
+  reminders             VaccinationReminders[]
+  childVaccinations     Vaccinations[]          @relation("RecurringVaccinations")
+  parentVaccination     Vaccinations?           @relation("RecurringVaccinations", fields: [parentVaccinationId], references: [id])
 
   @@index([flockId])
   @@index([administeredDate])
   @@index([createdAt])
   @@index([status])
+  @@index([isScheduled])
+  @@index([scheduledDate])
+  @@index([nextScheduledDate])
+  @@index([parentVaccinationId])
   @@index([flockId, administeredDate])
+  @@index([isScheduled, scheduledDate])
   @@map("vaccinations")
+}
+
+model VaccinationReminders {
+  id             String       @id @default(uuid())
+  vaccinationId  String
+  reminderDate   DateTime
+  sentAt         DateTime?
+  emailSent      Boolean      @default(false)
+  inAppAlertSent Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  vaccination    Vaccinations @relation(fields: [vaccinationId], references: [id], onDelete: Cascade)
+
+  @@index([vaccinationId])
+  @@index([reminderDate])
+  @@index([sentAt])
+  @@index([emailSent, inAppAlertSent])
+  @@map("vaccination_reminders")
 }
 
 model Treatments {
@@ -639,6 +680,13 @@ enum DeathCause {
   injury
   environmental
   unknown
+}
+
+enum AdministrationMethod {
+  INJECTION
+  DRINKING_WATER
+  SPRAY
+  OTHER
 }
 
 enum AttendanceStatus {

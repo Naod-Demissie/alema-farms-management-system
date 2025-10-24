@@ -42,7 +42,7 @@ export default function FlocksPage() {
 
   const handleFlockCreated = (newFlock: Flock) => {
     setFlocks(prev => [newFlock, ...prev]);
-    loadData(); // Refresh data
+    // No need to call loadData() as we already have the new flock
   };
 
   const handleFlockUpdated = (updatedFlock: Flock) => {
@@ -51,12 +51,12 @@ export default function FlocksPage() {
         flock.id === updatedFlock.id ? updatedFlock : flock
       )
     );
-    loadData(); // Refresh data
+    // No need to call loadData() as we already have the updated flock
   };
 
   const handleFlockDeleted = (flockId: string) => {
     setFlocks(prev => prev.filter(flock => flock.id !== flockId));
-    loadData(); // Refresh data
+    // No need to call loadData() as we already removed the flock
   };
 
   return (

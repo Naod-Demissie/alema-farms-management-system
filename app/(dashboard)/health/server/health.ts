@@ -9,12 +9,22 @@ import { getAuthenticatedUser } from "@/lib/auth-middleware";
 const VaccinationSchema = z.object({
   vaccineName: z.string().min(1, "Vaccine name is required"),
   flockId: z.string().min(1, "Flock ID is required"),
-  administeredDate: z.string().min(1, "Administered date is required"),
-  administeredBy: z.string().min(1, "Administered by is required"),
+  administeredDate: z.string().optional(),
+  scheduledDate: z.string().optional(),
   quantity: z.number().min(1, "Quantity must be at least 1"),
   dosage: z.string().min(1, "Dosage is required"),
+  dosageUnit: z.string().optional(),
   notes: z.string().optional(),
   status: z.string().optional().default("completed"),
+  administrationMethod: z.enum(["INJECTION", "DRINKING_WATER", "SPRAY", "OTHER"]).optional(),
+  isScheduled: z.boolean().optional().default(false),
+  reminderEnabled: z.boolean().optional().default(false),
+  reminderDaysBefore: z.number().optional(),
+  sendEmail: z.boolean().optional().default(false),
+  sendInAppAlert: z.boolean().optional().default(false),
+  isRecurring: z.boolean().optional().default(false),
+  recurringInterval: z.number().optional(),
+  recurringEndDate: z.string().optional(),
 });
 
 const TreatmentSchema = z.object({
@@ -68,7 +78,6 @@ export async function getVaccinations(
       where.OR = [
         { vaccineName: { contains: search, mode: "insensitive" } },
         { flockId: { contains: search, mode: "insensitive" } },
-        { administeredBy: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -131,12 +140,62 @@ export async function createVaccination(data: any): Promise<ApiResponse<any>> {
 
     const validatedData = VaccinationSchema.parse(data);
     
+    // Determine the correct date and status
+    const isScheduled = validatedData.isScheduled || false;
+    const dateToUse = isScheduled ? validatedData.scheduledDate : validatedData.administeredDate;
+    
+    if (!dateToUse) {
+      return {
+        success: false,
+        error: "Either administered date or scheduled date is required",
+      };
+    }
+
+    // Calculate next scheduled date for recurring vaccinations
+    let nextScheduledDate = null;
+    if (isScheduled && validatedData.isRecurring && validatedData.recurringInterval) {
+      const baseDate = new Date(dateToUse);
+      nextScheduledDate = new Date(baseDate);
+      nextScheduledDate.setDate(nextScheduledDate.getDate() + validatedData.recurringInterval);
+    }
+    
     const vaccination = await prisma.vaccinations.create({
       data: {
-        ...validatedData,
-        administeredDate: new Date(validatedData.administeredDate),
+        vaccineName: validatedData.vaccineName,
+        flockId: validatedData.flockId,
+        quantity: validatedData.quantity,
+        dosage: validatedData.dosage,
+        dosageUnit: validatedData.dosageUnit,
+        notes: validatedData.notes,
+        status: isScheduled ? "scheduled" : "completed",
+        administeredDate: new Date(dateToUse),
+        administrationMethod: validatedData.administrationMethod,
+        isScheduled: isScheduled,
+        scheduledDate: validatedData.scheduledDate ? new Date(validatedData.scheduledDate) : null,
+        reminderEnabled: validatedData.reminderEnabled || false,
+        reminderDaysBefore: validatedData.reminderDaysBefore,
+        sendEmail: validatedData.sendEmail || false,
+        sendInAppAlert: validatedData.sendInAppAlert || false,
+        isRecurring: validatedData.isRecurring || false,
+        recurringInterval: validatedData.recurringInterval,
+        recurringEndDate: validatedData.recurringEndDate ? new Date(validatedData.recurringEndDate) : null,
+        nextScheduledDate: nextScheduledDate,
       },
     });
+
+    // Create reminder record if reminder is enabled
+    if (isScheduled && validatedData.reminderEnabled && validatedData.reminderDaysBefore && validatedData.scheduledDate) {
+      const scheduledDate = new Date(validatedData.scheduledDate);
+      const reminderDate = new Date(scheduledDate);
+      reminderDate.setDate(reminderDate.getDate() - validatedData.reminderDaysBefore);
+
+      await prisma.vaccinationReminders.create({
+        data: {
+          vaccinationId: vaccination.id,
+          reminderDate: reminderDate,
+        },
+      });
+    }
 
     return {
       success: true,
@@ -236,6 +295,155 @@ export async function deleteVaccination(id: string): Promise<ApiResponse<any>> {
       success: false,
       message: `Failed to delete vaccination: ${errorMessage}`,
       error: errorMessage,
+    };
+  }
+}
+
+// Mark scheduled vaccination as completed
+export async function markVaccinationAsCompleted(id: string, administeredDate: string): Promise<ApiResponse<any>> {
+  try {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
+
+    const vaccination = await prisma.vaccinations.findUnique({
+      where: { id },
+    });
+
+    if (!vaccination) {
+      return {
+        success: false,
+        message: "Vaccination not found"
+      };
+    }
+
+    if (!vaccination.isScheduled) {
+      return {
+        success: false,
+        message: "Vaccination is already completed"
+      };
+    }
+
+    // Update vaccination to completed status
+    const updated = await prisma.vaccinations.update({
+      where: { id },
+      data: {
+        isScheduled: false,
+        status: "completed",
+        administeredDate: new Date(administeredDate),
+      },
+    });
+
+    // If this is a recurring vaccination, create the next occurrence
+    if (vaccination.isRecurring && vaccination.recurringInterval && vaccination.scheduledDate) {
+      const nextDate = new Date(vaccination.scheduledDate);
+      nextDate.setDate(nextDate.getDate() + vaccination.recurringInterval);
+
+      // Check if we should create next occurrence (within end date if set)
+      const shouldCreateNext = !vaccination.recurringEndDate || nextDate <= vaccination.recurringEndDate;
+
+      if (shouldCreateNext) {
+        const nextScheduledDate = new Date(nextDate);
+        nextScheduledDate.setDate(nextScheduledDate.getDate() + vaccination.recurringInterval);
+
+        const nextVaccination = await prisma.vaccinations.create({
+          data: {
+            vaccineName: vaccination.vaccineName,
+            flockId: vaccination.flockId,
+            quantity: vaccination.quantity,
+            dosage: vaccination.dosage,
+            dosageUnit: vaccination.dosageUnit,
+            notes: vaccination.notes,
+            status: "scheduled",
+            administeredDate: nextDate,
+            administrationMethod: vaccination.administrationMethod,
+            isScheduled: true,
+            scheduledDate: nextDate,
+            reminderEnabled: vaccination.reminderEnabled,
+            reminderDaysBefore: vaccination.reminderDaysBefore,
+            sendEmail: vaccination.sendEmail,
+            sendInAppAlert: vaccination.sendInAppAlert,
+            isRecurring: true,
+            recurringInterval: vaccination.recurringInterval,
+            recurringEndDate: vaccination.recurringEndDate,
+            parentVaccinationId: vaccination.parentVaccinationId || vaccination.id,
+            nextScheduledDate: nextScheduledDate,
+          },
+        });
+
+        // Create reminder for next occurrence
+        if (vaccination.reminderEnabled && vaccination.reminderDaysBefore) {
+          const reminderDate = new Date(nextDate);
+          reminderDate.setDate(reminderDate.getDate() - vaccination.reminderDaysBefore);
+
+          await prisma.vaccinationReminders.create({
+            data: {
+              vaccinationId: nextVaccination.id,
+              reminderDate: reminderDate,
+            },
+          });
+        }
+      }
+    }
+
+    return {
+      success: true,
+      data: updated,
+      message: "Vaccination marked as completed"
+    };
+  } catch (error) {
+    console.error("Error marking vaccination as completed:", error);
+    return {
+      success: false,
+      message: "Failed to mark vaccination as completed",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// Get scheduled vaccinations
+export async function getScheduledVaccinations(): Promise<ApiResponse<any>> {
+  try {
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.success) {
+      return {
+        success: false,
+        message: authResult.message || "Authentication required"
+      };
+    }
+
+    const vaccinations = await prisma.vaccinations.findMany({
+      where: {
+        isScheduled: true,
+        status: "scheduled",
+      },
+      include: {
+        flock: {
+          select: {
+            id: true,
+            batchCode: true,
+          },
+        },
+      },
+      orderBy: {
+        scheduledDate: "asc",
+      },
+    });
+
+    return {
+      success: true,
+      data: vaccinations,
+    };
+  } catch (error) {
+    console.error("Error fetching scheduled vaccinations:", error);
+    return {
+      success: false,
+      message: "Failed to fetch scheduled vaccinations",
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }

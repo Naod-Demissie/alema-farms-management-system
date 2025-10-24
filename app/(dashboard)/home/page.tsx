@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import HomeClient from "./home-client";
 import { getInventoryCounts } from "@/app/(dashboard)/feed/server/inventory-alerts";
+import { getUpcomingVaccinations } from "@/app/(dashboard)/health/server/vaccination-reminders";
 
 // Force dynamic rendering to avoid build-time database calls
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export default async function HomePage() {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   // Execute all queries in parallel for better performance
-  const [homeSummary, inventoryCounts] = await Promise.all([
+  const [homeSummary, inventoryCounts, upcomingVaccinationsResult] = await Promise.all([
     // Single optimized query for all daily summaries
     prisma.$queryRaw<Array<{
       eggs_today: bigint;
@@ -43,7 +44,9 @@ export default async function HomePage() {
         ), 0) as feed_left
     `,
     // Get inventory counts
-    getInventoryCounts()
+    getInventoryCounts(),
+    // Get upcoming vaccinations (next 14 days)
+    getUpcomingVaccinations(14)
   ]);
 
   const summary = homeSummary[0];
@@ -52,5 +55,13 @@ export default async function HomePage() {
   const salesToday = summary.sales_today || 0;
   const feedLeft = summary.feed_left || 0;
 
-  return <HomeClient summary={{ eggsToday, expensesToday, salesToday, feedLeft }} inventoryCounts={inventoryCounts} />;
+  const upcomingVaccinations = upcomingVaccinationsResult.success 
+    ? upcomingVaccinationsResult.data 
+    : [];
+
+  return <HomeClient 
+    summary={{ eggsToday, expensesToday, salesToday, feedLeft }} 
+    inventoryCounts={inventoryCounts} 
+    upcomingVaccinations={upcomingVaccinations}
+  />;
 }

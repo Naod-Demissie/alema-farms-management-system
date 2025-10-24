@@ -40,6 +40,7 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
+  Activity,
 } from "lucide-react";
 import { useTranslations } from 'next-intl';
 
@@ -53,12 +54,13 @@ declare module "@tanstack/react-table" {
 interface VaccinationTableProps {
   columns: ColumnDef<any>[];
   data: any[];
-  toolbar?: React.ReactNode;
+  toolbar?: (table: any) => React.ReactNode;
   onEdit?: (vaccination: any) => void;
   onDelete?: (vaccination: any) => void;
+  onUpdateStatus?: (vaccination: any) => void;
 }
 
-export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete }: VaccinationTableProps) {
+export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete, onUpdateStatus }: VaccinationTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -84,6 +86,10 @@ export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete }: V
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onUpdateStatus?.(vaccination)}>
+                    <Activity className="h-4 w-4 mr-2" />
+                    {t('columns.updateStatus')}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onEdit?.(vaccination)}>
                     <Edit className="h-4 w-4 mr-2" />
                     {t('edit')}
@@ -124,7 +130,7 @@ export function VaccinationTable({ columns, data, toolbar, onEdit, onDelete }: V
 
   return (
     <div className="space-y-4">
-      {toolbar || (
+      {toolbar ? toolbar(table) : (
         <DataTableToolbar
           table={table}
           filterColumnId="vaccineName"

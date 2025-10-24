@@ -49,7 +49,7 @@ export default function HealthManagementPage() {
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 h-auto">
           <TabsTrigger value="vaccinations">{t('vaccination.title')}</TabsTrigger>
           <TabsTrigger value="treatments">{t('treatment.title')}</TabsTrigger>
           <TabsTrigger value="mortality">{t('mortality.title')}</TabsTrigger>

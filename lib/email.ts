@@ -420,3 +420,104 @@ function getPayrollNotificationEmailTemplate(payrollData: any) {
     text: `Payroll notification: Net salary $${((payrollData.salary || 0) + (payrollData.bonus || 0) - (payrollData.deductions || 0)).toFixed(2)}`
   };
 }
+
+// Send vaccination reminder email
+export const sendVaccinationReminderEmail = async (
+  email: string, 
+  vaccinationData: {
+    vaccineName: string;
+    flockBatchCode: string;
+    scheduledDate: string;
+    administeredBy: string;
+    quantity: number;
+    dosage: string;
+    administrationMethod?: string;
+  }
+): Promise<ApiResponse> => {
+  try {
+    const template = getVaccinationReminderEmailTemplate(vaccinationData);
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: `Vaccination Reminder - ${vaccinationData.vaccineName}`,
+      html: template.html,
+      text: template.text
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return {
+      success: true,
+      message: "Vaccination reminder email sent successfully"
+    };
+  } catch (error) {
+    const e = error as Error;
+    return {
+      success: false,
+      message: e.message || "Failed to send vaccination reminder email"
+    };
+  }
+};
+
+function getVaccinationReminderEmailTemplate(vaccinationData: {
+  vaccineName: string;
+  flockBatchCode: string;
+  scheduledDate: string;
+  administeredBy: string;
+  quantity: number;
+  dosage: string;
+  administrationMethod?: string;
+}) {
+  const methodDisplay = vaccinationData.administrationMethod 
+    ? vaccinationData.administrationMethod.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+    : 'N/A';
+
+  return {
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #dc3545;">🔔 Vaccination Reminder</h2>
+        <p>This is a reminder that a vaccination is scheduled soon.</p>
+        <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #856404;">Vaccination Details</h3>
+          <p style="margin: 8px 0;"><strong>Vaccine Name:</strong> ${vaccinationData.vaccineName}</p>
+          <p style="margin: 8px 0;"><strong>Flock:</strong> ${vaccinationData.flockBatchCode}</p>
+          <p style="margin: 8px 0;"><strong>Scheduled Date:</strong> ${vaccinationData.scheduledDate}</p>
+          <p style="margin: 8px 0;"><strong>To Be Administered By:</strong> ${vaccinationData.administeredBy}</p>
+          <p style="margin: 8px 0;"><strong>Quantity:</strong> ${vaccinationData.quantity}</p>
+          <p style="margin: 8px 0;"><strong>Dosage:</strong> ${vaccinationData.dosage}</p>
+          <p style="margin: 8px 0;"><strong>Administration Method:</strong> ${methodDisplay}</p>
+        </div>
+        <p style="margin: 20px 0;">Please ensure that:</p>
+        <ul style="line-height: 1.8;">
+          <li>All necessary vaccination supplies are available</li>
+          <li>The veterinarian is available on the scheduled date</li>
+          <li>The flock is prepared for vaccination</li>
+          <li>Proper records are maintained after administration</li>
+        </ul>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p style="margin: 0; color: #666;">
+            <strong>Note:</strong> Please log in to the Poultry Farm Management System to mark the vaccination as completed once it has been administered.
+          </p>
+        </div>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px;">
+          This is an automated reminder from the Poultry Farm Management System.
+        </p>
+      </div>
+    `,
+    text: `
+      VACCINATION REMINDER
+      
+      Vaccine Name: ${vaccinationData.vaccineName}
+      Flock: ${vaccinationData.flockBatchCode}
+      Scheduled Date: ${vaccinationData.scheduledDate}
+      To Be Administered By: ${vaccinationData.administeredBy}
+      Quantity: ${vaccinationData.quantity}
+      Dosage: ${vaccinationData.dosage}
+      Administration Method: ${methodDisplay}
+      
+      Please ensure all necessary supplies are available and the veterinarian is scheduled.
+      Log in to the system to mark as completed after administration.
+    `
+  };
+}
