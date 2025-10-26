@@ -31,6 +31,9 @@ import { EggProductionDialog } from "@/app/(dashboard)/production/components/dia
 import { BroilerProductionDialog } from "@/app/(dashboard)/production/components/dialogs/broiler-production-dialog";
 import { ManureProductionDialog } from "@/app/(dashboard)/production/components/dialogs/manure-production-dialog";
 import { AddStaffDialog } from "@/app/(dashboard)/staff/components/directory/add-staff-dialog";
+import { VaccinationDialog } from "@/app/(dashboard)/health/components/dialogs/vaccination-dialog";
+import { TreatmentDialog } from "@/app/(dashboard)/health/components/dialogs/treatment-dialog";
+import { MortalityDialog } from "@/app/(dashboard)/health/components/dialogs/mortality-dialog";
 import { ExpenseFormData, RevenueFormData } from "@/app/(dashboard)/financial/types/types";
 import { createExpense, createRevenue } from "@/app/(dashboard)/financial/server/financial";
 import { createNonSystemStaff } from "@/app/(dashboard)/staff/server/staff-invites";
@@ -53,6 +56,12 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
   const [isBroilerProductionDialogOpen, setIsBroilerProductionDialogOpen] = useState(false);
   const [isManureProductionDialogOpen, setIsManureProductionDialogOpen] = useState(false);
   const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false);
+  const [isVaccinationDialogOpen, setIsVaccinationDialogOpen] = useState(false);
+  const [isTreatmentDialogOpen, setIsTreatmentDialogOpen] = useState(false);
+  const [isMortalityDialogOpen, setIsMortalityDialogOpen] = useState(false);
+  const [vaccinationDialogLoading, setVaccinationDialogLoading] = useState(false);
+  const [treatmentDialogLoading, setTreatmentDialogLoading] = useState(false);
+  const [mortalityDialogLoading, setMortalityDialogLoading] = useState(false);
 
   // Open expense dialog directly when actionType is "add-expense"
   React.useEffect(() => {
@@ -85,6 +94,27 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
   React.useEffect(() => {
     if (isOpen && actionType === "add-staff") {
       setIsAddStaffDialogOpen(true);
+    }
+  }, [isOpen, actionType]);
+
+  // Open vaccination dialog directly when actionType is "add-vaccination"
+  React.useEffect(() => {
+    if (isOpen && actionType === "add-vaccination") {
+      setIsVaccinationDialogOpen(true);
+    }
+  }, [isOpen, actionType]);
+
+  // Open treatment dialog directly when actionType is "add-treatment"
+  React.useEffect(() => {
+    if (isOpen && actionType === "add-treatment") {
+      setIsTreatmentDialogOpen(true);
+    }
+  }, [isOpen, actionType]);
+
+  // Open mortality dialog directly when actionType is "add-mortality"
+  React.useEffect(() => {
+    if (isOpen && actionType === "add-mortality") {
+      setIsMortalityDialogOpen(true);
     }
   }, [isOpen, actionType]);
 
@@ -407,6 +437,58 @@ export function QuickActionDialog({ isOpen, onClose, actionType, onRefresh }: Qu
           onClose();
         }}
         onSubmit={handleStaffSubmit}
+      />
+
+      {/* Reusable Health Dialogs */}
+      <VaccinationDialog
+        open={isVaccinationDialogOpen}
+        onOpenChange={(open) => {
+          setIsVaccinationDialogOpen(open);
+          if (!open) {
+            onClose();
+          }
+        }}
+        onSuccess={() => {
+          setIsVaccinationDialogOpen(false);
+          onClose();
+          onRefresh?.();
+        }}
+        loading={vaccinationDialogLoading}
+        onLoadingChange={setVaccinationDialogLoading}
+      />
+
+      <TreatmentDialog
+        open={isTreatmentDialogOpen}
+        onOpenChange={(open) => {
+          setIsTreatmentDialogOpen(open);
+          if (!open) {
+            onClose();
+          }
+        }}
+        onSuccess={() => {
+          setIsTreatmentDialogOpen(false);
+          onClose();
+          onRefresh?.();
+        }}
+        loading={treatmentDialogLoading}
+        onLoadingChange={setTreatmentDialogLoading}
+      />
+
+      <MortalityDialog
+        open={isMortalityDialogOpen}
+        onOpenChange={(open) => {
+          setIsMortalityDialogOpen(open);
+          if (!open) {
+            onClose();
+          }
+        }}
+        onSuccess={() => {
+          setIsMortalityDialogOpen(false);
+          onClose();
+          onRefresh?.();
+        }}
+        loading={mortalityDialogLoading}
+        onLoadingChange={setMortalityDialogLoading}
       />
     </Dialog>
   );

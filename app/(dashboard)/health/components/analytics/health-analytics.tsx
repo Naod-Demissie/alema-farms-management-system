@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getHealthAnalytics } from "../../server/health-analytics";
-import { Activity, Heart, Skull, AlertTriangle, RefreshCw } from "lucide-react";
+import { Activity, Heart, Skull, AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 
 type FlockAnalytics = {
   flockId: string;
@@ -192,22 +191,8 @@ export function HealthAnalytics() {
       {/* Per-Flock Analytics Table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{t("perFlockAnalytics")}</CardTitle>
-              <CardDescription>{t("perFlockDescription")}</CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchData}
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
+          <CardTitle>{t("perFlockAnalytics")}</CardTitle>
+          <CardDescription>{t("perFlockDescription")}</CardDescription>
         </CardHeader>
          <CardContent>
            {loading ? (

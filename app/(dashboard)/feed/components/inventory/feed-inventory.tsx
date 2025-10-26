@@ -425,8 +425,13 @@ export function FeedInventory() {
               <div className="text-2xl font-bold">
                 {formatNumber(inventory.reduce((sum, item) => {
                   // Calculate total value: quantity * costPerUnit
-                  // costPerUnit is per the selected unit (KG or Quintal)
-                  return sum + (item.quantity * (item.costPerUnit || 0));
+                  // IMPORTANT: quantity is stored in KG, costPerUnit is per original unit
+                  // Need to convert costPerUnit to cost per KG if unit is QUINTAL
+                  let costPerKg = item.costPerUnit || 0;
+                  if (item.unit === 'QUINTAL' && item.costPerUnit) {
+                    costPerKg = item.costPerUnit / 100; // Convert quintal cost to per KG
+                  }
+                  return sum + (item.quantity * costPerKg);
                 }, 0))} {tCommon('birr')}
               </div>
             )}

@@ -58,25 +58,17 @@ export const vaccinationSchema = z.object({
   dosageUnit: z.string().optional(),
   notes: z.string().optional(),
   administrationMethod: z.enum(["INJECTION", "DRINKING_WATER", "SPRAY", "OTHER"]).optional(),
-  isScheduled: z.boolean().default(false),
+  isScheduled: z.boolean().default(true),
   reminderEnabled: z.boolean().default(false),
   reminderDaysBefore: z.number().optional(),
   sendEmail: z.boolean().default(false),
-  sendInAppAlert: z.boolean().default(false),
+  sendInAppAlert: z.boolean().default(true),
   isRecurring: z.boolean().default(false),
   recurringInterval: z.number().optional(),
   recurringEndDate: z.date().optional(),
 }).refine((data) => {
-  // Either administeredDate or scheduledDate must be provided
-  if (!data.administeredDate && !data.scheduledDate) {
-    return false;
-  }
-  // If scheduled, scheduledDate is required
+  // Scheduled date is required for scheduled vaccinations
   if (data.isScheduled && !data.scheduledDate) {
-    return false;
-  }
-  // If not scheduled, administeredDate is required
-  if (!data.isScheduled && !data.administeredDate) {
     return false;
   }
   // If reminder is enabled, reminderDaysBefore is required
@@ -107,7 +99,6 @@ export const treatmentSchema = z.object({
   dosage: z.string().min(1, "Dosage is required"),
   frequency: z.string().min(1, "Frequency is required"),
   duration: z.string().min(1, "Duration is required"),
-  treatedBy: z.string().min(1, "Treated by is required"),
   startDate: z.date({
     message: "Start date is required",
   }),
@@ -231,13 +222,11 @@ export function FlockForm({ form, flocks = [], onGenerateBatchCode, t }: FlockFo
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
                       date > new Date() || date < new Date("1900-01-01")
                     }
-                    captionLayout="dropdown"
                   />
                 </PopoverContent>
               </Popover>
@@ -355,26 +344,28 @@ interface VaccinationFormProps {
 
 export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = false, veterinariansLoading = false }: VaccinationFormProps) {
   const t = useTranslations('health.vaccination');
-  const isScheduled = form.watch("isScheduled");
   const reminderEnabled = form.watch("reminderEnabled");
   const isRecurring = form.watch("isRecurring");
+
+  // Provide default translations if t is not provided (for backwards compatibility)
+  const getLabel = (key: string, defaultValue: string) => t ? t(key) : defaultValue;
 
   return (
     <>
       {/* 1st Row: Flock ID and Scheduled Date */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
           name="flockId"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>
-                {t('flock')} <span className="text-red-500">*</span>
+                {getLabel('flock', 'Flock')} <span className="text-red-500">*</span>
               </FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('flock')} />
+                    <SelectValue placeholder={getLabel('flock', 'Flock')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -382,17 +373,17 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
                     <SelectItem value="loading" disabled>
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        {t('loadingData')}
+                        {getLabel('loadingFlocks', 'Loading flocks...')}
                       </div>
                     </SelectItem>
                   ) : flocks.length === 0 ? (
                     <SelectItem value="no-flocks" disabled>
-                      <div className="text-muted-foreground">{t('noRecords')}</div>
+                      <div className="text-muted-foreground">{getLabel('noFlocks', 'No flocks available')}</div>
                     </SelectItem>
                   ) : (
                     flocks.map((flock: any) => (
                       <SelectItem key={flock.id} value={flock.id}>
-                        {flock.batchCode}
+                        {flock.batchCode} ({flock.currentCount} birds)
                       </SelectItem>
                     ))
                   )}
@@ -406,9 +397,9 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
           control={form.control}
           name="scheduledDate"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>
-                {t('scheduledDate')} <span className="text-red-500">*</span>
+                {getLabel('scheduledDate', 'Scheduled Date')} <span className="text-red-500">*</span>
               </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
@@ -431,11 +422,9 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) => date < new Date()}
-                    captionLayout="dropdown"
                   />
                 </PopoverContent>
               </Popover>
@@ -445,85 +434,20 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
         />
       </div>
 
-      {/* Vaccination Type Toggle */}
-      <FormField
-        control={form.control}
-        name="isScheduled"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-            <div className="space-y-0.5">
-              <FormLabel>{t('isScheduled', 'Scheduled Vaccination')}</FormLabel>
-              <div className="text-sm text-muted-foreground">
-                {t('isScheduledDescription', 'Toggle between scheduled and administered vaccination')}
-              </div>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      />
 
-      {/* Administered Date - Only show when not scheduled */}
-      {!isScheduled && (
-        <FormField
-          control={form.control}
-          name="administeredDate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t('administeredDate')} <span className="text-red-500">*</span>
-              </FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal h-10",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        EthiopianDateFormatter.formatForTable(field.value)
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => date > new Date()}
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
 
       {/* 2nd Row: Vaccine Name and Administration Method */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
           name="vaccineName"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>
-                {t('vaccineName')} <span className="text-red-500">*</span>
+                {getLabel('vaccineName', 'Vaccine Name')} <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
-                <Input placeholder={t('vaccineNamePlaceholder', 'e.g., Newcastle Disease Vaccine')} {...field} />
+                <Input placeholder={getLabel('vaccineNamePlaceholder', 'e.g., Newcastle Disease Vaccine')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -533,12 +457,12 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
           control={form.control}
           name="administrationMethod"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('administrationMethod')}</FormLabel>
+            <FormItem className="flex-1">
+              <FormLabel>{getLabel('administrationMethod', 'Administration Method')}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('administrationMethod')} />
+                    <SelectValue placeholder={getLabel('administrationMethod', 'Administration Method')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -555,14 +479,14 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
       </div>
 
       {/* 3rd Row: Quantity, Dosage, and Dosage Unit */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
           name="quantity"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>
-                {t('quantity')} <span className="text-red-500">*</span>
+                {getLabel('quantity', 'Quantity')} <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
                 <Input
@@ -583,9 +507,9 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
           control={form.control}
           name="dosage"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>
-                {t('dosage')} <span className="text-red-500">*</span>
+                {getLabel('dosage', 'Dosage')} <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
                 <Input 
@@ -607,23 +531,23 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
           control={form.control}
           name="dosageUnit"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('dosageUnit', 'Unit')}</FormLabel>
+            <FormItem className="flex-1">
+              <FormLabel>{getLabel('dosageUnit', 'Unit')}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('selectUnit', 'Select unit')} />
+                    <SelectValue placeholder={getLabel('selectUnit', 'Select unit')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="ml">{t('units.ml', 'ml')}</SelectItem>
-                  <SelectItem value="mg">{t('units.mg', 'mg')}</SelectItem>
-                  <SelectItem value="g">{t('units.g', 'g')}</SelectItem>
-                  <SelectItem value="drops">{t('units.drops', 'drops')}</SelectItem>
-                  <SelectItem value="tablets">{t('units.tablets', 'tablets')}</SelectItem>
-                  <SelectItem value="capsules">{t('units.capsules', 'capsules')}</SelectItem>
-                  <SelectItem value="units">{t('units.units', 'units')}</SelectItem>
-                  <SelectItem value="cc">{t('units.cc', 'cc')}</SelectItem>
+                  <SelectItem value="ml">{getLabel('units.ml', 'ml')}</SelectItem>
+                  <SelectItem value="mg">{getLabel('units.mg', 'mg')}</SelectItem>
+                  <SelectItem value="g">{getLabel('units.g', 'g')}</SelectItem>
+                  <SelectItem value="drops">{getLabel('units.drops', 'drops')}</SelectItem>
+                  <SelectItem value="tablets">{getLabel('units.tablets', 'tablets')}</SelectItem>
+                  <SelectItem value="capsules">{getLabel('units.capsules', 'capsules')}</SelectItem>
+                  <SelectItem value="units">{getLabel('units.units', 'units')}</SelectItem>
+                  <SelectItem value="cc">{getLabel('units.cc', 'cc')}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -634,7 +558,7 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
 
       {/* Total Calculator */}
       <div className="bg-muted/50 p-3 rounded-lg text-center">
-        <div className="text-sm text-muted-foreground mb-1">{t('totalDosage', 'Total Dosage')}</div>
+        <div className="text-sm text-muted-foreground mb-1">{getLabel('totalDosage', 'Total Dosage')}</div>
         <div className="text-xl font-semibold">
           {(() => {
             const quantity = form.watch("quantity") || 0;
@@ -645,48 +569,47 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
           })()}
         </div>
         <div className="text-xs text-muted-foreground mt-1">
-          {t('totalCalculation', 'Quantity × Dosage per bird')}
+          {getLabel('totalCalculation', 'Quantity × Dosage per bird')}
         </div>
       </div>
 
 
-      {/* Reminder Settings - Only show for scheduled vaccinations */}
-      {isScheduled && (
-        <>
-          <div className="border-t pt-4 mt-2">
-            <h4 className="text-sm font-medium mb-3">{t('reminderSettings')}</h4>
-            <FormField
-              control={form.control}
-              name="reminderEnabled"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>{t('enableReminder')}</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      {t('reminderDescription')}
-                    </div>
+      {/* Reminder Settings - Always show for scheduled vaccinations */}
+      <>
+        <div className="border-t pt-4 mt-2">
+          <h4 className="text-sm font-medium mb-3">{getLabel('reminderSettings', 'Reminder Settings')}</h4>
+          <FormField
+            control={form.control}
+            name="reminderEnabled"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel>{getLabel('enableReminder', 'Enable Reminder')}</FormLabel>
+                  <div className="text-sm text-muted-foreground">
+                    {getLabel('reminderDescription', 'Get notified before scheduled vaccination')}
                   </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
 
           {reminderEnabled && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <FormField
                   control={form.control}
                   name="reminderDaysBefore"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="flex-1">
                       <FormLabel>
-                        {t('remindMeDaysBefore')} <span className="text-red-500">*</span>
+                        {getLabel('remindMeDaysBefore', 'Remind me')} <span className="text-red-500">*</span>
                       </FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))} 
@@ -694,22 +617,22 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder={t('remindMeDaysBefore')} />
+                            <SelectValue placeholder={getLabel('remindMeDaysBefore', 'Remind me')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="1">1 {t('daysLabel', 'day before')}</SelectItem>
-                          <SelectItem value="3">3 {t('daysLabel', 'days before')}</SelectItem>
-                          <SelectItem value="7">7 {t('daysLabel', 'days before')}</SelectItem>
-                          <SelectItem value="14">14 {t('daysLabel', 'days before')}</SelectItem>
+                          <SelectItem value="1">1 {getLabel('daysLabel', 'day before')}</SelectItem>
+                          <SelectItem value="3">3 {getLabel('daysLabel', 'days before')}</SelectItem>
+                          <SelectItem value="7">7 {getLabel('daysLabel', 'days before')}</SelectItem>
+                          <SelectItem value="14">14 {getLabel('daysLabel', 'days before')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <div className="space-y-3">
-                  <FormLabel>{t('notificationChannels')} <span className="text-red-500">*</span></FormLabel>
+                <div className="flex-1 space-y-3">
+                  <FormLabel>{getLabel('notificationChannels', 'Notification Channels')} <span className="text-red-500">*</span></FormLabel>
                   <FormField
                     control={form.control}
                     name="sendEmail"
@@ -723,7 +646,7 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
                             className="h-4 w-4"
                           />
                         </FormControl>
-                        <FormLabel className="font-normal">{t('sendEmail')}</FormLabel>
+                        <FormLabel className="font-normal">{getLabel('sendEmail', 'Send Email')}</FormLabel>
                       </FormItem>
                     )}
                   />
@@ -740,7 +663,7 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
                             className="h-4 w-4"
                           />
                         </FormControl>
-                        <FormLabel className="font-normal">{t('inAppAlert')}</FormLabel>
+                        <FormLabel className="font-normal">{getLabel('inAppAlert', 'In-App Alert')}</FormLabel>
                       </FormItem>
                     )}
                   />
@@ -753,109 +676,106 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
             </>
           )}
 
-          {/* Recurring Settings */}
-          <div className="border-t pt-4 mt-2">
+        {/* Recurring Settings */}
+        <div className="border-t pt-4 mt-2">
+          <FormField
+            control={form.control}
+            name="isRecurring"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel>{getLabel('recurringVaccination', 'Recurring Vaccination')}</FormLabel>
+                  <div className="text-sm text-muted-foreground">
+                    {getLabel('recurringDescription', 'Set up automatic recurring vaccinations')}
+                  </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {isRecurring && (
+          <div className="flex flex-col sm:flex-row gap-4">
             <FormField
               control={form.control}
-              name="isRecurring"
+              name="recurringInterval"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>{t('recurringVaccination')}</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      {t('recurringDescription')}
-                    </div>
-                  </div>
+                <FormItem className="flex-1">
+                  <FormLabel>
+                    {getLabel('repeatEvery', 'Repeat every')} <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                    <Input
+                      type="number"
+                      placeholder="e.g., 30"
+                      min="1"
+                      value={field.value || ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? undefined : parseInt(value) || undefined);
+                      }}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="recurringEndDate"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>{getLabel('endDate', 'End Date')}</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal h-10",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            EthiopianDateFormatter.formatForTable(field.value)
+                          ) : (
+                            <span>{getLabel('noEndDate', 'No end date')}</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-
-          {isRecurring && (
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="recurringInterval"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t('repeatEvery')} <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 30"
-                        min="1"
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? undefined : parseInt(value) || undefined);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="recurringEndDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('endDate')}</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal h-10",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              EthiopianDateFormatter.formatForTable(field.value)
-                            ) : (
-                              <span>{t('noEndDate')}</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          captionLayout="dropdown"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-        </>
-      )}
+        )}
+      </>
 
       <FormField
         control={form.control}
         name="notes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t('notes', 'Notes')}</FormLabel>
+            <FormLabel>{getLabel('notes', 'Notes')}</FormLabel>
             <FormControl>
               <Textarea
-                placeholder={t('notesPlaceholder', 'Additional notes about the vaccination...')}
+                placeholder={getLabel('notesPlaceholder', 'Additional notes about the vaccination...')}
                 rows={3}
                 {...field}
               />
@@ -871,23 +791,25 @@ export function VaccinationForm({ form, flocks, veterinarians, flocksLoading = f
 interface TreatmentFormProps {
   form: UseFormReturn<z.infer<typeof treatmentSchema>>;
   flocks: any[];
-  veterinarians: any[];
   flocksLoading?: boolean;
-  veterinariansLoading?: boolean;
   t?: any;
 }
 
-export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = false, veterinariansLoading = false, t }: TreatmentFormProps) {
+export function TreatmentForm({ form, flocks, flocksLoading = false, t }: TreatmentFormProps) {
+  // Provide default translations if t is not provided (for backwards compatibility)
+  const getLabel = (key: string, defaultValue: string) => t ? t(key) : defaultValue;
+
   return (
     <>
-      <div className="grid grid-cols-2 gap-4">
+      {/* 1st Row: Flock ID and Disease Type */}
+      <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
           name="flockId"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t ? t('columns.flockId') : 'Flock ID'} <span className="text-red-500">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+            <FormItem className="flex-1">
+              <FormLabel>{getLabel('columns.flockId', 'Flock ID')} <span className="text-red-500">*</span></FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select flock" />
@@ -898,17 +820,17 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
                     <SelectItem value="loading" disabled>
                       <div className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Loading flocks...
+                        {getLabel('loadingFlocks', 'Loading flocks...')}
                       </div>
                     </SelectItem>
                   ) : flocks.length === 0 ? (
                     <SelectItem value="no-flocks" disabled>
-                      <div className="text-muted-foreground">No flocks available</div>
+                      <div className="text-muted-foreground">{getLabel('noFlocks', 'No flocks available')}</div>
                     </SelectItem>
                   ) : (
                     flocks.map((flock) => (
                       <SelectItem key={flock.id} value={flock.id}>
-                        {flock.batchCode}
+                        {flock.batchCode} ({flock.currentCount} birds)
                       </SelectItem>
                     ))
                   )}
@@ -922,9 +844,9 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
           control={form.control}
           name="disease"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t ? t('diseaseType') : 'Disease Type'} <span className="text-red-500">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+            <FormItem className="flex-1">
+              <FormLabel>{getLabel('diseaseType', 'Disease Type')} <span className="text-red-500">*</span></FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select disease type" />
@@ -944,46 +866,49 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
         />
       </div>
 
-      <FormField
-        control={form.control}
-        name="diseaseName"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t ? t('diseaseName') : 'Disease Name'} <span className="text-red-500">*</span></FormLabel>
-            <FormControl>
-              <Input placeholder="e.g., Infectious Bronchitis" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* 2nd Row: Disease Name and Number of Diseased Birds */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <FormField
+          control={form.control}
+          name="diseaseName"
+          render={({ field }) => (
+            <FormItem className="flex-1">
+              <FormLabel>{getLabel('diseaseName', 'Disease Name')} <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Infectious Bronchitis" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="diseasedBirdsCount"
+          render={({ field }) => (
+            <FormItem className="flex-1">
+              <FormLabel>{getLabel('diseasedBirdsCount', 'Number of Diseased Birds')} <span className="text-red-500">*</span></FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="e.g., 25" 
+                  min="1"
+                  value={field.value || ''}
+                  onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
-      <FormField
-        control={form.control}
-        name="diseasedBirdsCount"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t ? t('diseasedBirdsCount') : 'Number of Diseased Birds'} <span className="text-red-500">*</span></FormLabel>
-            <FormControl>
-              <Input 
-                type="number" 
-                placeholder="e.g., 25" 
-                min="1"
-                value={field.value || ''}
-                onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="grid grid-cols-2 gap-4">
+      {/* 3rd Row: Medication and Dosage */}
+      <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
           name="medication"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>Medication <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Amoxicillin" {...field} />
@@ -996,7 +921,7 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
           control={form.control}
           name="dosage"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>Dosage <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., 10mg/kg body weight" {...field} />
@@ -1007,12 +932,13 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* 4th Row: Frequency and Duration */}
+      <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
           name="frequency"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>Frequency <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Twice daily" {...field} />
@@ -1025,7 +951,7 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
           control={form.control}
           name="duration"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>Duration <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="e.g., 5 days" {...field} />
@@ -1036,49 +962,13 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="treatedBy"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Treated By <span className="text-red-500">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select veterinarian" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {veterinariansLoading ? (
-                    <SelectItem value="loading" disabled>
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Loading veterinarians...
-                      </div>
-                    </SelectItem>
-                  ) : veterinarians.length === 0 ? (
-                    <SelectItem value="no-vets" disabled>
-                      <div className="text-muted-foreground">No veterinarians available</div>
-                    </SelectItem>
-                  ) : (
-                    veterinarians.map((vet) => (
-                      <SelectItem key={vet.id} value={vet.id}>
-                        {vet.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      {/* 5th Row: Start Date and End Date */}
+      <div className="flex flex-col sm:flex-row gap-4">
         <FormField
           control={form.control}
           name="startDate"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel>Start Date <span className="text-red-500">*</span></FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
@@ -1101,13 +991,50 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
                       date < new Date("1900-01-01")
                     }
-                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="endDate"
+          render={({ field }) => (
+            <FormItem className="flex-1">
+              <FormLabel>End Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        EthiopianDateFormatter.formatForTable(field.value)
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) =>
+                      date < new Date("1900-01-01")
+                    }
                   />
                 </PopoverContent>
               </Popover>
@@ -1116,48 +1043,6 @@ export function TreatmentForm({ form, flocks, veterinarians, flocksLoading = fal
           )}
         />
       </div>
-
-      <FormField
-        control={form.control}
-        name="endDate"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>End Date</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full pl-3 text-left font-normal",
-                      !field.value && "text-muted-foreground"
-                    )}
-                  >
-                    {field.value ? (
-                      format(field.value, "MMM dd, yyyy")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={field.value}
-                  onSelect={field.onChange}
-                  disabled={(date) =>
-                    date < new Date("1900-01-01")
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
 
       <FormField
         control={form.control}
@@ -1222,7 +1107,7 @@ export function TreatmentStatusUpdateForm({ form, treatment, t }: TreatmentStatu
       {/* Treatment Information */}
       <div className="bg-muted/50 p-4 rounded-lg space-y-2">
         <h4 className="font-medium text-sm">{getLabel('statusUpdate.treatmentInfo', 'Treatment Information')}</h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">{getLabel('columns.flockId', 'Flock')}:</span>
             <span className="ml-2 font-medium">{treatment?.flock?.batchCode || treatment?.flockId}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -91,6 +91,7 @@ export function FlockManagementMerged({
   loading: pageLoading = false
 }: FlockManagementMergedProps) {
   const t = useTranslations('flocks');
+  const [mounted, setMounted] = useState(false);
   
   // Memoize columns to prevent unnecessary re-renders
   const columns = useMemo(() => getFlockColumns(t), [t]);
@@ -105,6 +106,11 @@ export function FlockManagementMerged({
     open: false,
     flock: null as Flock | null,
   });
+
+  // Track mounted state to defer table rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
 
 
@@ -164,7 +170,7 @@ export function FlockManagementMerged({
   };
 
 
-  const handleDeleteFlock = (flockId: string) => {
+  const handleDeleteFlock = useCallback((flockId: string) => {
     const flock = flocks.find(f => f.id === flockId);
     if (flock) {
       setConfirmDialog({
@@ -172,7 +178,7 @@ export function FlockManagementMerged({
         flock: flock,
       });
     }
-  };
+  }, [flocks]);
 
   const handleConfirmDelete = async () => {
     if (!confirmDialog.flock) return;
@@ -202,15 +208,15 @@ export function FlockManagementMerged({
     }
   };
 
-  const handleEditClick = (flock: Flock) => {
+  const handleEditClick = useCallback((flock: Flock) => {
     setEditingFlock(flock);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleViewClick = (flock: Flock) => {
+  const handleViewClick = useCallback((flock: Flock) => {
     setViewingFlock(flock);
     setIsViewDialogOpen(true);
-  };
+  }, []);
 
 
   const handleGenerateBatchCode = async (breed: string) => {
@@ -416,14 +422,20 @@ export function FlockManagementMerged({
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <FlockTable
-            columns={columns}
-            data={flocks}
-            onEdit={handleEditClick}
-            onView={handleViewClick}
-            onDelete={handleDeleteFlock}
-            loading={pageLoading || loading}
-          />
+          {mounted ? (
+            <FlockTable
+              columns={columns}
+              data={flocks}
+              onEdit={handleEditClick}
+              onView={handleViewClick}
+              onDelete={handleDeleteFlock}
+              loading={pageLoading || loading}
+            />
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

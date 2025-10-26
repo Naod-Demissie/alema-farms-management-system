@@ -173,8 +173,13 @@ export function FeedReports({ filters }: FeedReportsProps) {
 
       // Calculate inventory value
       const inventoryValue = inventory?.reduce((sum, item) => {
-        const costPerUnit = item.costPerUnit || averageCostPerKg;
-        return sum + (item.quantity * costPerUnit);
+        // IMPORTANT: quantity is stored in KG, costPerUnit is per original unit
+        // Need to convert costPerUnit to cost per KG if unit is QUINTAL
+        let costPerKg = item.costPerUnit || averageCostPerKg;
+        if (item.unit === 'QUINTAL' && item.costPerUnit) {
+          costPerKg = item.costPerUnit / 100; // Convert quintal cost to per KG
+        }
+        return sum + (item.quantity * costPerKg);
       }, 0) || 0;
 
       // Count low stock items (items with less than 7 days remaining)
@@ -199,15 +204,22 @@ export function FeedReports({ filters }: FeedReportsProps) {
       // Process feed by supplier data
       const feedBySupplier = inventory?.reduce((acc, item) => {
         if (item.supplier) {
+          // IMPORTANT: quantity is stored in KG, costPerUnit is per original unit
+          // Need to convert costPerUnit to cost per KG if unit is QUINTAL
+          let costPerKg = item.costPerUnit || averageCostPerKg;
+          if (item.unit === 'QUINTAL' && item.costPerUnit) {
+            costPerKg = item.costPerUnit / 100; // Convert quintal cost to per KG
+          }
+          
           const existing = acc.find(s => s.supplier === item.supplier.name);
           if (existing) {
             existing.quantity += item.quantity;
-            existing.cost += item.quantity * (item.costPerUnit || averageCostPerKg);
+            existing.cost += item.quantity * costPerKg;
           } else {
             acc.push({
               supplier: item.supplier.name,
               quantity: item.quantity,
-              cost: item.quantity * (item.costPerUnit || averageCostPerKg),
+              cost: item.quantity * costPerKg,
               percentage: 0 // Will be calculated below
             });
           }

@@ -32,7 +32,11 @@ import {
   CheckCircle,
   XCircle,
   UserCheck,
-  Package
+  Package,
+  Loader2,
+  Syringe,
+  Pill,
+  Heart
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuickActionDialog } from "@/app/(dashboard)/home/components/quick-action-dialog";
@@ -82,6 +86,7 @@ export default function HomeClient({ summary, inventoryCounts, upcomingVaccinati
   const router = useRouter();
   const t = useTranslations('dashboard');
   const tCommon = useTranslations('common');
+  const tHealth = useTranslations('health.vaccination');
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
   const [isFlockDialogOpen, setIsFlockDialogOpen] = useState(false);
@@ -99,6 +104,7 @@ export default function HomeClient({ summary, inventoryCounts, upcomingVaccinati
   const [buttonStates, setButtonStates] = useState<Record<string, 'checkin' | 'checkout' | 'checkedout' | 'onleave'>>({});
   const [leaveStatus, setLeaveStatus] = useState<Record<string, boolean>>({});
   const [pageLoading, setPageLoading] = useState(true);
+  const [vaccinationLoading, setVaccinationLoading] = useState<Record<string, boolean>>({});
   
   // Time period states for KPI cards
   const [productionPeriod, setProductionPeriod] = useState("today");
@@ -486,6 +492,36 @@ export default function HomeClient({ summary, inventoryCounts, upcomingVaccinati
     return colorMap[priority] || "text-gray-600 bg-gray-50 border-gray-200 dark:text-gray-400 dark:bg-gray-950/20 dark:border-gray-800";
   };
 
+  const handleMarkVaccinationCompleted = async (vaccinationId: string) => {
+    try {
+      // Set loading state for this specific vaccination
+      setVaccinationLoading(prev => ({ ...prev, [vaccinationId]: true }));
+
+      const response = await fetch(`/api/health/vaccinations/${vaccinationId}/mark-completed`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          administeredDate: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(tHealth('markCompletedSuccess'));
+        router.refresh(); // Refresh the page to update the alerts
+      } else {
+        toast.error(tHealth('markCompletedError'));
+      }
+    } catch (error) {
+      console.error('Error marking vaccination as completed:', error);
+      toast.error(tHealth('markCompletedError'));
+    } finally {
+      // Clear loading state
+      setVaccinationLoading(prev => ({ ...prev, [vaccinationId]: false }));
+    }
+  };
+
   // Generate inventory alerts
   const inventoryAlerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [];
   
@@ -530,7 +566,13 @@ export default function HomeClient({ summary, inventoryCounts, upcomingVaccinati
   }
 
   // Generate vaccination reminder alerts
-  const vaccinationAlerts: { id: number; message: string; priority: "high" | "medium" | "low" }[] = [];
+  const vaccinationAlerts: { 
+    id: number; 
+    message: string; 
+    priority: "high" | "medium" | "low";
+    vaccination: any;
+    daysUntil: number;
+  }[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -563,7 +605,9 @@ export default function HomeClient({ summary, inventoryCounts, upcomingVaccinati
       vaccinationAlerts.push({
         id: 1000 + index, // High ID to avoid conflicts
         message,
-        priority
+        priority,
+        vaccination,
+        daysUntil
       });
     }
   });
@@ -666,6 +710,9 @@ export default function HomeClient({ summary, inventoryCounts, upcomingVaccinati
                 { id: "add-revenue", title: t('quickActions.addRevenue'), icon: DollarSign, color: "bg-green-600" },
                 { id: "add-staff", title: t('quickActions.addStaffMember'), icon: UserPlus, color: "bg-indigo-500" },
                 { id: "add-flock", title: t('quickActions.addNewFlock'), icon: Bird, color: "bg-blue-500" },
+                { id: "add-vaccination", title: t('quickActions.addVaccination'), icon: Syringe, color: "bg-teal-500" },
+                { id: "add-treatment", title: t('quickActions.addTreatment'), icon: Pill, color: "bg-red-500" },
+                { id: "add-mortality", title: t('quickActions.addMortality'), icon: Heart, color: "bg-gray-600" },
               ].map((action: any) => {
                 const Icon = action.icon as any;
                 return (
@@ -870,6 +917,51 @@ export default function HomeClient({ summary, inventoryCounts, upcomingVaccinati
                     </div>
                   </div>
                 )}
+
+                {/* Vaccination Reminder Alerts */}
+                {vaccinationAlerts.map((alert) => (
+                  <div key={alert.id} className={`rounded-lg border p-3 sm:p-4 shadow-sm ${getAlertColor(alert.priority)}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0 mb-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-2 sm:p-2.5 rounded-lg bg-current/10">
+                          <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-semibold">{alert.vaccination.vaccineName}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Flock: {alert.vaccination.flock?.batchCode || 'N/A'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {alert.daysUntil === 0 ? 'Vaccination due today' : 
+                             alert.daysUntil === 1 ? 'Vaccination due tomorrow' : 
+                             `Vaccination due in ${alert.daysUntil} days`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMarkVaccinationCompleted(alert.vaccination.id)}
+                          disabled={vaccinationLoading[alert.vaccination.id]}
+                          className="text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {vaccinationLoading[alert.vaccination.id] ? (
+                            <>
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              {tHealth('markingCompleted')}
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              {tHealth('markCompleted')}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </TabsContent>
               <TabsContent value="attendance" className="mt-4">
                 {staffLoading ? (

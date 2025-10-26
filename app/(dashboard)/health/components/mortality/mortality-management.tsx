@@ -9,16 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useTranslations } from 'next-intl';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -52,6 +44,7 @@ import {
 } from "lucide-react";
 import { MortalityTable } from "./mortality-table";
 import { mortalityColumns } from "./mortality-columns";
+import { MortalityDialog } from "../dialogs/mortality-dialog";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -63,14 +56,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
-import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
-import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { 
   getMortalityRecords, 
   createMortalityRecord, 
   updateMortalityRecord, 
-  deleteMortalityRecord 
+  deleteMortalityRecord
 } from "@/app/(dashboard)/health/server/health";
+import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
 
 // Validation schema
 const mortalitySchema = z.object({
@@ -87,11 +79,11 @@ const mortalitySchema = z.object({
 export function MortalityManagement() {
   const t = useTranslations('health.mortality');
   const [mortalityRecords, setMortalityRecords] = useState<any[]>([]);
-  const [flocks, setFlocks] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<Array<{ id: string; batchCode: string; currentCount: number }>>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [dialogLoading, setDialogLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     type: 'delete' | null;
@@ -120,8 +112,26 @@ export function MortalityManagement() {
   useEffect(() => {
     fetchMortalityRecords();
     fetchFlocks();
-    fetchStaff();
   }, []);
+
+  const fetchFlocks = async () => {
+    try {
+      const result = await getFlocks({}, { page: 1, limit: 100 });
+      if (result.success && result.data) {
+        setFlocks(result.data.map(flock => ({
+          id: flock.id,
+          batchCode: flock.batchCode,
+          currentCount: flock.currentCount
+        })));
+      } else {
+        console.error("Failed to fetch flocks:", result.message);
+        setFlocks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching flocks:", error);
+      setFlocks([]);
+    }
+  };
 
   const fetchMortalityRecords = async () => {
     try {
@@ -136,58 +146,6 @@ export function MortalityManagement() {
     } catch (error) {
       console.error("Error fetching mortality records:", error);
       setMortalityRecords([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchFlocks = async () => {
-    try {
-      const result = await getFlocks({}, { page: 1, limit: 100 });
-      if (result && result.success && result.data) {
-        setFlocks(result.data);
-      }
-    } catch (error) {
-      console.error("Error fetching flocks:", error);
-    }
-  };
-
-  const fetchStaff = async () => {
-    try {
-      const result = await getStaff();
-      if (result && result.success && result.data) {
-        setStaff(result.data);
-      }
-    } catch (error) {
-      console.error("Error fetching staff:", error);
-    }
-  };
-
-  const handleSubmit = async (data: z.infer<typeof mortalitySchema>) => {
-    try {
-      setLoading(true);
-      const result = await createMortalityRecord({
-        ...data,
-        date: data.date.toISOString(),
-      });
-      
-      if (result.success) {
-        toast.success(t('createSuccess'), {
-          description: t('createSuccessDesc', { count: data.count }),
-        });
-        await fetchMortalityRecords();
-        setIsAddDialogOpen(false);
-        form.reset();
-      } else {
-        toast.error(t('createError'), {
-          description: result.message || t('unexpectedError'),
-        });
-      }
-    } catch (error) {
-      console.error("Error creating mortality record:", error);
-      toast.error(t('createError'), {
-        description: error instanceof Error ? error.message : t('unexpectedError'),
-      });
     } finally {
       setLoading(false);
     }
@@ -217,39 +175,6 @@ export function MortalityManagement() {
       recordedBy: record.recordedById || record.recordedBy,
     });
     setIsAddDialogOpen(true);
-  };
-
-  const handleUpdate = async (data: z.infer<typeof mortalitySchema>) => {
-    if (!editingRecord) return;
-    
-    try {
-      setLoading(true);
-      const result = await updateMortalityRecord(editingRecord.id, {
-        ...data,
-        date: data.date.toISOString(),
-      });
-      
-      if (result.success) {
-        toast.success(t('updateSuccess'), {
-          description: t('updateSuccessDesc'),
-        });
-        await fetchMortalityRecords();
-        setIsAddDialogOpen(false);
-        setEditingRecord(null);
-        form.reset();
-      } else {
-        toast.error(t('updateError'), {
-          description: result.message || t('unexpectedError'),
-        });
-      }
-    } catch (error) {
-      console.error("Error updating mortality record:", error);
-      toast.error(t('updateError'), {
-        description: error instanceof Error ? error.message : t('unexpectedError'),
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleDeleteClick = (record: any) => {
@@ -300,6 +225,69 @@ export function MortalityManagement() {
   };
 
 
+  const handleSubmit = async (data: z.infer<typeof mortalitySchema>) => {
+    setLoading(true);
+    try {
+      const result = await createMortalityRecord({
+        ...data,
+        date: data.date.toISOString(),
+      });
+      
+      if (result.success) {
+        toast.success(t('createSuccess'), {
+          description: t('createSuccessDesc', { count: data.count }),
+        });
+        setIsAddDialogOpen(false);
+        form.reset();
+        await fetchMortalityRecords();
+      } else {
+        toast.error(t('createError'), {
+          description: result.message || result.error || t('unexpectedError'),
+        });
+      }
+    } catch (error) {
+      console.error("Error creating mortality record:", error);
+      toast.error(t('createError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async (data: z.infer<typeof mortalitySchema>) => {
+    if (!editingRecord) return;
+    
+    setLoading(true);
+    try {
+      const result = await updateMortalityRecord(editingRecord.id, {
+        ...data,
+        date: data.date.toISOString(),
+      });
+      
+      if (result.success) {
+        toast.success(t('updateSuccess'), {
+          description: t('updateSuccessDesc'),
+        });
+        setIsAddDialogOpen(false);
+        setEditingRecord(null);
+        form.reset();
+        await fetchMortalityRecords();
+      } else {
+        toast.error(t('updateError'), {
+          description: result.message || result.error || t('unexpectedError'),
+        });
+      }
+    } catch (error) {
+      console.error("Error updating mortality record:", error);
+      toast.error(t('updateError'), {
+        description: error instanceof Error ? error.message : t('unexpectedError'),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getCauseBadge = (cause: string) => {
     switch (cause) {
       case "disease":
@@ -339,10 +327,6 @@ export function MortalityManagement() {
   const injuryMortality = mortalityRecords
     .filter(record => record.cause === "injury")
     .reduce((sum, record) => sum + record.count, 0);
-  
-  // Calculate overall mortality rate
-  const totalBirds = flocks.reduce((sum, flock) => sum + (flock.initialCount || 0), 0);
-  const mortalityRate = totalBirds > 0 ? (totalMortality / totalBirds) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -416,27 +400,6 @@ export function MortalityManagement() {
             )}
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('stats.mortalityRate')}</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-2xl font-bold">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">{mortalityRate.toFixed(2)}%</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">-0.2%</span> {t('stats.fromLastMonth')}
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Mortality Records Table */}
@@ -449,222 +412,35 @@ export function MortalityManagement() {
                 {t('cardDescription')}
               </CardDescription>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-              setIsAddDialogOpen(open);
-              if (!open) {
+            <Button onClick={handleAddNew}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t('addMortality')}
+            </Button>
+            
+            <MortalityDialog
+              open={isAddDialogOpen}
+              onOpenChange={(open) => {
+                setIsAddDialogOpen(open);
+                if (!open) {
+                  setEditingRecord(null);
+                }
+              }}
+              initialData={editingRecord ? {
+                id: editingRecord.id,
+                flockId: editingRecord.flockId,
+                date: new Date(editingRecord.date),
+                count: editingRecord.count,
+                cause: editingRecord.cause,
+                causeDescription: editingRecord.causeDescription,
+              } : undefined}
+              onSuccess={() => {
+                setIsAddDialogOpen(false);
                 setEditingRecord(null);
-                form.reset({
-                  flockId: "",
-                  date: new Date(),
-                  count: 0,
-                  cause: "disease",
-                  causeDescription: "",
-                  recordedBy: "",
-                });
-              }
-            }}>
-              <Button onClick={handleAddNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('addButton')}
-              </Button>
-              <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh]">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingRecord ? t('editTitle') : t('addNewTitle')}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {t('addNewDescription')}
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(editingRecord ? handleUpdate : handleSubmit)} className="space-y-4">
-                    {/* Row 1: Flock ID, Date, and Number of Deaths */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <FormField
-                        control={form.control}
-                        name="flockId"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="flex items-center gap-1">
-                              {t('form.flockId')} <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="w-full h-10">
-                                  <SelectValue placeholder={t('form.selectFlock')} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {flocks.map((flock: any) => (
-                                  <SelectItem key={flock.id} value={flock.id}>
-                                    {flock.batchCode}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="date"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="flex items-center gap-1">
-                              {t('form.date')} <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal h-10",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      EthiopianDateFormatter.formatForTable(field.value)
-                                    ) : (
-                                      <span>{t('form.pickDate')}</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
-                                  }
-                                  captionLayout="dropdown"
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="count"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="flex items-center gap-1 whitespace-nowrap">
-                              {t('form.numberOfDeaths')} <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="1"
-                                className="h-10"
-                                value={field.value === 0 ? "" : field.value}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  field.onChange(value === "" ? 0 : parseInt(value) || 0);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Row 2: Recorded By and Cause of Death - Full Width */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <FormField
-                        control={form.control}
-                        name="recordedBy"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="flex items-center gap-1">
-                              {t('form.recordedBy')} <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="w-full h-10">
-                                  <SelectValue placeholder={t('form.selectStaff')} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {staff.map((person: any) => (
-                                  <SelectItem key={person.id} value={person.id}>
-                                    {person.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="cause"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="flex items-center gap-1">
-                              {t('form.causeOfDeath')} <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="w-full h-10">
-                                  <SelectValue placeholder={t('form.selectCause')} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="disease">{t('causeTypes.disease')}</SelectItem>
-                                <SelectItem value="injury">{t('causeTypes.injury')}</SelectItem>
-                                <SelectItem value="environmental">{t('causeTypes.environmental')}</SelectItem>
-                                <SelectItem value="unknown">{t('causeTypes.unknown')}</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Row 3: Cause Description */}
-                    <FormField
-                      control={form.control}
-                      name="causeDescription"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-1">
-                            {t('form.causeDescription')} <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder={t('form.causeDescriptionPlaceholder')}
-                              rows={3}
-                              className="resize-none min-h-[80px]"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                        {t('cancelButton')}
-                      </Button>
-                      <Button type="submit" disabled={loading}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        {loading ? t('saving') : editingRecord ? t('updateButton') : t('addButton')}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+                fetchMortalityRecords();
+              }}
+              loading={dialogLoading}
+              onLoadingChange={setDialogLoading}
+            />
           </div>
         </CardHeader>
         <CardContent>

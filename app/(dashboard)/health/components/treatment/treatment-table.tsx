@@ -42,10 +42,10 @@ declare module "@tanstack/react-table" {
 interface TreatmentTableProps {
   columns: ColumnDef<any>[];
   data: any[];
-  flocks: Array<{ id: string; batchCode: string; currentCount: number }>;
+  flocks?: Array<{ id: string; batchCode: string; currentCount: number }>;
 }
 
-export function TreatmentTable({ columns, data, flocks }: TreatmentTableProps) {
+export function TreatmentTable({ columns, data, flocks = [] }: TreatmentTableProps) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);

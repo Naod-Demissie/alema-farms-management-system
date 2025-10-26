@@ -14,12 +14,12 @@ import { EthiopianCalendarUtils, ETHIOPIAN_MONTHS } from "@/lib/ethiopian-calend
 
 interface TreatmentTableToolbarProps<TData> {
   table: Table<TData>;
-  flocks: Array<{ id: string; batchCode: string; currentCount: number }>;
+  flocks?: Array<{ id: string; batchCode: string; currentCount: number }>;
 }
 
 export function TreatmentTableToolbar<TData>({
   table,
-  flocks,
+  flocks = [],
 }: TreatmentTableToolbarProps<TData>) {
   const t = useTranslations('health.treatment.table');
   const tColumns = useTranslations('health.treatment.columns');
@@ -29,7 +29,7 @@ export function TreatmentTableToolbar<TData>({
 
   // Flock options for filtering
   const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} ${tColumns('birds')})`,
+    label: `${flock.batchCode}`,
     value: flock.id,
   }));
 
@@ -156,7 +156,7 @@ export function TreatmentTableToolbar<TData>({
         </div>
 
         {/* Clear Filters */}
-        {isFiltered && (
+        {(isFiltered || selectedMonth || selectedDate) && (
           <Button
             variant="ghost"
             onClick={clearFilters}

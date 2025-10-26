@@ -15,12 +15,12 @@ import { DataTableFacetedFilter } from "@/components/table/data-table-faceted-fi
 
 interface MortalityTableToolbarProps<TData> {
   table: Table<TData>;
-  flocks: Array<{ id: string; batchCode: string; currentCount: number }>;
+  flocks?: Array<{ id: string; batchCode: string; currentCount: number }>;
 }
 
 export function MortalityTableToolbar<TData>({
   table,
-  flocks,
+  flocks = [],
 }: MortalityTableToolbarProps<TData>) {
   const t = useTranslations('health.mortality.table');
   const tColumns = useTranslations('health.mortality.columns');
@@ -30,7 +30,7 @@ export function MortalityTableToolbar<TData>({
 
   // Flock options for filtering
   const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} birds)`,
+    label: `${flock.batchCode}`,
     value: flock.id,
   }));
 

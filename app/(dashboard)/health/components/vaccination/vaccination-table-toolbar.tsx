@@ -15,12 +15,12 @@ import { DataTableFacetedFilter } from "@/components/table/data-table-faceted-fi
 
 interface VaccinationTableToolbarProps<TData> {
   table: Table<TData>;
-  flocks: Array<{ id: string; batchCode: string; currentCount: number }>;
+  flocks?: Array<{ id: string; batchCode: string; currentCount: number }>;
 }
 
 export function VaccinationTableToolbar<TData>({
   table,
-  flocks,
+  flocks = [],
 }: VaccinationTableToolbarProps<TData>) {
   const t = useTranslations('health.vaccination');
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -29,7 +29,7 @@ export function VaccinationTableToolbar<TData>({
 
   // Flock options for filtering
   const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} ${t('birds', 'birds')})`,
+    label: `${flock.batchCode}`,
     value: flock.id,
   }));
 

@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Package, TrendingUp, AlertTriangle, CheckCircle, Bird, Clock, Scale, ChevronDown, ChevronUp } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Package, TrendingUp, AlertTriangle, CheckCircle, Bird, Clock, Scale, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { toast } from "sonner";
 import { getDailyFeedRequirementsAction, getWeeklyFeedRequirementsAction } from "@/app/(dashboard)/feed/server/feed-program";
 import { getFeedInventoryAction, getInventoryWithUsageAction, getInventoryProjectionAction } from "@/app/(dashboard)/feed/server/feed-inventory";
@@ -23,6 +24,7 @@ export function FeedPlanning() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [selectedFeedType, setSelectedFeedType] = useState<string>('all');
 
   useEffect(() => {
     fetchData();
@@ -123,6 +125,11 @@ export function FeedPlanning() {
       case 'missing': return t('status.missing');
       default: return status;
     }
+  };
+
+  const getFilteredRequirements = (requirements: any[]) => {
+    if (selectedFeedType === 'all') return requirements;
+    return requirements.filter(req => req.feedType === selectedFeedType);
   };
 
   const currentRequirements = activeTab === 'daily' ? dailyRequirements : weeklyRequirements;
@@ -243,9 +250,6 @@ export function FeedPlanning() {
                 {t('requirements.description')}
               </CardDescription>
             </div>
-            <Button onClick={fetchData} variant="outline" size="sm">
-              {t('requirements.refresh')}
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -255,6 +259,27 @@ export function FeedPlanning() {
               <TabsTrigger value="weekly" className="text-xs sm:text-sm">{t('requirements.weeklyTab')}</TabsTrigger>
             </TabsList>
             
+            {/* Feed Type Filter */}
+            <div className="mt-4 mb-6">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Select value={selectedFeedType} onValueChange={setSelectedFeedType}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder={t('requirements.filterByFeedType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('requirements.allFeedTypes')}</SelectItem>
+                    <SelectItem value="LAYER_STARTER">{tFeedTypes('LAYER_STARTER')}</SelectItem>
+                    <SelectItem value="REARING">{tFeedTypes('REARING')}</SelectItem>
+                    <SelectItem value="PULLET_FEED">{tFeedTypes('PULLET_FEED')}</SelectItem>
+                    <SelectItem value="LAYER">{tFeedTypes('LAYER')}</SelectItem>
+                    <SelectItem value="LAYER_PHASE_1">{tFeedTypes('LAYER_PHASE_1')}</SelectItem>
+                    <SelectItem value="CUSTOM">{tFeedTypes('CUSTOM')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             <TabsContent value="daily" className="mt-6">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -263,7 +288,7 @@ export function FeedPlanning() {
                     <p className="mt-2 text-sm text-muted-foreground">{t('requirements.loading')}</p>
                   </div>
                 </div>
-              ) : dailyRequirements.length === 0 ? (
+              ) : getFilteredRequirements(dailyRequirements).length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">{t('requirements.noFlocks')}</p>
@@ -271,7 +296,7 @@ export function FeedPlanning() {
                 </div>
               ) : (
                 <div className="grid gap-6">
-                  {dailyRequirements.map((requirement) => {
+                  {getFilteredRequirements(dailyRequirements).map((requirement) => {
                     const inventoryStatus = getInventoryStatus(requirement.feedType);
                     const isExpanded = expandedCards.has(requirement.feedType);
                     
@@ -536,7 +561,7 @@ export function FeedPlanning() {
                     <p className="mt-2 text-sm text-muted-foreground">{t('requirements.loadingWeekly')}</p>
                   </div>
                 </div>
-              ) : weeklyRequirements.length === 0 ? (
+              ) : getFilteredRequirements(weeklyRequirements).length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">{t('requirements.noFlocks')}</p>
@@ -544,7 +569,7 @@ export function FeedPlanning() {
                 </div>
               ) : (
                 <div className="grid gap-6">
-                  {weeklyRequirements.map((requirement) => {
+                  {getFilteredRequirements(weeklyRequirements).map((requirement) => {
                     const inventoryStatus = getInventoryStatus(requirement.feedType);
                     const isExpanded = expandedCards.has(requirement.feedType);
                     

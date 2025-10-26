@@ -71,12 +71,6 @@ export function MortalityTable({ columns, data, toolbar, flocks = [], onEdit, on
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
 
-  // Flock options for filtering
-  const flockOptions = flocks.map((flock) => ({
-    label: `${flock.batchCode} (${flock.currentCount} birds)`,
-    value: flock.id,
-  }));
-
   const table = useReactTable({
     data,
     columns: columns.map(col => {

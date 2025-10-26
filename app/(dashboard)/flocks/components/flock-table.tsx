@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -68,9 +68,16 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [mounted, setMounted] = useState(false);
+  
+  const t = useTranslations('flocks');
+
+  // Track mounted state to prevent state updates before mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const { mobileColumnVisibility } = useMobileColumns(columns, columnVisibility);
-  const t = useTranslations('flocks');
 
   // Memoize the modified columns to prevent unnecessary re-renders
   const modifiedColumns = useMemo(() => {
@@ -151,7 +158,7 @@ export function FlockTable({ columns, data, toolbar, onEdit, onView, onDelete, l
     columns: modifiedColumns,
     state: {
       sorting,
-      columnVisibility: mobileColumnVisibility,
+      columnVisibility: mounted ? mobileColumnVisibility : columnVisibility,
       rowSelection,
       columnFilters,
     },

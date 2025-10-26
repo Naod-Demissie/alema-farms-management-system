@@ -17,8 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ReusableDialog } from "@/components/ui/reusable-dialog";
-import { VaccinationForm, vaccinationSchema } from "@/components/forms/dialog-forms";
+import { VaccinationDialog } from "@/app/(dashboard)/health/components/dialogs/vaccination-dialog";
 import {
   Select,
   SelectContent,
@@ -61,7 +60,6 @@ import { vaccinationColumns } from "./vaccination-columns";
 import { VaccinationTableToolbar } from "./vaccination-table-toolbar";
 import { getVaccinations, createVaccination, updateVaccination, deleteVaccination, markVaccinationAsCompleted } from "@/app/(dashboard)/health/server/health";
 import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
-import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -71,11 +69,11 @@ import { useTranslations } from 'next-intl';
 export function VaccinationRecords() {
   const t = useTranslations('health.vaccination');
   const [vaccinations, setVaccinations] = useState<any[]>([]);
-  const [flocks, setFlocks] = useState<any[]>([]);
-  const [veterinarians, setVeterinarians] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<Array<{ id: string; batchCode: string; currentCount: number }>>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingVaccination, setEditingVaccination] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [dialogLoading, setDialogLoading] = useState(false);
   const [statusUpdateDialog, setStatusUpdateDialog] = useState<{
     open: boolean;
     vaccination: any | null;
@@ -95,13 +93,30 @@ export function VaccinationRecords() {
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-
   // Fetch data on component mount
   useEffect(() => {
     fetchVaccinations();
     fetchFlocks();
-    fetchVeterinarians();
   }, []);
+
+  const fetchFlocks = async () => {
+    try {
+      const result = await getFlocks({}, { page: 1, limit: 100 });
+      if (result.success && result.data) {
+        setFlocks(result.data.map(flock => ({
+          id: flock.id,
+          batchCode: flock.batchCode,
+          currentCount: flock.currentCount
+        })));
+      } else {
+        console.error("Failed to fetch flocks:", result.message);
+        setFlocks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching flocks:", error);
+      setFlocks([]);
+    }
+  };
 
   const fetchVaccinations = async () => {
     try {
@@ -129,130 +144,9 @@ export function VaccinationRecords() {
     }
   };
 
-  const fetchFlocks = async () => {
-    try {
-      console.log("Fetching flocks...");
-      const result = await getFlocks({}, { page: 1, limit: 100 });
-      console.log("Flocks result:", result);
-      if (result && result.success && result.data) {
-        setFlocks(result.data);
-        console.log("Flocks set:", result.data);
-      } else {
-        console.error("Failed to fetch flocks:", result?.message || "Unknown error", result);
-        setFlocks([]);
-      }
-    } catch (error) {
-      console.error("Error fetching flocks:", error);
-      setFlocks([]);
-    }
-  };
-
-  const fetchVeterinarians = async () => {
-    try {
-      console.log("Fetching veterinarians...");
-      const result = await getStaff();
-      console.log("Staff result:", result);
-      if (result && result.success && result.data) {
-        // Filter staff to only include veterinarians
-        const vets = result.data.filter((staff: any) => staff.role === "VETERINARIAN" && staff.isActive);
-        setVeterinarians(vets);
-        console.log("Veterinarians set:", vets);
-      } else {
-        console.error("Failed to fetch staff:", result?.message || "Unknown error", result);
-        setVeterinarians([]);
-      }
-    } catch (error) {
-      console.error("Error fetching veterinarians:", error);
-      setVeterinarians([]);
-    }
-  };
-
-  const handleSubmit = async (data: z.infer<typeof vaccinationSchema>) => {
-    try {
-      setLoading(true);
-      
-      // Prepare the vaccination data
-      const vaccinationData = {
-        ...data,
-        // Only include administeredDate if it exists and is not scheduled
-        ...(data.administeredDate && !data.isScheduled && {
-          administeredDate: data.administeredDate.toISOString(),
-        }),
-        // Only include scheduledDate if it exists and is scheduled
-        ...(data.scheduledDate && data.isScheduled && {
-          scheduledDate: data.scheduledDate.toISOString(),
-        }),
-      };
-      
-      const result = await createVaccination(vaccinationData);
-      
-      if (result.success) {
-        toast.success(t('createSuccess'), {
-          description: t('createSuccessDesc', { vaccineName: data.vaccineName }),
-        });
-        await fetchVaccinations();
-        setIsAddDialogOpen(false);
-      } else {
-        toast.error(t('createError'), {
-          description: result.message || t('unexpectedError'),
-        });
-      }
-    } catch (error) {
-      console.error("Error creating vaccination:", error);
-      toast.error(t('createError'), {
-        description: error instanceof Error ? error.message : t('unexpectedError'),
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleEdit = (vaccination: any) => {
     setEditingVaccination(vaccination);
     setIsAddDialogOpen(true);
-  };
-
-  const handleUpdate = async (data: z.infer<typeof vaccinationSchema>) => {
-    if (!editingVaccination) return;
-    
-    try {
-      setLoading(true);
-      
-      // Prepare the vaccination data
-      const vaccinationData = {
-        ...data,
-        // Only include administeredDate if it exists and is not scheduled
-        ...(data.administeredDate && !data.isScheduled && {
-          administeredDate: data.administeredDate.toISOString(),
-        }),
-        // Only include scheduledDate if it exists and is scheduled
-        ...(data.scheduledDate && data.isScheduled && {
-          scheduledDate: data.scheduledDate.toISOString(),
-        }),
-      };
-      
-      const result = await updateVaccination(editingVaccination.id, vaccinationData);
-      
-      if (result.success) {
-        toast.success(t('updateSuccess'), {
-          description: t('updateSuccessDesc', { vaccineName: data.vaccineName }),
-        });
-        await fetchVaccinations();
-        setIsAddDialogOpen(false);
-        setEditingVaccination(null);
-      } else {
-        toast.error(t('updateError'), {
-          description: result.message || t('unexpectedError'),
-        });
-      }
-    } catch (error) {
-      console.error("Error updating vaccination:", error);
-      toast.error(t('updateError'), {
-        description: error instanceof Error ? error.message : t('unexpectedError'),
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleDeleteClick = (vaccination: any) => {
@@ -269,7 +163,7 @@ export function VaccinationRecords() {
       vaccination: vaccination,
     });
     // Set initial status to opposite of current status
-    const currentStatus = vaccination.isScheduled || vaccination.status === "scheduled" ? "scheduled" : "completed";
+    const currentStatus = vaccination.status || (vaccination.isScheduled ? "scheduled" : "completed");
     setNewStatus(currentStatus === "scheduled" ? "completed" : "scheduled");
   };
 
@@ -412,7 +306,7 @@ export function VaccinationRecords() {
               </DialogTrigger>
             </Dialog>
             
-            <ReusableDialog
+            <VaccinationDialog
               open={isAddDialogOpen}
               onOpenChange={(open) => {
                 setIsAddDialogOpen(open);
@@ -420,58 +314,33 @@ export function VaccinationRecords() {
                   setEditingVaccination(null);
                 }
               }}
-              config={{
-                schema: vaccinationSchema,
-                defaultValues: editingVaccination ? {
-                  vaccineName: editingVaccination.vaccineName,
-                  flockId: editingVaccination.flockId,
-                  administeredDate: editingVaccination.isScheduled ? undefined : (editingVaccination.administeredDate ? new Date(editingVaccination.administeredDate) : undefined),
-                  scheduledDate: editingVaccination.isScheduled ? (editingVaccination.scheduledDate ? new Date(editingVaccination.scheduledDate) : new Date()) : undefined,
-                  quantity: editingVaccination.quantity,
-                  dosage: editingVaccination.dosage,
-                  dosageUnit: editingVaccination.dosageUnit,
-                  notes: editingVaccination.notes || "",
-                  administrationMethod: editingVaccination.administrationMethod,
-                  isScheduled: editingVaccination.isScheduled || false,
-                  reminderEnabled: editingVaccination.reminderEnabled || false,
-                  reminderDaysBefore: editingVaccination.reminderDaysBefore,
-                  sendEmail: editingVaccination.sendEmail || false,
-                  sendInAppAlert: editingVaccination.sendInAppAlert || false,
-                  isRecurring: editingVaccination.isRecurring || false,
-                  recurringInterval: editingVaccination.recurringInterval,
-                  recurringEndDate: editingVaccination.recurringEndDate ? new Date(editingVaccination.recurringEndDate) : undefined,
-                } : {
-                  vaccineName: "",
-                  flockId: "",
-                  administeredDate: undefined,
-                  scheduledDate: new Date(),
-                  quantity: 0,
-                  dosage: "",
-                  dosageUnit: "",
-                  notes: "",
-                  administrationMethod: undefined,
-                  isScheduled: true,
-                  reminderEnabled: false,
-                  reminderDaysBefore: undefined,
-                  sendEmail: false,
-                  sendInAppAlert: false,
-                  isRecurring: false,
-                  recurringInterval: undefined,
-                  recurringEndDate: undefined,
-                },
-                title: editingVaccination ? t('editTitle') : t('addNewTitle'),
-                description: editingVaccination ? t('editDescription') : t('addNewDescription'),
-                submitText: editingVaccination ? t('updateButton') : t('addButton'),
-                onSubmit: editingVaccination ? handleUpdate : handleSubmit,
-                children: (form) => (
-                  <VaccinationForm 
-                    form={form} 
-                    flocks={flocks}
-                    veterinarians={veterinarians}
-                  />
-                ),
+              initialData={editingVaccination ? {
+                id: editingVaccination.id,
+                vaccineName: editingVaccination.vaccineName,
+                flockId: editingVaccination.flockId,
+                administeredDate: editingVaccination.isScheduled ? undefined : (editingVaccination.administeredDate ? new Date(editingVaccination.administeredDate) : undefined),
+                scheduledDate: editingVaccination.isScheduled ? (editingVaccination.scheduledDate ? new Date(editingVaccination.scheduledDate) : new Date()) : undefined,
+                quantity: editingVaccination.quantity,
+                dosage: editingVaccination.dosage,
+                dosageUnit: editingVaccination.dosageUnit,
+                notes: editingVaccination.notes || "",
+                administrationMethod: editingVaccination.administrationMethod,
+                isScheduled: editingVaccination.isScheduled || false,
+                reminderEnabled: editingVaccination.reminderEnabled || false,
+                reminderDaysBefore: editingVaccination.reminderDaysBefore,
+                sendEmail: editingVaccination.sendEmail || false,
+                sendInAppAlert: editingVaccination.sendInAppAlert || false,
+                isRecurring: editingVaccination.isRecurring || false,
+                recurringInterval: editingVaccination.recurringInterval,
+                recurringEndDate: editingVaccination.recurringEndDate ? new Date(editingVaccination.recurringEndDate) : undefined,
+              } : undefined}
+              onSuccess={() => {
+                setIsAddDialogOpen(false);
+                setEditingVaccination(null);
+                fetchVaccinations();
               }}
-              loading={loading}
+              loading={dialogLoading}
+              onLoadingChange={setDialogLoading}
             />
           </div>
         </CardHeader>

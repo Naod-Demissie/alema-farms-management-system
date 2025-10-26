@@ -207,6 +207,9 @@
       "addRevenue": "Add Revenue",
       "addStaffMember": "Add Staff Member",
       "addNewFlock": "Add New Flock",
+      "addVaccination": "Add Vaccination",
+      "addTreatment": "Add Treatment",
+      "addMortality": "Add Mortality",
       "flock": {
         "batchCode": "Batch Code",
         "batchCodePlaceholder": "FLK-2024-001",
@@ -303,6 +306,11 @@
         "kg": "kg",
         "units": "units",
         "birds": "birds"
+      },
+      "priority": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
       }
     },
     "dialogs": {
@@ -502,6 +510,8 @@
       "addButton": "Add Record",
       "updateButton": "Update Record",
       "loadingData": "Loading data...",
+      "loadingFlocks": "Loading flocks...",
+      "noFlocks": "No flocks available",
       "actions": "Actions",
       "viewDetails": "View Details",
       "editRecord": "Edit Record",
@@ -595,6 +605,10 @@
       "statusUpdateError": "Failed to update status",
       "markedAsCompleted": "has been marked as completed",
       "markedAsScheduled": "has been marked as scheduled",
+      "markCompleted": "Mark Completed",
+      "markCompletedSuccess": "Vaccination marked as completed successfully",
+      "markCompletedError": "Failed to mark vaccination as completed",
+      "markingCompleted": "Marking...",
       "filterByMonth": "Filter by Month",
       "filterByDate": "Filter by Date",
       "dosageUnit": "Unit",
@@ -648,6 +662,8 @@
       "addButton": "Add Treatment",
       "updateButton": "Update Treatment",
       "loadingData": "Loading data...",
+      "loadingFlocks": "Loading flocks...",
+      "noFlocks": "No flocks available",
       "actions": "Actions",
       "viewDetails": "View Details",
       "editRecord": "Edit",
@@ -753,6 +769,8 @@
       "addButton": "Add Record",
       "updateButton": "Update Record",
       "loadingData": "Loading data...",
+      "loadingFlocks": "Loading flocks...",
+      "noFlocks": "No flocks available",
       "saving": "Saving...",
       "actions": "Actions",
       "viewDetails": "View Details",
@@ -785,14 +803,19 @@
         "flockId": "Flock ID",
         "selectFlock": "Select flock",
         "date": "Date",
+        "selectDate": "Select date",
         "pickDate": "Pick a date",
+        "count": "Number of Deaths",
         "numberOfDeaths": "Number of Deaths",
-        "recordedBy": "Recorded By",
-        "selectStaff": "Select staff member",
+        "enterCount": "Enter number of deaths",
+        "cause": "Cause of Death",
         "causeOfDeath": "Cause of Death",
         "selectCause": "Select cause",
         "causeDescription": "Cause Description",
-        "causeDescriptionPlaceholder": "Detailed description of the cause of death..."
+        "enterCauseDescription": "Detailed description of the cause of death...",
+        "causeDescriptionPlaceholder": "Detailed description of the cause of death...",
+        "recordedBy": "Recorded By",
+        "selectStaff": "Select staff member"
       },
       "columns": {
         "flockId": "Flock ID",
@@ -931,6 +954,8 @@
       "deleteSuccessDesc": "Temperature reading has been removed",
       "error": "Error",
       "unexpectedError": "An unexpected error occurred",
+      "loadingFlocks": "Loading flocks...",
+      "noFlocks": "No flocks available",
       "aggregates": {
         "avgMin": "Avg Min",
         "avgMax": "Avg Max",

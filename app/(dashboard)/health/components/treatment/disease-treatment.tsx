@@ -18,8 +18,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { TreatmentDialog } from "@/app/(dashboard)/health/components/dialogs/treatment-dialog";
 import { ReusableDialog } from "@/components/ui/reusable-dialog";
-import { TreatmentForm, treatmentSchema, TreatmentStatusUpdateForm, treatmentStatusUpdateSchema } from "@/components/forms/dialog-forms";
 import {
   Select,
   SelectContent,
@@ -62,20 +62,20 @@ import { TreatmentTable } from "./treatment-table";
 import { treatmentColumns } from "./treatment-columns";
 import { getTreatments, createTreatment, updateTreatment, deleteTreatment, updateTreatmentStatus } from "@/app/(dashboard)/health/server/health";
 import { getFlocks } from "@/app/(dashboard)/flocks/server/flocks";
-import { getStaff } from "@/app/(dashboard)/staff/server/staff";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { treatmentStatusUpdateSchema, TreatmentStatusUpdateForm } from "@/components/forms/dialog-forms";
 
 
 export function DiseaseTreatment() {
   const t = useTranslations('health.treatment');
   const [treatments, setTreatments] = useState<any[]>([]);
-  const [flocks, setFlocks] = useState<any[]>([]);
-  const [veterinarians, setVeterinarians] = useState<any[]>([]);
+  const [flocks, setFlocks] = useState<Array<{ id: string; batchCode: string; currentCount: number }>>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTreatment, setEditingTreatment] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [dialogLoading, setDialogLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     type: 'delete' | null;
@@ -94,31 +94,38 @@ export function DiseaseTreatment() {
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-
   // Load data on component mount
   useEffect(() => {
     loadData();
+    fetchFlocks();
   }, []);
+
+  const fetchFlocks = async () => {
+    try {
+      const result = await getFlocks({}, { page: 1, limit: 100 });
+      if (result.success && result.data) {
+        setFlocks(result.data.map(flock => ({
+          id: flock.id,
+          batchCode: flock.batchCode,
+          currentCount: flock.currentCount
+        })));
+      } else {
+        console.error("Failed to fetch flocks:", result.message);
+        setFlocks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching flocks:", error);
+      setFlocks([]);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [treatmentsRes, flocksRes, staffRes] = await Promise.all([
-        getTreatments(1, 100),
-        getFlocks(),
-        getStaff(),
-      ]);
+      const treatmentsRes = await getTreatments(1, 100);
 
       if (treatmentsRes.success) {
         setTreatments(treatmentsRes.data?.treatments || []);
-      }
-      if (flocksRes.success) {
-        setFlocks(flocksRes.data || []);
-      }
-      if (staffRes.success) {
-        setVeterinarians((staffRes.data || []).filter((staff: any) => 
-          staff.role === 'VETERINARIAN' || staff.role === 'ADMIN'
-        ));
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -128,65 +135,10 @@ export function DiseaseTreatment() {
     }
   };
 
-  const handleSubmit = async (data: z.infer<typeof treatmentSchema>) => {
-    setActionLoading("create");
-    try {
-      const treatmentData = {
-        ...data,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate?.toISOString(),
-      };
-
-      const result = await createTreatment(treatmentData);
-      
-      if (result.success) {
-        toast.success(t('createSuccess'));
-        await loadData();
-        setIsAddDialogOpen(false);
-      } else {
-        toast.error(result.error || t('createError'));
-      }
-    } catch (error) {
-      console.error("Error creating treatment:", error);
-      toast.error(t('createError'));
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleEdit = (treatment: any) => {
     console.log("handleEdit called with treatment:", treatment);
     setEditingTreatment(treatment);
     setIsAddDialogOpen(true);
-  };
-
-  const handleUpdate = async (data: z.infer<typeof treatmentSchema>) => {
-    if (!editingTreatment) return;
-    
-    setActionLoading("update");
-    try {
-      const treatmentData = {
-        ...data,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate?.toISOString(),
-      };
-
-      const result = await updateTreatment(editingTreatment.id, treatmentData);
-      
-      if (result.success) {
-        toast.success(t('updateSuccess'));
-        await loadData();
-        setIsAddDialogOpen(false);
-        setEditingTreatment(null);
-      } else {
-        toast.error(result.error || t('updateError'));
-      }
-    } catch (error) {
-      console.error("Error updating treatment:", error);
-      toast.error(t('updateError'));
-    } finally {
-      setActionLoading(null);
-    }
   };
 
   const handleDelete = (treatment: any) => {
@@ -320,7 +272,7 @@ export function DiseaseTreatment() {
               </DialogTrigger>
             </Dialog>
             
-            <ReusableDialog
+            <TreatmentDialog
               open={isAddDialogOpen}
               onOpenChange={(open) => {
                 console.log("Dialog onOpenChange called with:", open, "editingTreatment:", editingTreatment);
@@ -329,51 +281,28 @@ export function DiseaseTreatment() {
                   setEditingTreatment(null);
                 }
               }}
-              config={{
-                schema: treatmentSchema,
-                defaultValues: editingTreatment ? {
-                  flockId: editingTreatment.flockId,
-                  disease: editingTreatment.disease,
-                  diseaseName: editingTreatment.diseaseName,
-                  medication: editingTreatment.medication,
-                  dosage: editingTreatment.dosage,
-                  frequency: editingTreatment.frequency,
-                  duration: editingTreatment.duration,
-                  treatedBy: editingTreatment.treatedBy?.id || editingTreatment.treatedById,
-                  startDate: new Date(editingTreatment.startDate),
-                  endDate: editingTreatment.endDate ? new Date(editingTreatment.endDate) : undefined,
-                  notes: editingTreatment.notes || "",
-                  symptoms: editingTreatment.symptoms || "",
-                } : {
-                  flockId: "",
-                  disease: "respiratory",
-                  diseaseName: "",
-                  medication: "",
-                  dosage: "",
-                  frequency: "",
-                  duration: "",
-                  treatedBy: "",
-                  startDate: new Date(),
-                  endDate: undefined,
-                  notes: "",
-                  symptoms: "",
-                },
-                title: editingTreatment ? t('editTitle') : t('addNewTitle'),
-                description: editingTreatment  
-                  ? t('editDescription')
-                  : t('addNewDescription'),
-                submitText: editingTreatment ? t('updateButton') : t('addButton'),
-                onSubmit: editingTreatment ? handleUpdate : handleSubmit,
-                children: (form) => (
-                  <TreatmentForm 
-                    form={form} 
-                    flocks={flocks}
-                    veterinarians={veterinarians}
-                    t={t}
-                  />
-                ),
+              initialData={editingTreatment ? {
+                id: editingTreatment.id,
+                flockId: editingTreatment.flockId,
+                disease: editingTreatment.disease || "respiratory",
+                diseaseName: editingTreatment.diseaseName,
+                diseasedBirdsCount: editingTreatment.diseasedBirdsCount || 0,
+                medication: editingTreatment.medication,
+                dosage: editingTreatment.dosage,
+                frequency: editingTreatment.frequency,
+                duration: editingTreatment.duration,
+                startDate: new Date(editingTreatment.startDate),
+                endDate: editingTreatment.endDate ? new Date(editingTreatment.endDate) : undefined,
+                notes: editingTreatment.notes || "",
+                symptoms: editingTreatment.symptoms || "",
+              } : undefined}
+              onSuccess={() => {
+                setIsAddDialogOpen(false);
+                setEditingTreatment(null);
+                loadData();
               }}
-              loading={actionLoading === "create" || actionLoading === "update"}
+              loading={dialogLoading}
+              onLoadingChange={setDialogLoading}
             />
           </div>
         </CardHeader>
@@ -401,6 +330,7 @@ export function DiseaseTreatment() {
         onOpenChange={(open) => setStatusUpdateDialog({ ...statusUpdateDialog, open })}
         config={{
           schema: treatmentStatusUpdateSchema,
+          maxWidth: "max-w-2xl",
           defaultValues: {
             deceasedCount: statusUpdateDialog.treatment?.deceasedCount || 0,
             recoveredCount: statusUpdateDialog.treatment?.recoveredCount || 0,

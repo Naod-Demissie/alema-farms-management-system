@@ -146,7 +146,6 @@ export async function getUpcomingVaccinations(daysAhead: number = 14): Promise<A
     const vaccinations = await prisma.vaccinations.findMany({
       where: {
         isScheduled: true,
-        status: "scheduled",
         scheduledDate: {
           gte: today,
           lte: futureDate,

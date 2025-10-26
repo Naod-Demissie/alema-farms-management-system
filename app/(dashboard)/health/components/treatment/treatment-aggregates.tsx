@@ -43,14 +43,10 @@ export function TreatmentAggregates<TData>({
       // Count total treatments
       totals.totalTreatments += 1;
       
-      // Count status updates if available
-      if (record.statusUpdates && Array.isArray(record.statusUpdates)) {
-        record.statusUpdates.forEach((update: any) => {
-          totals.totalDeceased += update.deceasedCount || 0;
-          totals.totalRecovered += update.recoveredCount || 0;
-          totals.totalStillSick += update.stillSickCount || 0;
-        });
-      }
+      // Count status data directly from treatment record
+      totals.totalDeceased += record.deceasedCount || 0;
+      totals.totalRecovered += record.recoveredCount || 0;
+      totals.totalStillSick += record.stillSickCount || 0;
     });
     
     return totals;

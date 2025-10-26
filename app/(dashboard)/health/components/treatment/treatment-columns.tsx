@@ -213,18 +213,6 @@ export const treatmentColumns = (
     },
   },
   {
-    accessorKey: "treatedBy",
-    header: t ? t('columns.treatedBy') : "Treated By",
-    cell: ({ row }) => {
-      const treatment = row.original;
-      return (
-        <div className="text-sm">
-          <div className="font-medium">{treatment.treatedBy?.name || treatment.treatedBy || (t ? t('columns.unknown') : "Unknown")}</div>
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "deceasedCount",
     header: t ? t('columns.deceasedCount') : "Deceased",
     cell: ({ row }) => {

@@ -107,18 +107,6 @@ export const mortalityColumns = (
     },
   },
   {
-    accessorKey: "recordedBy",
-    header: t ? t('columns.recordedBy') : "Recorded By",
-    cell: ({ row }) => {
-      const record = row.original;
-      return (
-        <div className="text-sm">
-          <div className="font-medium">{record.recordedBy?.name || record.recordedBy || (t ? t('columns.unknown') : "Unknown")}</div>
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "count",
     header: t ? t('columns.deaths') : "Deaths",
     cell: ({ row }) => {

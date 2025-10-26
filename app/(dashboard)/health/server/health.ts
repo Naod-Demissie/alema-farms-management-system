@@ -36,7 +36,6 @@ const TreatmentSchema = z.object({
   dosage: z.string().min(1, "Dosage is required"),
   frequency: z.string().min(1, "Frequency is required"),
   duration: z.string().min(1, "Duration is required"),
-  treatedBy: z.string().min(1, "Treated by is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().optional(),
   notes: z.string().optional(),
@@ -50,7 +49,6 @@ const MortalitySchema = z.object({
   count: z.number().min(1, "Count must be at least 1"),
   cause: z.enum(["disease", "injury", "environmental", "unknown"]),
   causeDescription: z.string().min(1, "Cause description is required"),
-  recordedBy: z.string().min(1, "Recorded by is required"),
 });
 
 // Vaccination Management
@@ -541,14 +539,12 @@ export async function createTreatment(data: any): Promise<ApiResponse<any>> {
 
     const validatedData = TreatmentSchema.parse(data);
     
-    const { treatedBy, ...treatmentData } = validatedData;
-    
     const treatment = await prisma.treatments.create({
       data: {
-        ...treatmentData,
+        ...validatedData,
         startDate: new Date(validatedData.startDate),
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
-        treatedById: treatedBy,
+        treatedById: authResult.user.id, // Use current authenticated user
         response: "no_change",
         // Initialize status tracking fields
         stillSickCount: validatedData.diseasedBirdsCount, // Initially all diseased birds are still sick
@@ -884,7 +880,7 @@ export async function createMortalityRecord(data: any): Promise<ApiResponse<any>
           count: validatedData.count,
           cause: validatedData.cause,
           causeDescription: validatedData.causeDescription,
-          recordedById: validatedData.recordedBy,
+          recordedById: authResult.user.id, // Use current authenticated user
         },
       });
 

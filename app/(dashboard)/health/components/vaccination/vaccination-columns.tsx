@@ -64,28 +64,31 @@ export const vaccinationColumns = (
     header: t ? t('columns.status') : "Status",
     cell: ({ row }) => {
       const vaccination = row.original;
-      const isScheduled = vaccination.isScheduled || vaccination.status === "scheduled";
+      const status = vaccination.status || (vaccination.isScheduled ? "scheduled" : "completed");
       const hasReminder = vaccination.reminderEnabled;
       const isRecurring = vaccination.isRecurring;
       
       return (
         <div className="flex items-center gap-2">
-          <Badge variant={isScheduled ? "outline" : "default"}>
-            {isScheduled ? (t ? t('scheduled') : "Scheduled") : (t ? t('completed') : "Completed")}
+          <Badge variant={status === "scheduled" ? "outline" : "default"}>
+            {status === "scheduled" ? (t ? t('scheduled') : "Scheduled") : (t ? t('completed') : "Completed")}
           </Badge>
-          {hasReminder && isScheduled && (
-            <Bell className="h-3 w-3 text-yellow-600" title="Reminder enabled" />
+          {hasReminder && status === "scheduled" && (
+            <div title="Reminder enabled">
+              <Bell className="h-3 w-3 text-yellow-600" />
+            </div>
           )}
-          {isRecurring && isScheduled && (
-            <Repeat className="h-3 w-3 text-blue-600" title="Recurring" />
+          {isRecurring && status === "scheduled" && (
+            <div title="Recurring">
+              <Repeat className="h-3 w-3 text-blue-600" />
+            </div>
           )}
         </div>
       );
     },
     filterFn: (row, id, value) => {
       const vaccination = row.original;
-      const isScheduled = vaccination.isScheduled || vaccination.status === "scheduled";
-      const status = isScheduled ? "scheduled" : "completed";
+      const status = vaccination.status || (vaccination.isScheduled ? "scheduled" : "completed");
       
       // Handle array values from DataTableFacetedFilter
       if (Array.isArray(value)) {
@@ -113,8 +116,8 @@ export const vaccinationColumns = (
     header: t ? t('columns.dateAdministered') : "Date",
     cell: ({ row }) => {
       const vaccination = row.original;
-      const isScheduled = vaccination.isScheduled || vaccination.status === "scheduled";
-      const dateToShow = isScheduled && vaccination.scheduledDate 
+      const status = vaccination.status || (vaccination.isScheduled ? "scheduled" : "completed");
+      const dateToShow = status === "scheduled" && vaccination.scheduledDate 
         ? new Date(vaccination.scheduledDate)
         : new Date(vaccination.administeredDate);
       
@@ -133,8 +136,8 @@ export const vaccinationColumns = (
       if (!value) return true;
       
       const vaccination = row.original;
-      const isScheduled = vaccination.isScheduled || vaccination.status === "scheduled";
-      const vaccinationDate = isScheduled && vaccination.scheduledDate 
+      const status = vaccination.status || (vaccination.isScheduled ? "scheduled" : "completed");
+      const vaccinationDate = status === "scheduled" && vaccination.scheduledDate 
         ? new Date(vaccination.scheduledDate)
         : new Date(vaccination.administeredDate);
       
@@ -250,7 +253,7 @@ export const vaccinationColumns = (
     header: t ? t('columns.actions') : "Actions",
     cell: ({ row }) => {
       const vaccination = row.original;
-      const isScheduled = vaccination.isScheduled || vaccination.status === "scheduled";
+      const status = vaccination.status || (vaccination.isScheduled ? "scheduled" : "completed");
       
       return (
         <DropdownMenu>
