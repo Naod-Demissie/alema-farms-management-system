@@ -48,7 +48,7 @@ const MortalitySchema = z.object({
   date: z.string().min(1, "Date is required"),
   count: z.number().min(1, "Count must be at least 1"),
   cause: z.enum(["disease", "injury", "environmental", "unknown"]),
-  causeDescription: z.string().min(1, "Cause description is required"),
+  causeDescription: z.string().optional(),
 });
 
 // Vaccination Management
@@ -592,27 +592,55 @@ export async function updateTreatment(id: string, data: any): Promise<ApiRespons
     if (validatedData.diseaseName) updateData.diseaseName = validatedData.diseaseName;
     if (validatedData.diseasedBirdsCount !== undefined) {
       updateData.diseasedBirdsCount = validatedData.diseasedBirdsCount;
-      // If diseased birds count is being updated, we need to adjust stillSickCount accordingly
-      // Get current treatment to calculate the adjustment
+      
+      // If diseased birds count is being updated, reset all status fields
+      // This treats it as a new/updated treatment record
+      
+      // Get current treatment to check if we need to handle mortality records
       const currentTreatment = await prisma.treatments.findUnique({
         where: { id },
-        select: { diseasedBirdsCount: true, stillSickCount: true, deceasedCount: true, recoveredCount: true }
+        select: { 
+          deceasedCount: true,
+          flockId: true,
+          diseasedBirdsCount: true
+        }
       });
       
-      if (currentTreatment) {
-        const currentStillSick = currentTreatment.stillSickCount || 0;
-        const currentDeceased = currentTreatment.deceasedCount || 0;
-        const currentRecovered = currentTreatment.recoveredCount || 0;
-        const currentTotal = currentStillSick + currentDeceased + currentRecovered;
+      // If there were deceased birds before, we need to handle the mortality records
+      if (currentTreatment && currentTreatment.deceasedCount > 0) {
+        // Get mortality records linked to this treatment
+        const mortalityRecords = await prisma.mortality.findMany({
+          where: { treatmentId: id },
+          select: { id: true, count: true }
+        });
         
-        // Calculate the difference and adjust stillSickCount proportionally
-        const newTotal = validatedData.diseasedBirdsCount;
-        const difference = newTotal - currentTotal;
-        
-        // Add the difference to stillSickCount (assuming new cases are still sick)
-        updateData.stillSickCount = Math.max(0, currentStillSick + difference);
-        updateData.lastStatusUpdate = new Date();
+        // If there are mortality records, restore birds to flock and delete records
+        if (mortalityRecords.length > 0) {
+          const totalDeceasedCount = mortalityRecords.reduce((sum, record) => sum + record.count, 0);
+          
+          // Restore the birds to the flock
+          await prisma.flocks.update({
+            where: { id: currentTreatment.flockId },
+            data: {
+              currentCount: {
+                increment: totalDeceasedCount
+              }
+            }
+          });
+          
+          // Delete the mortality records
+          await prisma.mortality.deleteMany({
+            where: { treatmentId: id }
+          });
+        }
       }
+      
+      // Reset all status fields
+      updateData.stillSickCount = validatedData.diseasedBirdsCount;
+      updateData.recoveredCount = 0;
+      updateData.deceasedCount = 0;
+      updateData.lastStatusUpdate = new Date();
+      updateData.response = "no_change"; // Reset response to initial state
     }
     if (validatedData.medication) updateData.medication = validatedData.medication;
     if (validatedData.dosage) updateData.dosage = validatedData.dosage;

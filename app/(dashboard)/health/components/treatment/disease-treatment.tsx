@@ -70,6 +70,7 @@ import { treatmentStatusUpdateSchema, TreatmentStatusUpdateForm } from "@/compon
 
 export function DiseaseTreatment() {
   const t = useTranslations('health.treatment');
+  const tDiseaseTypes = useTranslations('health.treatment.diseaseTypes');
   const [treatments, setTreatments] = useState<any[]>([]);
   const [flocks, setFlocks] = useState<Array<{ id: string; batchCode: string; currentCount: number }>>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -216,11 +217,11 @@ export function DiseaseTreatment() {
     };
     
     const labels = {
-      respiratory: "Respiratory",
-      digestive: "Digestive",
-      parasitic: "Parasitic",
-      nutritional: "Nutritional",
-      other: "Other",
+      respiratory: tDiseaseTypes('respiratory'),
+      digestive: tDiseaseTypes('digestive'),
+      parasitic: tDiseaseTypes('parasitic'),
+      nutritional: tDiseaseTypes('nutritional'),
+      other: tDiseaseTypes('other'),
     };
 
     return (

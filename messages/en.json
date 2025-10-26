@@ -694,6 +694,19 @@
         "notes": "Status Update Notes",
         "notesPlaceholder": "Add any additional notes about the status update..."
       },
+      "selectFlock": "Select flock",
+      "selectDiseaseType": "Select disease type",
+      "pickDate": "Pick a date",
+      "placeholders": {
+        "diseaseName": "e.g., Infectious Bronchitis",
+        "diseasedBirdsCount": "e.g., 25",
+        "medication": "e.g., Amoxicillin",
+        "dosage": "e.g., 10mg/kg body weight",
+        "frequency": "e.g., Twice daily",
+        "duration": "e.g., 5 days",
+        "symptoms": "Describe the symptoms observed...",
+        "notes": "Additional notes about the treatment..."
+      },
       "diseaseTypes": {
         "respiratory": "Respiratory",
         "digestive": "Digestive",
@@ -715,6 +728,8 @@
         "symptoms": "Symptoms",
         "medication": "Medication",
         "dosage": "Dosage",
+        "frequency": "Frequency",
+        "duration": "Duration",
         "startDate": "Start Date",
         "endDate": "End Date",
         "ongoing": "Ongoing",

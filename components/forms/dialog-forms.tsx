@@ -812,7 +812,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select flock" />
+                    <SelectValue placeholder={getLabel('selectFlock', 'Select flock')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -830,7 +830,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
                   ) : (
                     flocks.map((flock) => (
                       <SelectItem key={flock.id} value={flock.id}>
-                        {flock.batchCode} ({flock.currentCount} birds)
+                        {flock.batchCode} ({flock.currentCount} {t ? t('columns.birds') : 'birds'})
                       </SelectItem>
                     ))
                   )}
@@ -843,26 +843,36 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
         <FormField
           control={form.control}
           name="disease"
-          render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormLabel>{getLabel('diseaseType', 'Disease Type')} <span className="text-red-500">*</span></FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select disease type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {DISEASE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const diseaseOptions = [
+              { value: 'respiratory', label: t ? t('diseaseTypes.respiratory') : 'Respiratory' },
+              { value: 'digestive', label: t ? t('diseaseTypes.digestive') : 'Digestive' },
+              { value: 'parasitic', label: t ? t('diseaseTypes.parasitic') : 'Parasitic' },
+              { value: 'nutritional', label: t ? t('diseaseTypes.nutritional') : 'Nutritional' },
+              { value: 'other', label: t ? t('diseaseTypes.other') : 'Other' },
+            ];
+            
+            return (
+              <FormItem className="flex-1">
+                <FormLabel>{getLabel('diseaseType', 'Disease Type')} <span className="text-red-500">*</span></FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={getLabel('selectDiseaseType', 'Select disease type')} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {diseaseOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
       </div>
 
@@ -875,7 +885,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
             <FormItem className="flex-1">
               <FormLabel>{getLabel('diseaseName', 'Disease Name')} <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Infectious Bronchitis" {...field} />
+                <Input placeholder={getLabel('placeholders.diseaseName', 'e.g., Infectious Bronchitis')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -890,7 +900,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
               <FormControl>
                 <Input 
                   type="number" 
-                  placeholder="e.g., 25" 
+                  placeholder={getLabel('placeholders.diseasedBirdsCount', 'e.g., 25')} 
                   min="1"
                   value={field.value || ''}
                   onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
@@ -909,9 +919,9 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
           name="medication"
           render={({ field }) => (
             <FormItem className="flex-1">
-              <FormLabel>Medication <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{getLabel('columns.medication', 'Medication')} <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Amoxicillin" {...field} />
+                <Input placeholder={getLabel('placeholders.medication', 'e.g., Amoxicillin')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -922,9 +932,9 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
           name="dosage"
           render={({ field }) => (
             <FormItem className="flex-1">
-              <FormLabel>Dosage <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{getLabel('columns.dosage', 'Dosage')} <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="e.g., 10mg/kg body weight" {...field} />
+                <Input placeholder={getLabel('placeholders.dosage', 'e.g., 10mg/kg body weight')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -939,9 +949,9 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
           name="frequency"
           render={({ field }) => (
             <FormItem className="flex-1">
-              <FormLabel>Frequency <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{getLabel('columns.frequency', 'Frequency')} <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Twice daily" {...field} />
+                <Input placeholder={getLabel('placeholders.frequency', 'e.g., Twice daily')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -952,9 +962,9 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
           name="duration"
           render={({ field }) => (
             <FormItem className="flex-1">
-              <FormLabel>Duration <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{getLabel('columns.duration', 'Duration')} <span className="text-red-500">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="e.g., 5 days" {...field} />
+                <Input placeholder={getLabel('placeholders.duration', 'e.g., 5 days')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -969,7 +979,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
           name="startDate"
           render={({ field }) => (
             <FormItem className="flex-1">
-              <FormLabel>Start Date <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>{getLabel('columns.startDate', 'Start Date')} <span className="text-red-500">*</span></FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -983,7 +993,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
                       {field.value ? (
                         EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
-                        <span>Pick a date</span>
+                        <span>{getLabel('pickDate', 'Pick a date')}</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
@@ -1008,7 +1018,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
           name="endDate"
           render={({ field }) => (
             <FormItem className="flex-1">
-              <FormLabel>End Date</FormLabel>
+              <FormLabel>{getLabel('columns.endDate', 'End Date')}</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -1022,7 +1032,7 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
                       {field.value ? (
                         EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
-                        <span>Pick a date</span>
+                        <span>{getLabel('pickDate', 'Pick a date')}</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
@@ -1049,10 +1059,10 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
         name="symptoms"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Symptoms</FormLabel>
+            <FormLabel>{getLabel('columns.symptoms', 'Symptoms')}</FormLabel>
             <FormControl>
               <Textarea
-                placeholder="Describe the symptoms observed..."
+                placeholder={getLabel('placeholders.symptoms', 'Describe the symptoms observed...')}
                 className="resize-none"
                 rows={3}
                 {...field}
@@ -1068,10 +1078,10 @@ export function TreatmentForm({ form, flocks, flocksLoading = false, t }: Treatm
         name="notes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Notes</FormLabel>
+            <FormLabel>{getLabel('columns.notes', 'Notes')}</FormLabel>
             <FormControl>
               <Textarea
-                placeholder="Additional notes about the treatment..."
+                placeholder={getLabel('placeholders.notes', 'Additional notes about the treatment...')}
                 className="resize-none"
                 rows={3}
                 {...field}

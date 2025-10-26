@@ -29,7 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { EthiopianDateFormatter } from "@/lib/ethiopian-date-formatter";
 
 // Validation schema
 export const mortalitySchema = z.object({
@@ -39,7 +39,7 @@ export const mortalitySchema = z.object({
   }),
   count: z.number().min(1, "Count must be at least 1"),
   cause: z.enum(["disease", "injury", "environmental", "unknown"]),
-  causeDescription: z.string().min(1, "Cause description is required"),
+  causeDescription: z.string().optional(),
 });
 
 interface MortalityFormProps {
@@ -114,7 +114,7 @@ export function MortalityForm({ form, flocks, flocksLoading = false }: Mortality
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        EthiopianDateFormatter.formatForTable(field.value)
                       ) : (
                         <span>{t('form.selectDate')}</span>
                       )}
@@ -153,8 +153,11 @@ export function MortalityForm({ form, flocks, flocksLoading = false }: Mortality
                   type="number"
                   min="1"
                   placeholder={t('form.enterCount')}
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  value={field.value === 0 ? "" : field.value}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.onChange(value === "" ? 0 : parseInt(value) || 0);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -195,8 +198,8 @@ export function MortalityForm({ form, flocks, flocksLoading = false }: Mortality
         name="causeDescription"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="flex items-center gap-1">
-              {t('form.causeDescription')} <span className="text-red-500">*</span>
+            <FormLabel>
+              {t('form.causeDescription')}
             </FormLabel>
             <FormControl>
               <Textarea

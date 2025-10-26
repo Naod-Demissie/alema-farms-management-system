@@ -50,10 +50,10 @@ export const treatmentColumns = (
             {treatment.flock?.batchCode || treatment.flockId}
           </Badge>
           {hasSickBirds && (
-            <AlertCircle className="h-4 w-4 text-yellow-500" title="Has sick birds" />
+            <AlertCircle className="h-4 w-4 text-yellow-500" title={t ? t('columns.stillSickCount') : 'Has sick birds'} />
           )}
           {hasDeceasedBirds && (
-            <XCircle className="h-4 w-4 text-red-500" title="Has deceased birds" />
+            <XCircle className="h-4 w-4 text-red-500" title={t ? t('columns.deceasedCount') : 'Has deceased birds'} />
           )}
         </div>
       );
@@ -95,7 +95,7 @@ export const treatmentColumns = (
           <div className="font-medium text-red-600">
             {treatment.diseasedBirdsCount || 0}
           </div>
-          <span className="text-sm text-muted-foreground">birds</span>
+          <span className="text-sm text-muted-foreground">{t ? t('columns.birds') : 'birds'}</span>
         </div>
       );
     },
@@ -272,7 +272,7 @@ export const treatmentColumns = (
               </div>
             </div>
           ) : (
-            <span className="text-muted-foreground">No updates</span>
+            <span className="text-muted-foreground">{t ? t('columns.noNotes') : 'No updates'}</span>
           )}
         </div>
       );

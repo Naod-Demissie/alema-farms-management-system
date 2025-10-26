@@ -23,6 +23,7 @@ export function TreatmentTableToolbar<TData>({
 }: TreatmentTableToolbarProps<TData>) {
   const t = useTranslations('health.treatment.table');
   const tColumns = useTranslations('health.treatment.columns');
+  const tDiseaseTypes = useTranslations('health.treatment.diseaseTypes');
   const isFiltered = table.getState().columnFilters.length > 0;
   const [selectedMonth, setSelectedMonth] = React.useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined);
@@ -32,6 +33,15 @@ export function TreatmentTableToolbar<TData>({
     label: `${flock.batchCode}`,
     value: flock.id,
   }));
+  
+  // Disease type options for filtering
+  const diseaseOptions = [
+    { label: tDiseaseTypes('respiratory'), value: "respiratory" },
+    { label: tDiseaseTypes('digestive'), value: "digestive" },
+    { label: tDiseaseTypes('parasitic'), value: "parasitic" },
+    { label: tDiseaseTypes('nutritional'), value: "nutritional" },
+    { label: tDiseaseTypes('other'), value: "other" },
+  ];
 
   // Handle month picker change
   const handleMonthSelect = (date: Date | undefined) => {
@@ -144,13 +154,7 @@ export function TreatmentTableToolbar<TData>({
             <DataTableFacetedFilter
               column={table.getColumn("disease")}
               title={tColumns('disease')}
-              options={[
-                { label: "Respiratory", value: "respiratory" },
-                { label: "Digestive", value: "digestive" },
-                { label: "Parasitic", value: "parasitic" },
-                { label: "Nutritional", value: "nutritional" },
-                { label: "Other", value: "other" },
-              ]}
+              options={diseaseOptions}
             />
           )}
         </div>
